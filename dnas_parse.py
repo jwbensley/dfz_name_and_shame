@@ -7,11 +7,29 @@ import mrtparse
 import os
 import requests
 
+import timeit
+import itertools
+
 import math
 import multiprocessing
 from multiprocessing import Pool
 
-options = []
+class rib_entry:
+
+    def __init__(self, prefix=None, as_path=[[]], community_set=[[]], next_hop=None, origin_asn=[]):
+
+        self.prefix = prefix
+        self.as_path = as_path
+        self.community_set = community_set
+        self.next_hop = next_hop
+        self.origin_asn = origin_asn
+
+class rib_stats:
+
+    def __init__(self):
+        self.most_origin_asns = [rib_entry()]
+        self.longest_as_path = [rib_entry()]
+        self.longest_community_set = [rib_entry()]
 
 def download_mrt(filename, url):
 
@@ -68,244 +86,130 @@ def download_mrt(filename, url):
 
     return True
 
-
-def load_rib(filename):
+def parse_mrt_rib(rib_data):
 
     # RIB dumps can contain both AFIs (v4 and v6)
+    rstats = rib_stats()
 
-    if not filename:
-        print("Filename missing from load_rib() call!")
-        return False
+    print(f"Starting PID {os.getpid()} with {len(rib_data)} RIB entries")
 
-    if not os.path.isfile(filename):
-        print(f"Nonexisting filename parsed to load_rib(): {filename}")
-        return False
+    tic = timeit.default_timer()
 
-    peers = {}
-    v4_routes = {}
-    v6_routes = {}
-    for entry in mrtparse.Reader(filename):
-        if (entry.data["type"][0] == mrtparse.MRT_T['TABLE_DUMP_V2'] and
-            entry.data["subtype"][0] == mrtparse.TD_V2_ST['PEER_INDEX_TABLE']):
-            peers = entry.data["peer_entries"]
+    for entry in rib_data:
 
-        elif (entry.data["type"][0] == mrtparse.MRT_T['TABLE_DUMP_V2'] and
-            entry.data["subtype"][0] == mrtparse.TD_V2_ST['RIB_IPV4_UNICAST']):
-            prefix = entry.data["prefix"] + "/" + str(entry.data["prefix_length"])
-            v4_routes[prefix] = {
-                "updates": 0,
-                "origin_asns": [],
-                "longest_as_paths": [],
-                "longest_community_sets": [],
-            }
-            """
-            for rib_entry in entry.data["rib_entries"]:
-                as_path = [
-                    attr["value"][0]["value"]
-                    for attr in rib_entry["path_attributes"]
-                    if attr["type"][0] == mrtparse.BGP_ATTR_T['AS_PATH']
-                ][0]
+        origin_asns = []
+        longest_as_path = [rib_entry()]
+        longest_community_set = [rib_entry()]
+        prefix = entry["prefix"] + "/" + str(entry["prefix_length"])
 
-                community_set = [
-                    attr["value"][0]
-                    for attr in rib_entry["path_attributes"]
-                    if (attr["type"][0] == mrtparse.BGP_ATTR_T['COMMUNITY'] or
-                        attr["type"][0] == mrtparse.BGP_ATTR_T['LARGE_COMMUNITY'])
+        #if (entry["type"][0] == mrtparse.MRT_T['TABLE_DUMP_V2'] and
+        ###if entry["subtype"][0] == mrtparse.TD_V2_ST['RIB_IPV4_UNICAST']:
+
+        for re in entry["rib_entries"]:
+
+            as_path = []
+            origin_asn = None
+            community_set = []
+            next_hop = None
+
+            for attr in re["path_attributes"]:
+                if attr["type"][0] == mrtparse.BGP_ATTR_T['AS_PATH']:
+                    as_path = attr["value"][0]["value"]
+                    origin_asn = as_path[-1]
+                    if origin_asn not in origin_asns:
+                        origin_asns.append(origin_asn)
+
+                elif (attr["type"][0] == mrtparse.BGP_ATTR_T['COMMUNITY'] or
+                    attr["type"][0] == mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']):
+                    community_set = attr["value"]
+
+                elif attr["type"][0] == mrtparse.BGP_ATTR_T['NEXT_HOP']:
+                    next_hop = attr["value"]
+
+                elif attr["type"][0] == mrtparse.BGP_ATTR_T['MP_REACH_NLRI']:
+                    next_hop = attr["value"]["next_hop"]
+
+            if len(as_path) == len(longest_as_path[0].as_path):
+                longest_as_path.append(
+                    rib_entry(
+                        prefix=prefix,
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                    )
+                )
+            elif len(as_path) > len(longest_as_path[0].as_path):
+                longest_as_path = [
+                    rib_entry(
+                        prefix=prefix,
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                    )
                 ]
 
-                if not v4_routes[prefix]["longest_as_paths"]:
-                    v4_routes[prefix]["longest_as_paths"] = [as_path]
-                else:
-                    if len(as_path) == len(v4_routes[prefix]["longest_as_paths"][0]):
-                        v4_routes[prefix]["longest_as_paths"].append(as_path)
-                    elif len(as_path) > len(v4_routes[prefix]["longest_as_paths"][0]):
-                        v4_routes[prefix]["longest_as_paths"] = [as_path]
-
-                origin_asn = as_path[-1]
-                if origin_asn not in v4_routes[prefix]["origin_asns"]:
-                    v4_routes[prefix]["origin_asns"].append(origin_asn)
-
-                if len(community_set) > 0:
-                    if not v4_routes[prefix]["longest_community_sets"]:
-                        v4_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-                    else:
-                        if len(community_set) == len(v4_routes[prefix]["longest_community_sets"][0]):
-                            v4_routes[prefix]["longest_community_sets"].append((community_set, origin_asn))
-                        elif len(community_set) > len(v4_routes[prefix]["longest_community_sets"][0]):
-                            v4_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-                """
-
-        elif (entry.data["type"][0] == mrtparse.MRT_T['TABLE_DUMP_V2'] and
-            entry.data["subtype"][0] == mrtparse.TD_V2_ST['RIB_IPV6_UNICAST']):
-            prefix = entry.data["prefix"] + "/" + str(entry.data["prefix_length"])
-            v6_routes[prefix] = {
-                "updates": 0,
-                "origin_asns": [],
-                "longest_as_paths": [],
-                "longest_community_sets": [],
-            }
-            """
-            for rib_entry in entry.data["rib_entries"]:
-                as_path = [
-                    attr["value"][0]["value"]
-                    for attr in rib_entry["path_attributes"]
-                    if attr["type"][0] == mrtparse.BGP_ATTR_T['AS_PATH']
-                ][0]
-
-                community_set = [
-                    attr["value"][0]
-                    for attr in rib_entry["path_attributes"]
-                    if (attr["type"][0] == mrtparse.BGP_ATTR_T['COMMUNITY'] or
-                        attr["type"][0] == mrtparse.BGP_ATTR_T['LARGE_COMMUNITY'])
+            if len(community_set) == len(longest_community_set[0].community_set):
+                longest_community_set.append(
+                    rib_entry(
+                        prefix=prefix,
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                    )
+                )
+            elif len(community_set) > len(longest_community_set[0].community_set):
+                longest_community_set = [
+                    rib_entry(
+                        prefix=prefix,
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                    )
                 ]
 
-                if not v6_routes[prefix]["longest_as_paths"]:
-                    v6_routes[prefix]["longest_as_paths"] = [as_path]
-                else:
-                    if len(as_path) == len(v6_routes[prefix]["longest_as_paths"][0]):
-                        v6_routes[prefix]["longest_as_paths"].append(as_path)
-                    elif len(as_path) > len(v6_routes[prefix]["longest_as_paths"][0]):
-                        v6_routes[prefix]["longest_as_paths"] = [as_path]
+        if len(longest_as_path[0].as_path) == len(rstats.longest_as_path[0].as_path):
+            rstats.longest_as_path.extend(longest_as_path)
+        elif len(longest_as_path[0].as_path) > len(rstats.longest_as_path[0].as_path):
+            rstats.longest_as_path = longest_as_path.copy()
 
-                origin_asn = as_path[-1]
-                if origin_asn not in v6_routes[prefix]["origin_asns"]:
-                    v6_routes[prefix]["origin_asns"].append(origin_asn)
+        if len(longest_community_set[0].community_set) == len(rstats.longest_community_set[0].community_set):
+            rstats.longest_community_set.extend(longest_community_set)
+        elif len(longest_community_set[0].community_set) > len(rstats.longest_community_set[0].community_set):
+            rstats.longest_community_set = longest_community_set.copy()
 
-                if len(community_set) > 0:
-                    if not v6_routes[prefix]["longest_community_sets"]:
-                        v6_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-                    else:
-                        if len(community_set) == len(v6_routes[prefix]["longest_community_sets"][0]):
-                            v6_routes[prefix]["longest_community_sets"].append((community_set, origin_asn))
-                        elif len(community_set) > len(v6_routes[prefix]["longest_community_sets"][0]):
-                            v6_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-            """
+        if len(origin_asns) == len(rstats.most_origin_asns[0].origin_asn):
+            rstats.most_origin_asns.append(
+                rib_entry(
+                    prefix = prefix,
+                    origin_asn = origin_asns,
+                )
+            )
+        elif len(origin_asns) > len(rstats.most_origin_asns[0].origin_asn):
+            rstats.most_origin_asns = [
+                rib_entry(
+                    prefix = prefix,
+                    origin_asn = origin_asns,
+                )
+            ]
 
+        # Is there a noticable performance hit to wrap in a "try" ?
         #else:
-        #    print(f"Unknown type/subtype: {entry.data['type']}/{entry.data['subtype']}")
+        #    print(f"Unknown type/subtype: {entry['type']}/{entry['subtype']}")
 
-    print(f"Loaded {len(peers)} peers, {len(v4_routes)} IPv4 routes and {len(v6_routes)} IPv6 routes")
-    return True
+    toc = timeit.default_timer()
+    print(f"PID {os.getpid()} duration: {toc - tic}")
 
+    del rib_data
 
-def load_update(filename):
+    return rstats
 
-    if not filename:
-        print("Filename missing from load_update() call!")
-        return False
+def test_mrt_rib(data):
 
-    if not os.path.isfile(filename):
-        print(f"Nonexisting filename parsed to load_update(): {filename}")
-        return False
-
-    peers = {}
-    v4_routes = {}
-    v6_routes = {}
-    for entry in mrtparse.Reader(filename):
-        if (entry.data["type"][0] == mrtparse.MRT_T['BGP4MP_ET'] and
-            entry.data["subtype"][0] == mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4']):
-            prefix = entry.data["prefix"] + "/" + str(entry.data["prefix_length"])
-            if prefix not in v4_routes:
-                v4_routes[prefix] = {
-                    "updates": 0,
-                    "origin_asns": [],
-                    "longest_as_paths": [],
-                    "longest_community_sets": [],
-                }
-                """
-                for rib_entry in entry.data["rib_entries"]:
-                    as_path = [
-                        attr["value"][0]["value"]
-                        for attr in rib_entry["path_attributes"]
-                        if attr["type"][0] == mrtparse.BGP_ATTR_T['AS_PATH']
-                    ][0]
-
-                    community_set = [
-                        attr["value"][0]
-                        for attr in rib_entry["path_attributes"]
-                        if (attr["type"][0] == mrtparse.BGP_ATTR_T['COMMUNITY'] or
-                            attr["type"][0] == mrtparse.BGP_ATTR_T['LARGE_COMMUNITY'])
-                    ]
-
-                    if not v4_routes[prefix]["longest_as_paths"]:
-                        v4_routes[prefix]["longest_as_paths"] = [as_path]
-                    else:
-                        if len(as_path) == len(v4_routes[prefix]["longest_as_paths"][0]):
-                            v4_routes[prefix]["longest_as_paths"].append(as_path)
-                        elif len(as_path) > len(v4_routes[prefix]["longest_as_paths"][0]):
-                            v4_routes[prefix]["longest_as_paths"] = [as_path]
-
-                    origin_asn = as_path[-1]
-                    if origin_asn not in v4_routes[prefix]["origin_asns"]:
-                        v4_routes[prefix]["origin_asns"].append(origin_asn)
-
-                    if len(community_set) > 0:
-                        if not v4_routes[prefix]["longest_community_sets"]:
-                            v4_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-                        else:
-                            if len(community_set) == len(v4_routes[prefix]["longest_community_sets"][0]):
-                                v4_routes[prefix]["longest_community_sets"].append((community_set, origin_asn))
-                            elif len(community_set) > len(v4_routes[prefix]["longest_community_sets"][0]):
-                                v4_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-                """
-
-        elif (entry.data["type"][0] == mrtparse.MRT_T['BGP4MP_ET'] and
-            entry.data["subtype"][0] == mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4']):
-            prefix = entry.data["prefix"] + "/" + str(entry.data["prefix_length"])
-            if prefix not in v6_routes:
-                v6_routes[prefix] = {
-                    "updates": 0,
-                    "origin_asns": [],
-                    "longest_as_paths": [],
-                    "longest_community_sets": [],
-                }
-                """
-                for rib_entry in entry.data["rib_entries"]:
-                    as_path = [
-                        attr["value"][0]["value"]
-                        for attr in rib_entry["path_attributes"]
-                        if attr["type"][0] == mrtparse.BGP_ATTR_T['AS_PATH']
-                    ][0]
-
-                    community_set = [
-                        attr["value"][0]
-                        for attr in rib_entry["path_attributes"]
-                        if (attr["type"][0] == mrtparse.BGP_ATTR_T['COMMUNITY'] or
-                            attr["type"][0] == mrtparse.BGP_ATTR_T['LARGE_COMMUNITY'])
-                    ]
-
-                    if not v6_routes[prefix]["longest_as_paths"]:
-                        v6_routes[prefix]["longest_as_paths"] = [as_path]
-                    else:
-                        if len(as_path) == len(v6_routes[prefix]["longest_as_paths"][0]):
-                            v6_routes[prefix]["longest_as_paths"].append(as_path)
-                        elif len(as_path) > len(v6_routes[prefix]["longest_as_paths"][0]):
-                            v6_routes[prefix]["longest_as_paths"] = [as_path]
-
-                    origin_asn = as_path[-1]
-                    if origin_asn not in v6_routes[prefix]["origin_asns"]:
-                        v6_routes[prefix]["origin_asns"].append(origin_asn)
-
-                    if len(community_set) > 0:
-                        if not v6_routes[prefix]["longest_community_sets"]:
-                            v6_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-                        else:
-                            if len(community_set) == len(v6_routes[prefix]["longest_community_sets"][0]):
-                                v6_routes[prefix]["longest_community_sets"].append((community_set, origin_asn))
-                            elif len(community_set) > len(v6_routes[prefix]["longest_community_sets"][0]):
-                                v6_routes[prefix]["longest_community_sets"] = [(community_set, origin_asn)]
-                """
-
-        #else:
-        #    print(f"Unknown type/subtype: {entry.data['type']}/{entry.data['subtype']}")
-
-    print(f"Loaded {len(peers)} peers, {len(v4_routes)} IPv4 routes and {len(v6_routes)} IPv6 routes")
-    return True
-
-
-def test_rib(data):
-
-    print(f"Started test_rib() with {len(data)} entries")
+    print(f"Started test_mrt_rib() with {len(data)} entries")
 
     i = 0
     for entry in data:
@@ -325,10 +229,9 @@ def test_rib(data):
 
     return i
 
+def test_mrt_updates(data):
 
-def test_updates(data):
-
-    print(f"Started test_updates() with {len(data)} entries")
+    print(f"Started test_mrt_updates() with {len(data)} entries")
 
     i = 0
     for entry in data:
@@ -357,11 +260,11 @@ def get_mrt_size(filename):
 
 def main():
 
+    # Download todays MRTs files:
     #filename = "/tmp/rib.20211222.0600.bz2"
     #url = "http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/RIBS/rib.20211222.0600.bz2"
     #if download_mrt(filename, url) != True:
     #    exit(1)
-
     #filename = "/tmp/updates.20211222.0600.bz2"
     #url = "http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/UPDATES/updates.20211222.0600.bz2" # 263632 entries
     #if download_mrt(filename, url) != True:
@@ -388,30 +291,137 @@ def main():
     #filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/updates.20211222.0600.bz2" # 263632 entries / 0m6s
     #filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/rib.20211222.0600.bz2" # 1092192 entries / 7m5s
     filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/ribv6.20211222.0600.bz2" #  148015 entries / 0m54s
-    mrt_length = 148015 #get_mrt_size(filename)
 
-    data = []
-    for entry in mrtparse.Reader(filename):
-        data.append(entry)
-    print(f"Data list if {len(data)} entries")
+    if not filename:
+        print("Filename missing from load_rib() call!")
+        return False
 
-    num_proc = multiprocessing.cpu_count() - 1 ##############
-    Pool = multiprocessing.Pool(num_proc)
-    chunk_size = int(math.ceil(len(data) / num_proc))
+    if not os.path.isfile(filename):
+        print(f"Nonexisting filename parsed to load_rib(): {filename}")
+        return False
 
-    chunks = [
-        data[i : i + chunk_size]
-        for i in range(0, len(data), chunk_size)
-    ]
-    print(f"No of chunks: {len(chunks)}, chunk size: {chunk_size}, no of procs: {num_proc}")
+    ##mrt_length = 148015 #get_mrt_size(filename)
 
-    print(f"Starting chunks 0-{num_proc}...")
-    #route_chunks = Pool.map(test_updates, chunks)
-    route_chunks = Pool.map(test_rib, chunks)
+    num_procs = multiprocessing.cpu_count()
+    Pool = multiprocessing.Pool(num_procs)
 
-    print(f"Number of chunks: {len(route_chunks)}")
-    print(f"Results: {route_chunks}")
+    # 78 seconds
+    chunks = [[] for i in range(0, num_procs)]
+    tic = timeit.default_timer()
+    entries = mrtparse.Reader(filename)
+    next(entries) # Skip the peer table which is the first entry in the RIB dump
+    for idx, entry in enumerate(entries):
+        if idx == 20000:
+            break
+        chunks[idx % num_procs].append(entry.data)
 
+    toc = timeit.default_timer()
+    print(f"Duration: {toc - tic}")
+    print(f"No. of entries: {idx}, No. of chunks: {len(chunks)}, chunk size: {len(chunks[0])}, No. of procs: {num_procs}")
+
+    try:
+        entries.close()
+    except StopIteration:
+        pass
+
+    del(entries)
+
+    """
+    80 seconds
+    chunks = [[] for i in range(0, num_procs)]
+    tic = timeit.default_timer()
+
+    entries2 = mrtparse.Reader(filename)
+    next(entries2)
+    it = iter(entries2)
+    for idx, entry in enumerate(entries2):
+        chunks[idx % num_procs].append(itertools.islice(it, 1))
+
+    toc = timeit.default_timer()
+    print(f"Duration: {toc - tic}")
+    """
+
+
+    """
+    # 81 seconds
+    i = 0
+    entries2 = mrtparse.Reader(filename)
+    next(entries2)
+    tic = timeit.default_timer()
+    for entry in entries2:
+        i += 1
+    toc = timeit.default_timer()
+    print(f"Duration: {toc - tic}")
+    print(f"{i} entries")
+    """
+
+    """
+    # 81 seconds
+    i = 0
+    entries3 = mrtparse.Reader(filename)
+    next(entries3)
+    it3 = iter(entries3)
+    tic = timeit.default_timer()
+    for entry in it3:
+        i += 1
+    toc = timeit.default_timer()
+    print(f"Duration: {toc - tic}")
+    print(f"{i} entries")
+    """
+
+    """
+    # cant be serialised!
+    # 1.4 seconds
+    chunks = []
+    entries4 = mrtparse.Reader(filename)
+    next(entries4) # Skip the peer table which is the first entry in the RIB dump
+    it = iter(entries4)
+    tic = timeit.default_timer()
+    for i in range(0, num_procs):
+        chunks.append(itertools.islice(it, 18502))
+    toc = timeit.default_timer()
+    print(f"Duration: {toc - tic}")
+    print(f"No. of chunks: {len(chunks)}, chunk size: {18502}, No. of procs: {num_procs}")
+    """
+
+    print(f"Starting processes...")
+    #rib_stats_chunks = Pool.map(parse_mrt_update, chunks)
+    rib_stats_chunks = Pool.map(parse_mrt_rib, chunks)
+
+    # ^ Add to results the filename these came from
+
+    print(f"Number of chunks: {len(rib_stats_chunks)}")
+    print(f"Results: {rib_stats_chunks}")
+
+    for rstats in rib_stats_chunks:
+
+        for re in rstats.most_origin_asns:
+
+            print(f"most_origin_asns->prefix: {re.prefix}")
+            print(f"most_origin_asns->as_path: {re.as_path}")
+            print(f"most_origin_asns->community_set: {re.community_set}")
+            print(f"most_origin_asns->next_hop: {re.next_hop}")
+            print(f"most_origin_asns->origin_asn: {re.origin_asn}")
+    
+        for re in rstats.longest_as_path:
+
+            print(f"longest_as_path->prefix: {re.prefix}")
+            print(f"longest_as_path->as_path: {re.as_path}")
+            print(f"longest_as_path->community_set: {re.community_set}")
+            print(f"longest_as_path->next_hop: {re.next_hop}")
+            print(f"longest_as_path->origin_asn: {re.origin_asn}")
+
+        for re in rstats.longest_community_set:
+
+            print(f"longest_community_set->prefix: {re.prefix}")
+            print(f"longest_community_set->as_path: {re.as_path}")
+            print(f"longest_community_set->community_set: {re.community_set}")
+            print(f"longest_community_set->next_hop: {re.next_hop}")
+            print(f"longest_community_set->origin_asn: {re.origin_asn}")
+
+        break
+
+        print("")
 
 if __name__ == '__main__':
     main()
