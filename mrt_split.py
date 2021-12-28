@@ -64,7 +64,7 @@ class Reader():
         val = 0
         length = 0
         for i in record[-4:]:
-            length = (val << 8) + i
+            length = (length << 8) + i
 
         record += bytes(self.f.read(length))
         self.data = record
@@ -85,11 +85,12 @@ def main():
     chunk_files = []
     for i in range(0, no_of_chunks):
         chunk_name = filename + "_" + str(i)
-        print(f"Opening {chunk_name}")
+        print(f"Opening {chunk_name} for output")
         f = open(chunk_name, "wb")
         chunk_files.append(f)
 
     entries = Reader(filename)
+    next(entries) # Skip the peer table which is the first entry in the RIB dump
     for idx, entry in enumerate(entries):
         chunk_files[idx % no_of_chunks].write(entry.data)
 
