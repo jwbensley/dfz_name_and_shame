@@ -9,27 +9,48 @@ import requests
 
 import timeit
 import itertools
+import operator
 
 import math
 import multiprocessing
 from multiprocessing import Pool
 
-class rib_entry:
+class mrt_entry:
 
-    def __init__(self, prefix=None, as_path=[[]], community_set=[[]], next_hop=None, origin_asn=[]):
+    def __init__(
+        self,
+        as_path=[[]],
+        community_set=[[]],
+        next_hop=None,
+        prefix=None,
+        origin_asn=[],
+        peer_asn=None,
+        timestamp=None,
+        updates=0,
+        withdraws=0,
+    ):
 
         self.prefix = prefix
         self.as_path = as_path
         self.community_set = community_set
         self.next_hop = next_hop
         self.origin_asn = origin_asn
+        self.peer_asn = peer_asn
+        self.timestamp = timestamp
+        self.updates = updates
+        self.withdraws = withdraws
 
-class rib_stats:
+class mrt_stats:
 
     def __init__(self):
-        self.most_origin_asns = [rib_entry()]
-        self.longest_as_path = [rib_entry()]
-        self.longest_community_set = [rib_entry()]
+        self.longest_as_path = [mrt_entry()]
+        self.longest_community_set = [mrt_entry()]
+        self.most_advertisements_origin = [mrt_entry()]
+        self.most_origin_asns = [mrt_entry()]
+        self.most_updates_peer = [mrt_entry()]
+        self.most_withdraws_origin = [mrt_entry()]
+        self.most_withdraws_peer = [mrt_entry()]
+        self.timestamp = None
 
 def download_mrt(filename, url):
 
@@ -86,25 +107,24 @@ def download_mrt(filename, url):
 
     return True
 
-def load_parse_mrt_rib(args):
+def load_parse_mrt_rib(args=None):
 
     print(f"Started PID {os.getpid()} with args {args}")
 
     # RIB dumps can contain both AFIs (v4 and v6)
-    rstats = rib_stats()
+    rstats = mrt_stats()
+
+    #filename = args[0] + "_" + str(args[1])
+    filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600_0"
+    print(f"PID {os.getpid()} is opening {filename}")
+    entries = mrtparse.Reader(filename)
 
     tic = timeit.default_timer()
-
-    rib_data = []
-    filename = args[0] + "_" + str(args[1])
-    print(f"PID {os.getpid()} is opening {filename}")
-
-    entries = mrtparse.Reader(filename)
     for idx, entry in enumerate(entries):
 
         origin_asns = []
-        longest_as_path = [rib_entry()]
-        longest_community_set = [rib_entry()]
+        longest_as_path = [mrt_entry()]
+        longest_community_set = [mrt_entry()]
         prefix = entry.data["prefix"] + "/" + str(entry.data["prefix_length"])
 
         #if (entry["type"][0] == mrtparse.MRT_T['TABLE_DUMP_V2'] and
@@ -118,25 +138,28 @@ def load_parse_mrt_rib(args):
             next_hop = None
 
             for attr in re["path_attributes"]:
-                if attr["type"][0] == mrtparse.BGP_ATTR_T['AS_PATH']:
+                at = attr["type"][0]
+
+                if at == 2: # attr["type"][0] == 2: # mrtparse.BGP_ATTR_T['AS_PATH']:
                     as_path = attr["value"][0]["value"]
                     origin_asn = as_path[-1]
                     if origin_asn not in origin_asns:
                         origin_asns.append(origin_asn)
 
-                elif (attr["type"][0] == mrtparse.BGP_ATTR_T['COMMUNITY'] or
-                    attr["type"][0] == mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']):
+                #elif (attr["type"][0] == 8 or # mrtparse.BGP_ATTR_T['COMMUNITY'] or
+                #    attr["type"][0] == 32): # mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']):
+                elif (at == 8 or at == 32):
                     community_set = attr["value"]
 
-                elif attr["type"][0] == mrtparse.BGP_ATTR_T['NEXT_HOP']:
+                elif at == 3: # attr["type"][0] == 3: # mrtparse.BGP_ATTR_T['NEXT_HOP']:
                     next_hop = attr["value"]
 
-                elif attr["type"][0] == mrtparse.BGP_ATTR_T['MP_REACH_NLRI']:
+                elif at == 14: # attr["type"][0] == 14: # mrtparse.BGP_ATTR_T['MP_REACH_NLRI']:
                     next_hop = attr["value"]["next_hop"]
 
             if len(as_path) == len(longest_as_path[0].as_path):
                 longest_as_path.append(
-                    rib_entry(
+                    mrt_entry(
                         prefix=prefix,
                         as_path=as_path,
                         community_set=community_set,
@@ -146,7 +169,7 @@ def load_parse_mrt_rib(args):
                 )
             elif len(as_path) > len(longest_as_path[0].as_path):
                 longest_as_path = [
-                    rib_entry(
+                    mrt_entry(
                         prefix=prefix,
                         as_path=as_path,
                         community_set=community_set,
@@ -157,7 +180,7 @@ def load_parse_mrt_rib(args):
 
             if len(community_set) == len(longest_community_set[0].community_set):
                 longest_community_set.append(
-                    rib_entry(
+                    mrt_entry(
                         prefix=prefix,
                         as_path=as_path,
                         community_set=community_set,
@@ -167,7 +190,7 @@ def load_parse_mrt_rib(args):
                 )
             elif len(community_set) > len(longest_community_set[0].community_set):
                 longest_community_set = [
-                    rib_entry(
+                    mrt_entry(
                         prefix=prefix,
                         as_path=as_path,
                         community_set=community_set,
@@ -188,14 +211,14 @@ def load_parse_mrt_rib(args):
 
         if len(origin_asns) == len(rstats.most_origin_asns[0].origin_asn):
             rstats.most_origin_asns.append(
-                rib_entry(
+                mrt_entry(
                     prefix = prefix,
                     origin_asn = origin_asns,
                 )
             )
         elif len(origin_asns) > len(rstats.most_origin_asns[0].origin_asn):
             rstats.most_origin_asns = [
-                rib_entry(
+                mrt_entry(
                     prefix = prefix,
                     origin_asn = origin_asns,
                 )
@@ -208,15 +231,207 @@ def load_parse_mrt_rib(args):
     toc = timeit.default_timer()
     print(f"PID {os.getpid()} duration: {toc - tic}")
 
-    del rib_data
-
     return rstats
 
-def merge_stats(rib_stats_chunks):
+def load_parse_mrt_update(filename):
 
-    results = rib_stats()
+    print(f"Started PID {os.getpid()} with filename {filename}")
 
-    for rstats in rib_stats_chunks:
+    # Update dumps can contain both AFIs (v4 and v6)
+    stats = mrt_stats()
+    updates = {}
+    withdraws = {}
+    origin_asns = {}
+    origin_asn_advertisements = {}
+    peer_asn_updates = {}
+    longest_as_path = [mrt_entry()]
+    longest_community_set = [mrt_entry()]
+
+    entries = mrtparse.Reader(filename)
+
+    tic = timeit.default_timer()
+    for idx, entry in enumerate(entries):
+
+        peer_asn = entry.data["peer_as"]
+        if peer_asn not in peer_asn_updates:
+            peer_asn_updates[peer_asn] = 1
+        else:
+            peer_asn_updates[peer_asn] += 1
+
+        timestamp = entry.data["timestamp"]
+
+        as_path = []
+        community_set = []
+
+        if len(entry.data["bgp_message"]["withdrawn_routes"]) > 0:
+            for withdrawn_route in entry.data["bgp_message"]["withdrawn_routes"]:
+                prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
+                if prefix not in updates:
+                    updates[prefix] = 0
+                    withdraws[prefix] = 1
+                    origin_asn[prefix] = []
+                else:
+                    withdraws[prefix] += 1
+
+        if len(entry.data["bgp_message"]["path_attributes"]) > 1:
+
+            prefixes = []
+
+            for path_attr in entry.data["bgp_message"]["path_attributes"]:
+                attr_t = path_attr["type"][0]
+
+                # AS_PATH
+                if attr_t == 2:
+                    as_path = path_attr["value"][0]["value"]
+                    origin_asn = as_path[-1]
+                    if origin_asn not in origin_asn_advertisements:
+                        origin_asn_advertisements[origin_asn] = 1
+                    else:
+                        origin_asn_advertisements[origin_asn] += 1
+
+                # NEXT_HOP
+                elif attr_t == 3:
+                    next_hop = path_attr["value"]
+
+                # COMMUNITY or LARGE_COMMUNITY
+                elif (attr_t == 8 or attr_t == 32):
+                    community_set = path_attr["value"]
+
+                # MP_REACH_NLRI
+                elif attr_t == 14:
+                    next_hop = path_attr["value"]["next_hop"]
+                    for nlri in path_attr["value"]["nlri"]:
+                        prefixes.append(nlri["prefix"] + "/" + str(nlri["prefix_length"]))
+
+            for nlri in entry.data["bgp_message"]["nlri"]:
+                prefixes.append(nlri["prefix"] + "/" + str(nlri["prefix_length"]))
+
+            for prefix in prefixes:
+
+                if prefix not in updates:
+                    updates[prefix] = 1
+                    withdraws[prefix] = 0
+                    origin_asns[prefix] = []
+                else:
+                    updates[prefix] += 1
+                    if origin_asn not in origin_asns[prefix]:
+                        origin_asns[prefix].append(origin_asn)
+
+
+        if len(as_path) == len(longest_as_path[0].as_path):
+            for prefix in prefixes:
+                longest_as_path.append(
+                    mrt_entry(
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                        peer_asn=peer_asn,
+                        prefix=prefix,
+                        timestamp=timestamp,
+                    )
+                )
+
+        elif len(as_path) > len(longest_as_path[0].as_path):
+            longest_as_path = []
+            for prefix in prefixes:
+                longest_as_path.append(
+                    mrt_entry(
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                        peer_asn=peer_asn,
+                        prefix=prefix,
+                        timestamp=timestamp,
+                    )
+                )
+
+        if len(community_set) == len(longest_community_set[0].community_set):
+            for prefix in prefixes:
+                longest_community_set.append(
+                    mrt_entry(
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                        peer_asn=peer_asn,
+                        prefix=prefix,
+                        timestamp=timestamp,
+                    )
+                )
+
+        elif len(community_set) > len(longest_community_set[0].community_set):
+            for prefix in prefixes:
+                longest_community_set = []
+                longest_community_set.append(
+                    mrt_entry(
+                        as_path=as_path,
+                        community_set=community_set,
+                        next_hop=next_hop,
+                        origin_asn=origin_asn,
+                        peer_asn=peer_asn,
+                        prefix=prefix,
+                        timestamp=timestamp,
+                    )
+                )
+
+    if len(longest_as_path[0].as_path) == len(stats.longest_as_path[0].as_path):
+        stats.longest_as_path.extend(longest_as_path)
+    elif len(longest_as_path[0].as_path) > len(stats.longest_as_path[0].as_path):
+        stats.longest_as_path = longest_as_path.copy()
+
+    if len(longest_community_set[0].community_set) == len(stats.longest_community_set[0].community_set):
+        stats.longest_community_set.extend(longest_community_set)
+    elif len(longest_community_set[0].community_set) > len(stats.longest_community_set[0].community_set):
+        stats.longest_community_set = longest_community_set.copy()
+
+    origin_asn_advertisements = sorted(origin_asn_advertisements.items(), key=operator.itemgetter(1))
+
+    stats.most_advertisements_origin = []
+
+    for i in range(len(origin_asn_advertisements)-1, 0, -1):
+        if origin_asn_advertisements[i][1] == origin_asn_advertisements[-1][1]:
+            stats.most_advertisements_origin.append(
+                mrt_entry(
+                    origin_asn = origin_asn_advertisements[i][1],
+                    updates = origin_asn_advertisements[i][0],
+                )
+            )
+        else:
+            break
+
+    """
+    if len(origin_asns) == len(stats.most_origin_asns[0].origin_asn):
+        stats.most_origin_asns.append(
+            mrt_entry(
+                prefix = prefix,
+                origin_asn = origin_asns,
+            )
+        )
+    elif len(origin_asns) > len(stats.most_origin_asns[0].origin_asn):
+        stats.most_origin_asns = [
+            mrt_entry(
+                prefix = prefix,
+                origin_asn = origin_asns,
+            )
+        ]
+    """
+
+        # Is there a noticable performance hit to wrap in a "try" ?
+        #else:
+        #    print(f"Unknown type/subtype: {entry['type']}/{entry['subtype']}")
+
+    toc = timeit.default_timer()
+    print(f"PID {os.getpid()} duration: {toc - tic}")
+
+    return stats
+
+def merge_stats(mrt_stats_chunks):
+
+    results = mrt_stats()
+
+    for rstats in mrt_stats_chunks:
 
         if len(rstats.longest_as_path[0].as_path) == len(results.longest_as_path[0].as_path):
             results.longest_as_path.extend(rstats.longest_as_path)
@@ -234,127 +449,6 @@ def merge_stats(rib_stats_chunks):
             results.most_origin_asns = rstats.most_origin_asns.copy()
 
     return results
-
-def parse_mrt_rib(rib_data):
-
-    # RIB dumps can contain both AFIs (v4 and v6)
-    rstats = rib_stats()
-
-    print(f"Starting PID {os.getpid()} with {len(rib_data)} RIB entries")
-
-    tic = timeit.default_timer()
-
-    for entry in rib_data:
-
-        origin_asns = []
-        longest_as_path = [rib_entry()]
-        longest_community_set = [rib_entry()]
-        prefix = entry["prefix"] + "/" + str(entry["prefix_length"])
-
-        #if (entry["type"][0] == mrtparse.MRT_T['TABLE_DUMP_V2'] and
-        ###if entry["subtype"][0] == mrtparse.TD_V2_ST['RIB_IPV4_UNICAST']:
-
-        for re in entry["rib_entries"]:
-
-            as_path = []
-            origin_asn = None
-            community_set = []
-            next_hop = None
-
-            for attr in re["path_attributes"]:
-                if attr["type"][0] == mrtparse.BGP_ATTR_T['AS_PATH']:
-                    as_path = attr["value"][0]["value"]
-                    origin_asn = as_path[-1]
-                    if origin_asn not in origin_asns:
-                        origin_asns.append(origin_asn)
-
-                elif (attr["type"][0] == mrtparse.BGP_ATTR_T['COMMUNITY'] or
-                    attr["type"][0] == mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']):
-                    community_set = attr["value"]
-
-                elif attr["type"][0] == mrtparse.BGP_ATTR_T['NEXT_HOP']:
-                    next_hop = attr["value"]
-
-                elif attr["type"][0] == mrtparse.BGP_ATTR_T['MP_REACH_NLRI']:
-                    next_hop = attr["value"]["next_hop"]
-
-            if len(as_path) == len(longest_as_path[0].as_path):
-                longest_as_path.append(
-                    rib_entry(
-                        prefix=prefix,
-                        as_path=as_path,
-                        community_set=community_set,
-                        next_hop=next_hop,
-                        origin_asn=origin_asn,
-                    )
-                )
-            elif len(as_path) > len(longest_as_path[0].as_path):
-                longest_as_path = [
-                    rib_entry(
-                        prefix=prefix,
-                        as_path=as_path,
-                        community_set=community_set,
-                        next_hop=next_hop,
-                        origin_asn=origin_asn,
-                    )
-                ]
-
-            if len(community_set) == len(longest_community_set[0].community_set):
-                longest_community_set.append(
-                    rib_entry(
-                        prefix=prefix,
-                        as_path=as_path,
-                        community_set=community_set,
-                        next_hop=next_hop,
-                        origin_asn=origin_asn,
-                    )
-                )
-            elif len(community_set) > len(longest_community_set[0].community_set):
-                longest_community_set = [
-                    rib_entry(
-                        prefix=prefix,
-                        as_path=as_path,
-                        community_set=community_set,
-                        next_hop=next_hop,
-                        origin_asn=origin_asn,
-                    )
-                ]
-
-        if len(longest_as_path[0].as_path) == len(rstats.longest_as_path[0].as_path):
-            rstats.longest_as_path.extend(longest_as_path)
-        elif len(longest_as_path[0].as_path) > len(rstats.longest_as_path[0].as_path):
-            rstats.longest_as_path = longest_as_path.copy()
-
-        if len(longest_community_set[0].community_set) == len(rstats.longest_community_set[0].community_set):
-            rstats.longest_community_set.extend(longest_community_set)
-        elif len(longest_community_set[0].community_set) > len(rstats.longest_community_set[0].community_set):
-            rstats.longest_community_set = longest_community_set.copy()
-
-        if len(origin_asns) == len(rstats.most_origin_asns[0].origin_asn):
-            rstats.most_origin_asns.append(
-                rib_entry(
-                    prefix = prefix,
-                    origin_asn = origin_asns,
-                )
-            )
-        elif len(origin_asns) > len(rstats.most_origin_asns[0].origin_asn):
-            rstats.most_origin_asns = [
-                rib_entry(
-                    prefix = prefix,
-                    origin_asn = origin_asns,
-                )
-            ]
-
-        # Is there a noticable performance hit to wrap in a "try" ?
-        #else:
-        #    print(f"Unknown type/subtype: {entry['type']}/{entry['subtype']}")
-
-    toc = timeit.default_timer()
-    print(f"PID {os.getpid()} duration: {toc - tic}")
-
-    del rib_data
-
-    return rstats
 
 def test_mrt_rib(data):
 
@@ -440,7 +534,8 @@ def main():
     #filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/updates.20211222.0600.bz2" # 263632 entries / 0m6s
     #filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/rib.20211222.0600.bz2" # 1092192 entries / 7m5s
     #filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600.bz2" #  148015 entries / 0m54s
-    filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600" #  148015 entries / 0m54s
+    #filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600" #  148015 entries / 0m54s
+    filename = "/home/bensley/GitHub/dfz_rust/updatesv6.20211222.0615.bz2"
 
     if not filename:
         print("Filename missing from load_rib() call!")
@@ -452,7 +547,7 @@ def main():
 
     ##mrt_length = 148015 #get_mrt_size(filename)
 
-    num_procs = multiprocessing.cpu_count()
+    num_procs = 1# multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(num_procs)
 
     """
@@ -536,22 +631,29 @@ def main():
     """
 
     print(f"Starting processes...")
-    #rib_stats_chunks = Pool.map(parse_mrt_update, chunks)
-    #rib_stats_chunks = Pool.map(parse_mrt_rib, chunks)
-    
-    """
-    chunks = []
-    for i in range(num_procs):
-        chunks.append([filename, i, num_procs])
-    rib_stats_chunks = Pool.map(load_parse_mrt_rib, chunks)
-    """
 
+
+    entries = mrtparse.Reader(filename)
+    timestamp = next(entries).data["timestamp"][0]
+
+    """
     args = []
     for i in range(num_procs):
         args.append([filename, i])
-    rib_stats_chunks = Pool.map(load_parse_mrt_rib, args)
+    mrt_stats_chunks = Pool.map(load_parse_mrt_rib, args)
+    """
+    #args = [filename, 0]
+    #print(timeit.timeit('load_parse_mrt_rib()', 'from __main__ import load_parse_mrt_rib'))
 
-    for rstats in rib_stats_chunks:
+
+    args = []
+    for i in range(num_procs):
+        args.append(filename + "_" + str(i))
+    mrt_stats_chunks = Pool.map(load_parse_mrt_update, args)
+
+    #exit(0)
+
+    for rstats in mrt_stats_chunks:
 
         for re in rstats.most_origin_asns:
 
@@ -580,7 +682,7 @@ def main():
     print("")
     print("")
 
-    results = merge_stats(rib_stats_chunks)
+    results = merge_stats(mrt_stats_chunks)
     # ^ Add to results the filename these came from
 
     for re in results.most_origin_asns:
