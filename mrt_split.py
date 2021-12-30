@@ -82,6 +82,12 @@ def main():
     filename = sys.argv[1]
     no_of_chunks = int(sys.argv[2])
 
+    entries = Reader(filename)
+
+    basename = os.path.basename(filename)
+    if basename[0:3].lower() == "rib":
+        next(entries) # Skip the peer table which is the first entry in the RIB dump
+
     chunk_files = []
     for i in range(0, no_of_chunks):
         chunk_name = filename + "_" + str(i)
@@ -89,13 +95,13 @@ def main():
         f = open(chunk_name, "wb")
         chunk_files.append(f)
 
-    entries = Reader(filename)
-    next(entries) # Skip the peer table which is the first entry in the RIB dump
     for idx, entry in enumerate(entries):
         chunk_files[idx % no_of_chunks].write(entry.data)
 
     for i in range(0, no_of_chunks):
         chunk_files[i].close()
+
+    print(f"Split {idx + 1} entries into {no_of_chunks} files.")
 
 
 if __name__ == '__main__':
