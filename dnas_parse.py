@@ -277,7 +277,7 @@ def load_parse_mrt_update(filename):
                         "advertisements": 0,
                         "withdraws": 1,
                     }
-                    origin_asn[prefix] = []
+                    origin_asns[prefix] = []
                 else:
                     upd_prefix[prefix]["withdraws"] += 1
 
@@ -329,9 +329,6 @@ def load_parse_mrt_update(filename):
 
 
         if len(as_path) == len(longest_as_path[0].as_path):
-            #### NOT CHECKING IF THE AS-PATH FOR THIS PREFIX IS ALREADY STORED
-            #### E.G. AN UPDATE FOR THE SAME PREFIX WITH SAME AS-PATH HAS ALRADY BEEN SEEN
-            #### NEWEST SHOULD SUPERCEED?
             for prefix in prefixes:
                 longest_as_path.append(
                     mrt_entry(
@@ -390,12 +387,20 @@ def load_parse_mrt_update(filename):
                 )
 
     if len(longest_as_path[0].as_path) == len(stats.longest_as_path[0].as_path):
-        stats.longest_as_path.extend(longest_as_path)
+        s_paths = [mrt_e.as_path for mrt_e in stats.longest_as_path]
+        u_paths = [mrt_e.as_path for mrt_e in longest_as_path]
+        for u_path in u_paths:
+            if u_path not in s_paths:
+                stats.longest_as_path.extend(u_path)
     elif len(longest_as_path[0].as_path) > len(stats.longest_as_path[0].as_path):
         stats.longest_as_path = longest_as_path.copy()
 
     if len(longest_community_set[0].community_set) == len(stats.longest_community_set[0].community_set):
-        stats.longest_community_set.extend(longest_community_set)
+        s_comms = [mrt_e.community_set for mrt_e in stats.longest_community_set]
+        u_comms = [mrt_e.community_set for mrt_e in longest_community_set]
+        for u_comm in u_comms:
+            if u_comm not in s_comms:
+                stats.longest_community_set.extend(u_comm)
     elif len(longest_community_set[0].community_set) > len(stats.longest_community_set[0].community_set):
         stats.longest_community_set = longest_community_set.copy()
 
@@ -500,9 +505,6 @@ def load_parse_mrt_update(filename):
         ) for asn in max_asns
     ]
 
-
-    ###### NOT CHECKING IF IT IS THE SAME PREFIX WITH THE SAME AS-APT
-    ###### E.G. RECIEVING AN UPDATE FOR A PREFIX WE HAVE ALREADY RECEIVED AN UPDATE FOR
     asns_length = 0
     asns = []
     for prefix in origin_asns:
@@ -533,31 +535,65 @@ def load_parse_mrt_update(filename):
         #    print(f"Unknown type/subtype: {entry['type']}/{entry['subtype']}")
 
     toc = timeit.default_timer()
-    print(f"PID {os.getpid()} duration: {toc - tic}")
+    print(f"PID {os.getpid()} completed, duration: {toc - tic}, entires: {idx + 1}")
 
     return stats
 
-def merge_stats(mrt_stats_chunks):
+def merge_chunks(mrt_stats_chunks):
 
     results = mrt_stats()
 
     for rstats in mrt_stats_chunks:
 
         if len(rstats.longest_as_path[0].as_path) == len(results.longest_as_path[0].as_path):
-            results.longest_as_path.extend(rstats.longest_as_path)
+            s_paths = [mrt_e.as_path for mrt_e in results.longest_as_path]
+            u_paths = [mrt_e.as_path for mrt_e in rstats.longest_as_path]
+            for u_path in u_paths:
+                if u_path not in s_paths:
+                    results.longest_as_path.extend(u_path)
         elif len(rstats.longest_as_path[0].as_path) > len(results.longest_as_path[0].as_path):
             results.longest_as_path = rstats.longest_as_path.copy()
 
         if len(rstats.longest_community_set[0].community_set) == len(results.longest_community_set[0].community_set):
-            results.longest_community_set.extend(rstats.longest_community_set)
+            s_comms = [mrt_e.community_set for mrt_e in results.longest_community_set]
+            u_comms = [mrt_e.community_set for mrt_e in rstats.longest_community_set]
+            for u_comm in u_comms:
+                if u_comm not in s_comms:
+                    results.longest_community_set.extend(u_comm)
         elif len(rstats.longest_community_set[0].community_set) > len(results.longest_community_set[0].community_set):
             results.longest_community_set = rstats.longest_community_set.copy()
 
-        if (rstats.most_advt_prefixes[0].advertisements == results.most_advt_prefixes[0].advertisements and
-            results.most_advt_prefixes[0].advertisements > 0):
-            results.most_advt_prefixes.extend(rstats.most_advt_prefixes)
-        elif rstats.most_advt_prefixes[0].advertisements > results.most_advt_prefixes[0].advertisements:
-            results.most_advt_prefixes = rstats.most_advt_prefixes.copy()
+
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_advt_prefixes):
+            for res_e in results.most_advt_prefixes:
+                if res_e.prefix == u_e.prefix:
+                    print(res_e)
+                    print(res_e.advertisements)
+                    print(u_e)
+                    print(u_e.advertisements)
+                    tmp.append(
+                        mrt_entry(
+                            prefix=res_e.prefix,
+                            advertisements=(res_e.advertisements + u_e.advertisements),
+                        )
+                    )
+                    print(f"{res_e.prefix} now has {(res_e.advertisements + u_e.advertisements)}")
+                    print(f"Deleting: {rstats.most_advt_prefixes[idx]}")
+                    del(rstats.most_advt_prefixes[idx])
+
+        if rstats.most_advt_prefixes:
+            if (rstats.most_advt_prefixes[0].advertisements == results.most_advt_prefixes[0].advertisements and
+                results.most_advt_prefixes[0].advertisements > 0):
+                results.most_advt_prefixes.extend(rstats.most_advt_prefixes)
+            elif rstats.most_advt_prefixes[0].advertisements > results.most_advt_prefixes[0].advertisements:
+                results.most_advt_prefixes = rstats.most_advt_prefixes.copy()
+
+        for tmp_e in tmp:
+            if tmp_e.advertisements == results.most_advt_prefixes[0].advertisements:
+                results.most_advt_prefixes.extend(tmp_e)
+            elif tmp_e.advertisements > results.most_advt_prefixes[0].advertisements:
+                results.most_advt_prefixes = [tmp_e]
 
         if (rstats.most_upd_prefixes[0].updates == results.most_upd_prefixes[0].updates and
             results.most_upd_prefixes[0].updates > 0):
@@ -683,23 +719,23 @@ def main():
         exit(1)
     """
 
-    #filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/updates.20211222.0600.bz2" # 263632 entries / 0m6s
-    #filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/rib.20211222.0600.bz2" # 1092192 entries / 7m5s
+    filename = "/home/bensley/GitHub/dfz_rust/updates.20211222.0600" # 263632 entries / 0m6s
+    #filename = "/home/bensley/GitHub/dfz_rust/rib.20211222.0600.bz2" # 1092192 entries / 7m5s
     #filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600.bz2" #  148015 entries / 0m54s
     #filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600" #  148015 entries / 0m54s
-    filename = "/home/bensley/GitHub/dfz_rust/updatesv6.20211222.0615.bz2"
+    #filename = "/home/bensley/GitHub/dfz_rust/updatesv6.20211222.0615.bz2"
 
     if not filename:
-        print("Filename missing from load_rib() call!")
+        print("MRT filename missing")
         return False
 
     if not os.path.isfile(filename):
-        print(f"Nonexisting filename parsed to load_rib(): {filename}")
+        print(f"Non-existing MRT filename {filename}")
         return False
 
     ##mrt_length = 148015 #get_mrt_size(filename)
 
-    num_procs = 1# multiprocessing.cpu_count()
+    num_procs =  multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(num_procs)
 
     """
@@ -835,7 +871,7 @@ def main():
     print("")
     """
 
-    results = merge_stats(mrt_stats_chunks)
+    results = merge_chunks(mrt_stats_chunks)
     # ^ Add to results the filename these came from
 
 
