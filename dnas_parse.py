@@ -24,7 +24,7 @@ class mrt_entry:
         community_set=[[]],
         next_hop=None,
         prefix=None,
-        origin_asn=[],  ##### SHOULD THIS BE ORIGIN ASNS PLURAL?
+        origin_asns=set(),
         peer_asn=None,
         timestamp=None,
         updates=0,
@@ -35,7 +35,7 @@ class mrt_entry:
         self.as_path = as_path
         self.community_set = community_set
         self.next_hop = next_hop
-        self.origin_asn = origin_asn
+        self.origin_asns = origin_asns
         self.peer_asn = peer_asn
         self.prefix = prefix
         self.timestamp = timestamp
@@ -126,13 +126,10 @@ def load_parse_mrt_rib(args=None):
     tic = timeit.default_timer()
     for idx, entry in enumerate(entries):
 
-        origin_asns = []
+        origin_asns = set()
         longest_as_path = [mrt_entry()]
         longest_community_set = [mrt_entry()]
         prefix = entry.data["prefix"] + "/" + str(entry.data["prefix_length"])
-
-        #if (entry["type"][0] == mrtparse.MRT_T['TABLE_DUMP_V2'] and
-        ###if entry["subtype"][0] == mrtparse.TD_V2_ST['RIB_IPV4_UNICAST']:
 
         for re in entry.data["rib_entries"]:
 
@@ -147,8 +144,7 @@ def load_parse_mrt_rib(args=None):
                 if at == 2: # attr["type"][0] == 2: # mrtparse.BGP_ATTR_T['AS_PATH']:
                     as_path = attr["value"][0]["value"]
                     origin_asn = as_path[-1]
-                    if origin_asn not in origin_asns:
-                        origin_asns.append(origin_asn)
+                    origin_asns.add(origin_asn)
 
                 #elif (attr["type"][0] == 8 or # mrtparse.BGP_ATTR_T['COMMUNITY'] or
                 #    attr["type"][0] == 32): # mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']):
@@ -168,7 +164,7 @@ def load_parse_mrt_rib(args=None):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                     )
                 )
             elif len(as_path) > len(longest_as_path[0].as_path):
@@ -178,7 +174,7 @@ def load_parse_mrt_rib(args=None):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                     )
                 ]
 
@@ -189,7 +185,7 @@ def load_parse_mrt_rib(args=None):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                     )
                 )
             elif len(community_set) > len(longest_community_set[0].community_set):
@@ -199,7 +195,7 @@ def load_parse_mrt_rib(args=None):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                     )
                 ]
 
@@ -213,18 +209,18 @@ def load_parse_mrt_rib(args=None):
         elif len(longest_community_set[0].community_set) > len(rstats.longest_community_set[0].community_set):
             rstats.longest_community_set = longest_community_set.copy()
 
-        if len(origin_asns) == len(rstats.most_origin_asns[0].origin_asn):
+        if len(origin_asns) == len(rstats.most_origin_asns[0].origin_asns):
             rstats.most_origin_asns.append(
                 mrt_entry(
                     prefix = prefix,
-                    origin_asn = origin_asns,
+                    origin_asns = origin_asns,
                 )
             )
-        elif len(origin_asns) > len(rstats.most_origin_asns[0].origin_asn):
+        elif len(origin_asns) > len(rstats.most_origin_asns[0].origin_asns):
             rstats.most_origin_asns = [
                 mrt_entry(
                     prefix = prefix,
-                    origin_asn = origin_asns,
+                    origin_asns = origin_asns,
                 )
             ]
 
@@ -245,7 +241,7 @@ def load_parse_mrt_update(filename):
     stats = mrt_stats()
     longest_as_path = [mrt_entry()]
     longest_community_set = [mrt_entry()]
-    origin_asns = {}
+    origin_asns_prefix = {}
     upd_prefix = {}
     advt_per_origin_asn = {}
     upd_peer_asn = {}
@@ -277,7 +273,7 @@ def load_parse_mrt_update(filename):
                         "advertisements": 0,
                         "withdraws": 1,
                     }
-                    origin_asns[prefix] = []
+                    origin_asns_prefix[prefix] = set()
                 else:
                     upd_prefix[prefix]["withdraws"] += 1
 
@@ -321,11 +317,10 @@ def load_parse_mrt_update(filename):
                         "advertisements": 1,
                         "withdraws": 0,
                     }
-                    origin_asns[prefix] = [origin_asn]
+                    origin_asns_prefix[prefix] = set([origin_asn])
                 else:
                     upd_prefix[prefix]["advertisements"] += 1
-                    if origin_asn not in origin_asns[prefix]:
-                        origin_asns[prefix].append(origin_asn) ##### Change lists to set?
+                    origin_asns_prefix[prefix].add(origin_asn)
 
 
         if len(as_path) == len(longest_as_path[0].as_path):
@@ -335,7 +330,7 @@ def load_parse_mrt_update(filename):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
                         prefix=prefix,
                         timestamp=timestamp,
@@ -350,7 +345,7 @@ def load_parse_mrt_update(filename):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
                         prefix=prefix,
                         timestamp=timestamp,
@@ -364,7 +359,7 @@ def load_parse_mrt_update(filename):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
                         prefix=prefix,
                         timestamp=timestamp,
@@ -379,7 +374,7 @@ def load_parse_mrt_update(filename):
                         as_path=as_path,
                         community_set=community_set,
                         next_hop=next_hop,
-                        origin_asn=origin_asn,
+                        origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
                         prefix=prefix,
                         timestamp=timestamp,
@@ -507,24 +502,24 @@ def load_parse_mrt_update(filename):
 
     asns_length = 0
     asns = []
-    for prefix in origin_asns:
-        if len(origin_asns[prefix]) > asns_length:
-            asns_length = len(origin_asns[prefix])
-            asns = [(prefix, origin_asns[prefix])]
-        elif len(origin_asns[prefix]) == asns_length:
-            asns.append((prefix, origin_asns[prefix]))
+    for prefix in origin_asns_prefix:
+        if len(origin_asns_prefix[prefix]) > asns_length:
+            asns_length = len(origin_asns_prefix[prefix])
+            asns = [(prefix, origin_asns_prefix[prefix])]
+        elif len(origin_asns_prefix[prefix]) == asns_length:
+            asns.append((prefix, origin_asns_prefix[prefix]))
 
     stats.most_origin_asns = [
         mrt_entry(
             prefix=x[0],
-            origin_asn=x[1],
+            origin_asns=x[1],
         ) for x in asns
     ]
 
     advt_per_origin_asn = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
     stats.most_advt_origin_asn = [
         mrt_entry(
-            origin_asn=[x[0]],
+            origin_asns=set(x[0]),
             advertisements=x[1],
         ) for x in advt_per_origin_asn if x[1] == advt_per_origin_asn[-1][1]
     ]
@@ -547,94 +542,237 @@ def merge_chunks(mrt_stats_chunks):
 
         if len(rstats.longest_as_path[0].as_path) == len(results.longest_as_path[0].as_path):
             s_paths = [mrt_e.as_path for mrt_e in results.longest_as_path]
-            u_paths = [mrt_e.as_path for mrt_e in rstats.longest_as_path]
-            for u_path in u_paths:
-                if u_path not in s_paths:
-                    results.longest_as_path.extend(u_path)
+            for mrt_e in rstats.longest_as_path:
+                if mrt_e.as_path not in s_paths:
+                    results.longest_as_path.append(mrt_e)
         elif len(rstats.longest_as_path[0].as_path) > len(results.longest_as_path[0].as_path):
             results.longest_as_path = rstats.longest_as_path.copy()
 
         if len(rstats.longest_community_set[0].community_set) == len(results.longest_community_set[0].community_set):
             s_comms = [mrt_e.community_set for mrt_e in results.longest_community_set]
-            u_comms = [mrt_e.community_set for mrt_e in rstats.longest_community_set]
-            for u_comm in u_comms:
-                if u_comm not in s_comms:
-                    results.longest_community_set.extend(u_comm)
+            for mrt_e in rstats.longest_community_set:
+                if mrt_e.community_set not in s_comms:
+                    results.longest_community_set.append(mrt_e)
         elif len(rstats.longest_community_set[0].community_set) > len(results.longest_community_set[0].community_set):
             results.longest_community_set = rstats.longest_community_set.copy()
 
 
         tmp = []
-        for idx, u_e in enumerate(rstats.most_advt_prefixes):
+        for idx, u_e in enumerate(rstats.most_advt_prefixes[:]):
             for res_e in results.most_advt_prefixes:
                 if res_e.prefix == u_e.prefix:
-                    print(res_e)
-                    print(res_e.advertisements)
-                    print(u_e)
-                    print(u_e.advertisements)
                     tmp.append(
                         mrt_entry(
                             prefix=res_e.prefix,
                             advertisements=(res_e.advertisements + u_e.advertisements),
                         )
                     )
-                    print(f"{res_e.prefix} now has {(res_e.advertisements + u_e.advertisements)}")
-                    print(f"Deleting: {rstats.most_advt_prefixes[idx]}")
-                    del(rstats.most_advt_prefixes[idx])
+                    rstats.most_advt_prefixes.remove(u_e)
 
-        if rstats.most_advt_prefixes:
+        if tmp:
+            for tmp_e in tmp:
+                if tmp_e.advertisements == results.most_advt_prefixes[0].advertisements:
+                    results.most_advt_prefixes.append(tmp_e)
+                elif tmp_e.advertisements > results.most_advt_prefixes[0].advertisements:
+                    results.most_advt_prefixes = [tmp_e]
+        else:
             if (rstats.most_advt_prefixes[0].advertisements == results.most_advt_prefixes[0].advertisements and
                 results.most_advt_prefixes[0].advertisements > 0):
                 results.most_advt_prefixes.extend(rstats.most_advt_prefixes)
             elif rstats.most_advt_prefixes[0].advertisements > results.most_advt_prefixes[0].advertisements:
                 results.most_advt_prefixes = rstats.most_advt_prefixes.copy()
 
-        for tmp_e in tmp:
-            if tmp_e.advertisements == results.most_advt_prefixes[0].advertisements:
-                results.most_advt_prefixes.extend(tmp_e)
-            elif tmp_e.advertisements > results.most_advt_prefixes[0].advertisements:
-                results.most_advt_prefixes = [tmp_e]
 
-        if (rstats.most_upd_prefixes[0].updates == results.most_upd_prefixes[0].updates and
-            results.most_upd_prefixes[0].updates > 0):
-            results.most_upd_prefixes.extend(rstats.most_upd_prefixes)
-        elif rstats.most_upd_prefixes[0].updates > results.most_upd_prefixes[0].updates:
-            results.most_upd_prefixes = rstats.most_upd_prefixes.copy()
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_upd_prefixes[:]):
+            for res_e in results.most_upd_prefixes:
+                if res_e.prefix == u_e.prefix:
+                    tmp.append(
+                        mrt_entry(
+                            prefix=res_e.prefix,
+                            updates=(res_e.updates + u_e.updates),
+                        )
+                    )
+                    rstats.most_upd_prefixes.remove(u_e)
 
-        if (rstats.most_withd_prefixes[0].withdraws == results.most_withd_prefixes[0].withdraws and
-            results.most_withd_prefixes[0].withdraws > 0):
-            results.most_withd_prefixes.extend(rstats.most_withd_prefixes)
-        elif rstats.most_withd_prefixes[0].withdraws > results.most_withd_prefixes[0].withdraws:
-            results.most_withd_prefixes = rstats.most_withd_prefixes.copy()
+        if tmp:
+            for tmp_e in tmp:
+                if tmp_e.updates == results.most_upd_prefixes[0].updates:
+                    results.most_upd_prefixes.append(tmp_e)
+                elif tmp_e.updates > results.most_upd_prefixes[0].updates:
+                    results.most_upd_prefixes = [tmp_e]
+        else:
+            if (rstats.most_upd_prefixes[0].updates == results.most_upd_prefixes[0].updates and
+                results.most_upd_prefixes[0].updates > 0):
+                results.most_upd_prefixes.extend(rstats.most_upd_prefixes)
+            elif rstats.most_upd_prefixes[0].updates > results.most_upd_prefixes[0].updates:
+                results.most_upd_prefixes = rstats.most_upd_prefixes.copy()
 
-        if (rstats.most_advt_origin_asn[0].advertisements == results.most_advt_origin_asn[0].advertisements and
-            results.most_advt_origin_asn[0].advertisements > 0):
-            results.most_advt_origin_asn.extend(rstats.most_advt_origin_asn)
-        elif rstats.most_advt_origin_asn[0].advertisements > results.most_advt_origin_asn[0].advertisements:
-            results.most_advt_origin_asn = rstats.most_advt_origin_asn.copy()
 
-        if (rstats.most_advt_peer_asn[0].advertisements == results.most_advt_peer_asn[0].advertisements and
-            results.most_advt_peer_asn[0].advertisements > 0):
-            results.most_advt_peer_asn.extend(rstats.most_advt_peer_asn)
-        elif rstats.most_advt_peer_asn[0].advertisements > results.most_advt_peer_asn[0].advertisements:
-            results.most_advt_peer_asn = rstats.most_advt_peer_asn.copy()
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_withd_prefixes[:]):
+            for res_e in results.most_withd_prefixes:
+                if res_e.prefix == u_e.prefix:
+                    tmp.append(
+                        mrt_entry(
+                            prefix=res_e.prefix,
+                            withdraws=(res_e.withdraws + u_e.withdraws),
+                        )
+                    )
+                    rstats.most_withd_prefixes.remove(u_e)
 
-        if (rstats.most_upd_peer_asn[0].updates == results.most_upd_peer_asn[0].updates and
-            results.most_upd_peer_asn[0].updates > 0):
-            results.most_upd_peer_asn.extend(rstats.most_upd_peer_asn)
-        elif rstats.most_upd_peer_asn[0].updates > results.most_upd_peer_asn[0].updates:
-            results.most_upd_peer_asn = rstats.most_upd_peer_asn.copy()
+        if tmp:
+            for tmp_e in tmp:
+                if tmp_e.withdraws == results.most_withd_prefixes[0].withdraws:
+                    results.most_withd_prefixes.append(tmp_e)
+                elif tmp_e.withdraws > results.most_withd_prefixes[0].withdraws:
+                    results.most_withd_prefixes = [tmp_e]
+        else:
+            if (rstats.most_withd_prefixes[0].withdraws == results.most_withd_prefixes[0].withdraws and
+                results.most_withd_prefixes[0].withdraws > 0):
+                results.most_withd_prefixes.extend(rstats.most_withd_prefixes)
+            elif rstats.most_withd_prefixes[0].withdraws > results.most_withd_prefixes[0].withdraws:
+                results.most_withd_prefixes = rstats.most_withd_prefixes.copy()
 
-        if (rstats.most_withd_peer_asn[0].withdraws == results.most_withd_peer_asn[0].withdraws and
-            results.most_withd_peer_asn[0].withdraws > 0):
-            results.most_withd_peer_asn.extend(rstats.most_withd_peer_asn)
-        elif rstats.most_withd_peer_asn[0].withdraws > results.most_withd_peer_asn[0].withdraws:
-            results.most_withd_peer_asn = rstats.most_withd_peer_asn.copy()
 
-        if len(rstats.most_origin_asns[0].origin_asn) == len(results.most_origin_asns[0].origin_asn):
-            results.most_origin_asns.extend(rstats.most_origin_asns)
-        elif len(rstats.most_origin_asns[0].origin_asn) > len(results.most_origin_asns[0].origin_asn):
-            results.most_origin_asns = rstats.most_origin_asns.copy()
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_advt_origin_asn[:]):
+            for res_e in results.most_advt_origin_asn:
+                if res_e.origin_asns == u_e.origin_asns:
+                    tmp.append(
+                        mrt_entry(
+                            origin_asns=res_e.origin_asns,
+                            advertisements=(res_e.advertisements + u_e.advertisements),
+                        )
+                    )
+                    rstats.most_advt_origin_asn.remove(u_e)
+
+        if tmp:
+            for tmp_e in tmp:
+                if tmp_e.advertisements == results.most_advt_origin_asn[0].advertisements:
+                    results.most_advt_origin_asn.append(tmp_e)
+                elif tmp_e.advertisements > results.most_advt_origin_asn[0].advertisements:
+                    results.most_advt_origin_asn = [tmp_e]
+        else:
+            if (rstats.most_advt_origin_asn[0].advertisements == results.most_advt_origin_asn[0].advertisements and
+                results.most_advt_origin_asn[0].advertisements > 0):
+                results.most_advt_origin_asn.extend(rstats.most_advt_origin_asn)
+            elif rstats.most_advt_origin_asn[0].advertisements > results.most_advt_origin_asn[0].advertisements:
+                results.most_advt_origin_asn = rstats.most_advt_origin_asn.copy()
+
+
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_advt_peer_asn[:]):
+            for res_e in results.most_advt_peer_asn:
+                if res_e.peer_asn == u_e.peer_asn:
+                    tmp.append(
+                        mrt_entry(
+                            peer_asn=res_e.peer_asn,
+                            advertisements=(res_e.advertisements + u_e.advertisements),
+                        )
+                    )
+                    rstats.most_advt_peer_asn.remove(u_e)
+
+        if tmp:
+            for tmp_e in tmp:
+                if tmp_e.advertisements == results.most_advt_peer_asn[0].advertisements:
+                    results.most_advt_peer_asn.append(tmp_e)
+                elif tmp_e.advertisements > results.most_advt_peer_asn[0].advertisements:
+                    results.most_advt_peer_asn = [tmp_e]
+        else:
+            if (rstats.most_advt_peer_asn[0].advertisements == results.most_advt_peer_asn[0].advertisements and
+                results.most_advt_peer_asn[0].advertisements > 0):
+                results.most_advt_peer_asn.extend(rstats.most_advt_peer_asn)
+            elif rstats.most_advt_peer_asn[0].advertisements > results.most_advt_peer_asn[0].advertisements:
+                results.most_advt_peer_asn = rstats.most_advt_peer_asn.copy()
+
+
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_upd_peer_asn[:]):
+            for res_e in results.most_upd_peer_asn:
+                if res_e.peer_asn == u_e.peer_asn:
+                    tmp.append(
+                        mrt_entry(
+                            peer_asn=res_e.peer_asn,
+                            updates=(res_e.updates + u_e.updates),
+                        )
+                    )
+                    rstats.most_upd_peer_asn.remove(u_e)
+
+        if tmp:
+            for tmp_e in tmp:
+                if tmp_e.updates == results.most_upd_peer_asn[0].updates:
+                    results.most_upd_peer_asn.append(tmp_e)
+                elif tmp_e.updates > results.most_upd_peer_asn[0].updates:
+                    results.most_upd_peer_asn = [tmp_e]
+        else:
+            if (rstats.most_upd_peer_asn[0].updates == results.most_upd_peer_asn[0].updates and
+                results.most_upd_peer_asn[0].updates > 0):
+                results.most_upd_peer_asn.extend(rstats.most_upd_peer_asn)
+            elif rstats.most_upd_peer_asn[0].updates > results.most_upd_peer_asn[0].updates:
+                results.most_upd_peer_asn = rstats.most_upd_peer_asn.copy()
+
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_withd_peer_asn[:]):
+            for res_e in results.most_withd_peer_asn:
+                if res_e.peer_asn == u_e.peer_asn:
+                    tmp.append(
+                        mrt_entry(
+                            peer_asn=res_e.peer_asn,
+                            withdraws=(res_e.withdraws + u_e.withdraws),
+                        )
+                    )
+                    rstats.most_withd_peer_asn.remove(u_e)  ############### DO WE NEED TO REMOVE - rstats NOT USED if tmp
+                    ###### IF WE HAVE THIS - DO WE NEED AN "if" to check if rstats is not empty, under the "else" below?
+
+        if tmp:
+            for tmp_e in tmp:
+                if tmp_e.withdraws == results.most_withd_peer_asn[0].withdraws:
+                    results.most_withd_peer_asn.append(tmp_e)
+                elif tmp_e.withdraws > results.most_withd_peer_asn[0].withdraws:
+                    results.most_withd_peer_asn = [tmp_e]
+        else:
+            if (rstats.most_withd_peer_asn[0].withdraws == results.most_withd_peer_asn[0].withdraws and
+                results.most_withd_peer_asn[0].withdraws > 0):
+                results.most_withd_peer_asn.extend(rstats.most_withd_peer_asn)
+            elif rstats.most_withd_peer_asn[0].withdraws > results.most_withd_peer_asn[0].withdraws:
+                results.most_withd_peer_asn = rstats.most_withd_peer_asn.copy()
+
+
+        tmp = []
+        for idx, u_e in enumerate(rstats.most_origin_asns[:]):
+            for res_e in results.most_origin_asns:
+                if (res_e.prefix == u_e.prefix and
+                    res_e.origin_asns != u_e.origin_asns):
+                    tmp.append(
+                        mrt_entry(
+                            prefix=res_e.prefix,
+                            origin_asns=res_e.origin_asns.union(u_e.origin_asns),
+                        )
+                    )
+                    print(f"update prefix: {u_e.prefix}")
+                    print(f"update origin_asns: {u_e.origin_asns}")
+                    print(f"results prefix: {res_e.prefix}")
+                    print(f"results origin_asns: {res_e.origin_asns}")
+                    print(f"Merged to {tmp[-1].origin_asns}")
+                    rstats.most_origin_asns.remove(u_e) ############### DO WE NEED TO REMOVE - rstats NOT USED if tmp
+
+                elif (res_e.prefix == u_e.prefix and
+                    res_e.origin_asns == u_e.origin_asns):
+                    rstats.most_origin_asns.remove(u_e)
+
+        if tmp:
+            for tmp_e in tmp:
+                if len(tmp_e.origin_asns) == len(results.most_origin_asns[0].origin_asns):
+                    results.most_origin_asns.append(tmp_e)
+                elif len(tmp_e.origin_asns) > len(results.most_origin_asns[0].origin_asns):
+                    results.most_origin_asns = [tmp_e]
+        else:
+            if rstats.most_origin_asns:
+                if len(rstats.most_origin_asns[0].origin_asns) == len(results.most_origin_asns[0].origin_asns):
+                    results.most_origin_asns.extend(rstats.most_origin_asns)
+                elif len(rstats.most_origin_asns[0].origin_asns) > len(results.most_origin_asns[0].origin_asns):
+                    results.most_origin_asns = rstats.most_origin_asns.copy()
 
     return results
 
@@ -848,7 +986,7 @@ def main():
             print(f"most_origin_asns->as_path: {re.as_path}")
             print(f"most_origin_asns->community_set: {re.community_set}")
             print(f"most_origin_asns->next_hop: {re.next_hop}")
-            print(f"most_origin_asns->origin_asn: {re.origin_asn}")    
+            print(f"most_origin_asns->origin_asns: {re.origin_asns}")    
         print("")
 
         for re in rstats.longest_as_path:
@@ -856,7 +994,7 @@ def main():
             print(f"longest_as_path->as_path: {re.as_path}")
             print(f"longest_as_path->community_set: {re.community_set}")
             print(f"longest_as_path->next_hop: {re.next_hop}")
-            print(f"longest_as_path->origin_asn: {re.origin_asn}")
+            print(f"longest_as_path->origin_asns: {re.origin_asns}")
         print("")
 
         for re in rstats.longest_community_set:
@@ -864,7 +1002,7 @@ def main():
             print(f"longest_community_set->as_path: {re.as_path}")
             print(f"longest_community_set->community_set: {re.community_set}")
             print(f"longest_community_set->next_hop: {re.next_hop}")
-            print(f"longest_community_set->origin_asn: {re.origin_asn}")
+            print(f"longest_community_set->origin_asns: {re.origin_asns}")
         print("")
 
     print("")
@@ -882,7 +1020,7 @@ def main():
         print(f"most_origin_asns->as_path: {re.as_path}")
         print(f"most_origin_asns->community_set: {re.community_set}")
         print(f"most_origin_asns->next_hop: {re.next_hop}")
-        print(f"most_origin_asns->origin_asn: {re.origin_asn}")    
+        print(f"most_origin_asns->origin_asns: {re.origin_asns}")    
     print("")
 
     for re in results.longest_as_path:
@@ -890,7 +1028,7 @@ def main():
         print(f"longest_as_path->as_path: {re.as_path}")
         print(f"longest_as_path->community_set: {re.community_set}")
         print(f"longest_as_path->next_hop: {re.next_hop}")
-        print(f"longest_as_path->origin_asn: {re.origin_asn}")
+        print(f"longest_as_path->origin_asns: {re.origin_asns}")
     print("")
 
     for re in results.longest_community_set:
@@ -898,7 +1036,7 @@ def main():
         print(f"longest_community_set->as_path: {re.as_path}")
         print(f"longest_community_set->community_set: {re.community_set}")
         print(f"longest_community_set->next_hop: {re.next_hop}")
-        print(f"longest_community_set->origin_asn: {re.origin_asn}")
+        print(f"longest_community_set->origin_asns: {re.origin_asns}")
     print("")
 
     """
@@ -911,7 +1049,7 @@ def main():
         print(f"longest_as_path->as_path: {re.as_path}")
         print(f"longest_as_path->community_set: {re.community_set}")
         print(f"longest_as_path->next_hop: {re.next_hop}")
-        print(f"longest_as_path->origin_asn: {re.origin_asn}")
+        print(f"longest_as_path->origin_asns: {re.origin_asns}")
         print(f"longest_as_path->peer_asn: {re.peer_asn}")
         print(f"longest_as_path->timestamp: {re.timestamp}")
         print(f"longest_as_path->updates: {re.updates}")
@@ -925,7 +1063,7 @@ def main():
         print(f"longest_community_set->as_path: {re.as_path}")
         print(f"longest_community_set->community_set: {re.community_set}")
         print(f"longest_community_set->next_hop: {re.next_hop}")
-        print(f"longest_community_set->origin_asn: {re.origin_asn}")
+        print(f"longest_community_set->origin_asns: {re.origin_asns}")
         print(f"longest_community_set->peer_asn: {re.peer_asn}")
         print(f"longest_community_set->timestamp: {re.timestamp}")
         print(f"longest_community_set->updates: {re.updates}")
@@ -938,7 +1076,7 @@ def main():
         print(f"most_advt_prefixes->as_path: {re.as_path}")
         print(f"most_advt_prefixes->community_set: {re.community_set}")
         print(f"most_advt_prefixes->next_hop: {re.next_hop}")
-        print(f"most_advt_prefixes->origin_asn: {re.origin_asn}")
+        print(f"most_advt_prefixes->origin_asns: {re.origin_asns}")
         print(f"most_advt_prefixes->peer_asn: {re.peer_asn}")
         print(f"most_advt_prefixes->timestamp: {re.timestamp}")
         print(f"most_advt_prefixes->updates: {re.updates}")
@@ -952,7 +1090,7 @@ def main():
         print(f"most_upd_prefixes->as_path: {re.as_path}")
         print(f"most_upd_prefixes->community_set: {re.community_set}")
         print(f"most_upd_prefixes->next_hop: {re.next_hop}")
-        print(f"most_upd_prefixes->origin_asn: {re.origin_asn}")
+        print(f"most_upd_prefixes->origin_asns: {re.origin_asns}")
         print(f"most_upd_prefixes->peer_asn: {re.peer_asn}")
         print(f"most_upd_prefixes->timestamp: {re.timestamp}")
         print(f"most_upd_prefixes->updates: {re.updates}")
@@ -966,7 +1104,7 @@ def main():
         print(f"most_withd_prefixes->as_path: {re.as_path}")
         print(f"most_withd_prefixes->community_set: {re.community_set}")
         print(f"most_withd_prefixes->next_hop: {re.next_hop}")
-        print(f"most_withd_prefixes->origin_asn: {re.origin_asn}")
+        print(f"most_withd_prefixes->origin_asns: {re.origin_asns}")
         print(f"most_withd_prefixes->peer_asn: {re.peer_asn}")
         print(f"most_withd_prefixes->timestamp: {re.timestamp}")
         print(f"most_withd_prefixes->updates: {re.updates}")
@@ -979,7 +1117,7 @@ def main():
         print(f"most_advt_origin_asn->as_path: {re.as_path}")
         print(f"most_advt_origin_asn->community_set: {re.community_set}")
         print(f"most_advt_origin_asn->next_hop: {re.next_hop}")
-        print(f"most_advt_origin_asn->origin_asn: {re.origin_asn}")
+        print(f"most_advt_origin_asn->origin_asns: {re.origin_asns}")
         print(f"most_advt_origin_asn->peer_asn: {re.peer_asn}")
         print(f"most_advt_origin_asn->timestamp: {re.timestamp}")
         print(f"most_advt_origin_asn->updates: {re.updates}")
@@ -992,7 +1130,7 @@ def main():
         print(f"most_advt_peer_asn->as_path: {re.as_path}")
         print(f"most_advt_peer_asn->community_set: {re.community_set}")
         print(f"most_advt_peer_asn->next_hop: {re.next_hop}")
-        print(f"most_advt_peer_asn->origin_asn: {re.origin_asn}")
+        print(f"most_advt_peer_asn->origin_asns: {re.origin_asns}")
         print(f"most_advt_peer_asn->peer_asn: {re.peer_asn}")
         print(f"most_advt_peer_asn->timestamp: {re.timestamp}")
         print(f"most_advt_peer_asn->updates: {re.updates}")
@@ -1005,7 +1143,7 @@ def main():
         print(f"most_upd_peer_asn->as_path: {re.as_path}")
         print(f"most_upd_peer_asn->community_set: {re.community_set}")
         print(f"most_upd_peer_asn->next_hop: {re.next_hop}")
-        print(f"most_upd_peer_asn->origin_asn: {re.origin_asn}")
+        print(f"most_upd_peer_asn->origin_asns: {re.origin_asns}")
         print(f"most_upd_peer_asn->peer_asn: {re.peer_asn}")
         print(f"most_upd_peer_asn->timestamp: {re.timestamp}")
         print(f"most_upd_peer_asn->updates: {re.updates}")
@@ -1018,7 +1156,7 @@ def main():
         print(f"most_withd_peer_asn->as_path: {re.as_path}")
         print(f"most_withd_peer_asn->community_set: {re.community_set}")
         print(f"most_withd_peer_asn->next_hop: {re.next_hop}")
-        print(f"most_withd_peer_asn->origin_asn: {re.origin_asn}")
+        print(f"most_withd_peer_asn->origin_asns: {re.origin_asns}")
         print(f"most_withd_peer_asn->peer_asn: {re.peer_asn}")
         print(f"most_withd_peer_asn->timestamp: {re.timestamp}")
         print(f"most_withd_peer_asn->updates: {re.updates}")
@@ -1031,7 +1169,7 @@ def main():
         print(f"most_origin_asns->as_path: {re.as_path}")
         print(f"most_origin_asns->community_set: {re.community_set}")
         print(f"most_origin_asns->next_hop: {re.next_hop}")
-        print(f"most_origin_asns->origin_asn: {re.origin_asn}")
+        print(f"most_origin_asns->origin_asns: {re.origin_asns}")
         print(f"most_origin_asns->peer_asn: {re.peer_asn}")
         print(f"most_origin_asns->timestamp: {re.timestamp}")
         print(f"most_origin_asns->updates: {re.updates}")
