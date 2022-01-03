@@ -1,6 +1,8 @@
 import bz2
+import errno
 import gzip
 import os
+
 
 class MrtFormatError(Exception):
     """
@@ -14,6 +16,7 @@ class MrtFormatError(Exception):
 class mrt_splitter():
     """
     Splitter for MRT files.
+    Copy-pasta of the original mrtparer lib to split an MRT file into N files.
     """
 
     def __init__(self, filename=None, debug=False):
@@ -26,6 +29,17 @@ class mrt_splitter():
         self.data = None
         self.f = None
         self.filename = filename
+
+        if not isinstance(self.debug, bool):
+            raise TypeError("Debug must be bool")
+
+        if not self.filename:
+            raise ValueError("MRT filename missing")
+
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(
+                errno.ENOENT, os.strerror(errno.ENOENT), filename
+            )
 
         f = open(filename, 'rb')
         hdr = f.read(max(len(BZ2_MAGIC), len(GZIP_MAGIC)))
@@ -43,7 +57,6 @@ class mrt_splitter():
             self.f = open(filename, 'rb')
             if self.debug:
                 print("Is binary file")
-        print(type(self.f))
 
     def close(self):
         """
@@ -81,9 +94,18 @@ class mrt_splitter():
         return self
 
     def split(self, no_of_chunks):
+        """
+        Split the MRT data into N equal chunks written to disk.
+        Return the total number of MRT records and a list of file names.
+        """
 
         if not self.f:
-            return
+            raise AttributeError("No MRT file is currently open")
+
+        if (not no_of_chunks or
+            not isinstance(no_of_chunks, int) or
+            no_of_chunks < 1):
+            raise ValueError("Number of chunks to split MRT file into must be a positive integer")
 
         basename = os.path.basename(self.filename)
         if basename[0:3].lower() == "rib":
@@ -94,7 +116,8 @@ class mrt_splitter():
         for i in range(0, no_of_chunks):
             chunk_name = self.filename + "_" + str(i)
             chunk_names.append(chunk_name)
-            print(f"Opening {chunk_name} for output")
+            if self.debug:
+                print(f"Opening {chunk_name} for output")
             f = open(chunk_name, "wb")
             chunk_files.append(f)
 
@@ -105,6 +128,7 @@ class mrt_splitter():
             chunk_files[i].close()
 
         total = idx + 1
-        print(f"Split {total} mrt_entries into {no_of_chunks} files.")
+        if self.debug:
+            print(f"Split {total} mrt_entries into {no_of_chunks} files.")
 
         return total, chunk_names

@@ -12,7 +12,9 @@ def main():
     no_of_chunks = int(sys.argv[2])
 
     splitter = mrt_splitter(filename)
-    splitter.split(no_of_chunks)
+    total, chunk_names = splitter.split(no_of_chunks)
+    print(f"Split {total} mrt_entries into {no_of_chunks} files:")
+    print(chunk_names)
 
 if __name__ == '__main__':
     main()
