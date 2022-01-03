@@ -1,11 +1,8 @@
-# RIB dumps are every 2 hours:
-# http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/RIBS/rib.20211222.0600.bz2
-# UPDATES are ever 5 minutes:
-# http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/UPDATES/updates.20211222.0600.bz2
+
 
 import mrtparse
 import os
-import requests
+
 
 import timeit
 import itertools
@@ -15,13 +12,19 @@ import math
 import multiprocessing
 from multiprocessing import Pool
 
+import sys
+sys.path.append('./')
+from mrt_getter import mrt_getter
 
 
 def main():
 
-    # Download todays MRTs files:
-    #filename = "/tmp/rib.20211222.0600.bz2"
-    #url = "http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/RIBS/rib.20211222.0600.bz2"
+    # Download the RIB dump and MRT updates from 2 hours ago.
+    files = mrt_getter.get_latest_rv()
+    print(files)
+    exit(0)
+
+
     #if download_mrt(filename, url) != True:
     #    exit(1)
     #filename = "/tmp/updates.20211222.0600.bz2"

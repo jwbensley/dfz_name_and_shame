@@ -1,6 +1,13 @@
-class mrt_parser:
+import errno
+import os
+import mrtparse
 
-    @classmethod
+class mrt_parser:
+    """
+    Class which provides various MRT file features such as parsing and testing.
+    """
+
+    @staticmethod
     def load_rib_dump(filename):
 
         print(f"Started PID {os.getpid()} with {filename}")
@@ -9,21 +16,21 @@ class mrt_parser:
         mrt_entries = mrtparse.Reader(filename)
 
         #############tic = timeit.default_timer()
-        for idx, entry in enumerate(mrt_entries):
+        for idx, mrt_entry in enumerate(mrt_entries):
 
             origin_asns = set()
             longest_as_path = [mrt_entry()]
             longest_community_set = [mrt_entry()]
-            prefix = entry.data["prefix"] + "/" + str(entry.data["prefix_length"])
+            prefix = mrt_entry.data["prefix"] + "/" + str(mrt_entry.data["prefix_length"])
 
-            for re in entry.data["rib_entries"]:
+            for rib_entry in mrt_entry.data["rib_entries"]:
 
                 as_path = []
                 origin_asn = None
                 community_set = []
                 next_hop = None
 
-                for attr in re["path_attributes"]:
+                for attr in rib_entry["path_attributes"]:
                     attr_t = attr["type"][0]
 
                     # mrtparse.BGP_ATTR_T['AS_PATH']
@@ -31,11 +38,9 @@ class mrt_parser:
                         as_path = attr["value"][0]["value"]
                         origin_asn = as_path[-1]
                         origin_asns.add(origin_asn)
-
-                    """
-                    mrtparse.BGP_ATTR_T['COMMUNITY'] or
-                    mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']
-                    """
+                    
+                    # mrtparse.BGP_ATTR_T['COMMUNITY'] or
+                    # mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']
                     elif (attr_t == 8 or attr_t == 32):
                         community_set = attr["value"]
 
@@ -121,10 +126,10 @@ class mrt_parser:
         ####toc = timeit.default_timer()
         ####print(f"PID {os.getpid()} duration: {toc - tic}")
 
-    return rib_data
+        return rib_data
 
 
-    @classmethod
+    @staticmethod
     def load_update_dump(filename):
 
         print(f"Started PID {os.getpid()} with filename {filename}")
@@ -435,3 +440,75 @@ class mrt_parser:
         print(f"PID {os.getpid()} completed, duration: {toc - tic}, entires: {idx + 1}")
 
         return upd_stats
+
+
+    @staticmethod
+    def test_mrt_rib_dump(filename):
+
+        if not filename:
+            raise ValueError("MRT filename missing")
+
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(
+                errno.ENOENT, os.strerror(errno.ENOENT), filename
+            )
+
+        mrt_entries = mrtparse.Reader(filename)
+        for idx, mrt_entry in enumerate(mrt_entries):
+            if (mrt_entry.data["type"][0] != mrtparse.MRT_T['TABLE_DUMP_V2']):
+                print(f"Entry {idx} in {filename} is not type TABLE_DUMP_V2")
+                print(mrt_entry.data)
+                return idx
+
+            # RIB dumps can contain both AFIs (v4 and v6)
+            if (mrt_entry.data["subtype"][0] != mrtparse.TD_V2_ST['PEER_INDEX_TABLE'] and
+                mrt_entry.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV4_UNICAST'] and
+                mrt_entry.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV6_UNICAST']):
+                print(f"Entry {idx} in {filename} is not PEER_INDEX_TABLE or RIB_IPV4_UNICAST or RIB_IPV6_UNICAST")
+                print(mrt_entry.data)
+                return idx
+
+        return idx
+
+    @staticmethod
+    def test_mrt_update_dump(data):
+
+        if not filename:
+            raise ValueError("MRT filename missing")
+
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(
+                errno.ENOENT, os.strerror(errno.ENOENT), filename
+            )
+
+        mrt_entries = mrtparse.Reader(filename)
+        for idx, mrt_entry in enumerate(mrt_entries):
+            if (mrt_entry.data["type"][0] != mrtparse.MRT_T['BGP4MP_ET']):
+                print(f"Entry {idx} in {filename} is not type BGP4MP_ET")
+                print(mrt_entry.data)
+                return idx
+            
+            # UPDATE dumps can contain both AFIs (v4 and v6)
+            if (mrt_entry.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4'] and
+                mrt_entry.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE']):
+                print(f"Entry {idx} in {filename} is not BGP4MP_MESSAGE or BGP4MP_MESSAGE_AS4")
+                print(mrt_entry.data)
+                return idx
+
+        return idx
+
+    @staticmethod
+    def mrt_count(filename):
+
+        if not filename:
+            raise ValueError("MRT filename missing")
+
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(
+                errno.ENOENT, os.strerror(errno.ENOENT), filename
+            )
+
+        i = 0
+        for entry in mrtparse.Reader(filename):
+            i += 1
+        return i

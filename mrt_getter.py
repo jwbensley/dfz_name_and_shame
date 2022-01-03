@@ -1,110 +1,146 @@
+import datetime
+import os
+import requests
+
+class mrt_getter:
+    """
+    Class which can be used to get MRT files from public sources.
+    """
+
+    # Locations of popular MRT dump archives:
+
+    """
+    Route-Views London
+    RIB dumps are every 2 hours
+    RIB dump example: http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/RIBS/rib.20211222.0600.bz2
+    UPDATE dumps are ever 15 minutes
+    UPDATE dump example: http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/UPDATES/updates.20211222.0600.bz2
+    """
+    RV_LINX = "http://archive.routeviews.org/route-views.linx/bgpdata/"
+
+    """
+    Route-Views Sydnex
+    RIB dumps are every 2 hours
+    RIB dump example: http://archive.routeviews.org/route-views.sydney/bgpdata/2021.12/RIBS/rib.20211201.0600.bz2
+    UPDATE dumps are ever 15 minutes
+    UPDATE dump example: http://archive.routeviews.org/route-views.sydney/bgpdata/2021.12/UPDATES/updates.20211201.0030.bz2
+    """
+    RV_SYDNEY = "http://archive.routeviews.org/route-views.sydney/bgpdata/"
 
 
-def download_mrt(filename, url):
+    """
+    RRC23 Singapore
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc23/2021.12/bview.20211206.1600.gz
+    UPDATE dumps are ever 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc23/2021.12/updates.20211231.2335.gz
+    """
+    RCC_23 = "https://data.ris.ripe.net/rrc23/"
 
-    with open(filename, "wb") as f:
-        print(f"Downloading {url} to {filename}")
-        try:
-            req = requests.get(url, stream=True)
-        except requests.exceptions.ConnectionError as e:
-            print(f"Couldn't connect to MRT server: {e}")
-            f.close()
-            return False
+    """
+    RRC24 LACNIC
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc24/2021.12/bview.20211208.1600.gz
+    UPDATE dumps are ever 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc24/2021.12/updates.20211231.1245.gz
+    """
+    RCC_24 = "https://data.ris.ripe.net/rrc24/"
 
-        file_len = req.headers['Content-length']
+    @staticmethod
+    def get_latest_rv():
 
-        if req.status_code != 200:
-            print(f"HTTP error: {req.status_code}")
-            print(req.url)
-            print(req.text)
-            f.write(req.content)
-            f.close()
-            return False
+        downloaded = []
 
-        if file_len is None:
-            print(f"Missing file length!")
-            print(req.url)
-            print(req.text)
-            f.write(req.content)
-            f.close()
-            return False
+        hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
+        if hours % 2 != 0:
+            hours = 3
+        else:
+            hours = 2
+        h_delta = datetime.timedelta(hours=hours)
 
-        file_len = int(file_len)
-        rcvd = 0
-        print(f"File size is {file_len/1024/1024:.7}MBs")
-        progress = 0
-        for chunk in req.iter_content(chunk_size=1024):
+        latest_ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
+        latest_ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
+
+        latest_linx_rib = mrt_getter.RV_LINX + latest_ym + "/RIBS/rib." + latest_ymd_hm + ".bz2"
+        filename = os.path.basename(latest_linx_rib)
+        mrt_getter.download_mrt(url=latest_linx_rib)
+        downloaded.append(latest_linx_rib)
+
+        update_base = datetime.datetime.strptime(latest_ymd_hm, "%Y%m%d.%H00")
+        for i in range(0, 8):
+            m_delta = datetime.timedelta(minutes=(i*15))
+            update_ymd_hm = datetime.datetime.strftime(update_base+m_delta,"%Y%m%d.%H%M")
+
+            latest_linx_upd = mrt_getter.RV_LINX + latest_ym + "/UPDATES/updates." + update_ymd_hm + ".bz2"
+            filename = os.path.basename(latest_linx_upd)
+            mrt_getter.download_mrt(url=latest_linx_upd)
+            downloaded.append(filename)
+
+        return downloaded
+
+    @staticmethod
+    def download_mrt(filename=None, url=None, debug=False):
+        """
+        Download an MRT file from the given url,
+        and save it as the given filename.
+        """
+
+        if not url:
+            raise ValueError("Missing ULR")
+
+        if not filename:
+            filename = os.path.basename(url)
+
+        with open(filename, "wb") as f:
+            print(f"Downloading {url} to {filename}")
+            try:
+                req = requests.get(url, stream=True)
+            except requests.exceptions.ConnectionError as e:
+                if debug:
+                    print(f"Couldn't connect to MRT server: {e}")
+                f.close()
+                raise requests.exceptions.ConnectionError
+
+            file_len = req.headers['Content-length']
 
             if req.status_code != 200:
-                print(f"HTTP error: {req.status_code}")
-                print(req.url)
-                print(req.text)
+                if debug:
+                    print(f"HTTP error: {req.status_code}")
+                    print(req.url)
+                    print(req.text)
                 f.write(req.content)
                 f.close()
-                return False
+                req.raise_for_status()
 
-            rcvd += len(chunk)
-            f.write(chunk)
-            f.flush()
+            if file_len is None:
+                if debug:
+                    print(req.url)
+                    print(req.text)
+                f.write(req.content)
+                f.close()
+                raise ValueError("Missing file length!")
 
-            if rcvd == file_len:
-                print(f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)")
-            elif ((rcvd/file_len)*100)//10 > progress:
-                print(f"\rDownloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)", end="\r")
-                progress = ((rcvd/file_len)*100)//10
+            file_len = int(file_len)
+            rcvd = 0
+            print(f"File size is {file_len/1024/1024:.7}MBs")
+            progress = 0
+            for chunk in req.iter_content(chunk_size=1024):
 
-    return True
+                if req.status_code != 200:
+                    if debug:
+                        print(f"HTTP error: {req.status_code}")
+                        print(req.url)
+                        print(req.text)
+                    f.write(req.content)
+                    f.close()
+                    req.raise_for_status()
 
+                rcvd += len(chunk)
+                f.write(chunk)
+                f.flush()
 
-def test_mrt_rib(data):
-
-    print(f"Started test_mrt_rib() with {len(data)} entries")
-
-    i = 0
-    for entry in data:
-        if (entry.data["type"][0] != mrtparse.MRT_T['TABLE_DUMP_V2']):
-            print(f"Not TABLE_DUMP_V2")
-            print(entry.data)
-            return i
-        
-        # RIB dumps can contain both AFIs (v4 and v6)
-        if (entry.data["subtype"][0] != mrtparse.TD_V2_ST['PEER_INDEX_TABLE'] and
-            entry.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV4_UNICAST'] and
-            entry.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV6_UNICAST']):
-            print(f"Not PEER_INDEX_TABLE or RIB_IPV4_UNICAST or RIB_IPV6_UNICAST")
-            print(entry.data)
-            return i
-
-        i+= 1
-
-    return i
-
-def test_mrt_updates(data):
-
-    print(f"Started test_mrt_updates() with {len(data)} entries")
-
-    i = 0
-    for entry in data:
-        if (entry.data["type"][0] != mrtparse.MRT_T['BGP4MP_ET']):
-            print(f"Not BGP4MP_ET")
-            print(entry.data)
-            return i
-        
-        # RIB dumps can contain both AFIs (v4 and v6)
-        if (entry.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4'] and
-            entry.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE']):
-            print(f"Not BGP4MP_MESSAGE or BGP4MP_MESSAGE_AS4")
-            print(entry.data)
-            return i
-
-        i+= 1
-
-    return i
-
-def get_mrt_size(filename):
-
-    i = 0
-    for entry in mrtparse.Reader(filename):
-        i += 1
-
-    return i
+                if rcvd == file_len:
+                    print(f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)")
+                elif ((rcvd/file_len)*100)//10 > progress:
+                    print(f"\rDownloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)", end="\r")
+                    progress = ((rcvd/file_len)*100)//10
