@@ -1,3 +1,4 @@
+redis_auth.py
 **/*.bz2
 **/*.gz
 __pycache__/
