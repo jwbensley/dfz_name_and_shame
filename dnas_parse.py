@@ -1,4 +1,13 @@
+"""
+Requires:
+pypy3.8-v7.3.7
 
+pypy3 -mpip ensurepip
+pypy3 -mpip install --upgrade pip
+pypy3 -mpip install mrtparse
+pypy3 -mpip install requests
+pypy3 -mpip install redis
+"""
 
 import mrtparse
 import os
@@ -15,139 +24,23 @@ from multiprocessing import Pool
 import sys
 sys.path.append('./')
 from mrt_getter import mrt_getter
+from mrt_parser import mrt_parser
 
 
 def main():
 
     # Download the RIB dump and MRT updates from 2 hours ago.
-    files = mrt_getter.get_latest_rv()
-    print(files)
-    exit(0)
+    #files = mrt_getter.get_latest_rv()
+    files = ['http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/RIBS/rib.20220103.1200.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1200.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1215.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1230.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1245.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1300.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1315.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1330.bz2', 'http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1345.bz2']
 
+    rib_file = files[0]
+    rib_data = mrt_parser(rib_file)
 
-    #if download_mrt(filename, url) != True:
-    #    exit(1)
-    #filename = "/tmp/updates.20211222.0600.bz2"
-    #url = "http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/UPDATES/updates.20211222.0600.bz2" # 263632 entries
-    #if download_mrt(filename, url) != True:
-    #    exit(1)
+    for file in files:
 
-    """
-    filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/rib.20211222.0600.bz2"
-    if not load_rib(filename):
-        exit(1)
-    """
-
-    """
-    filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/ribv6.20211222.0600.bz2"
-    if not load_rib(filename):
-        exit(1)
-    """
-
-    """
-    filename = "/mnt/c/Users/bensley/GitHub/dfz_name_and_shame/updates.20211222.0600.bz2" # 263632 entries
-    if not load_update(filename):
-        exit(1)
-    """
-
-    filename = "/home/bensley/GitHub/dfz_rust/updates.20211222.0600" # 263632 entries / 0m6s
-    #filename = "/home/bensley/GitHub/dfz_rust/rib.20211222.0600.bz2" # 1092192 entries / 7m5s
-    #filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600.bz2" #  148015 entries / 0m54s
-    #filename = "/home/bensley/GitHub/dfz_rust/ribv6.20211222.0600" #  148015 entries / 0m54s
-    #filename = "/home/bensley/GitHub/dfz_rust/updatesv6.20211222.0615.bz2"
-
-    if not filename:
-        print("MRT filename missing")
-        return False
-
-    if not os.path.isfile(filename):
-        print(f"Non-existing MRT filename {filename}")
-        return False
-
-    ##mrt_length = 148015 #get_mrt_size(filename)
 
     num_procs =  multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(num_procs)
-
-    """
-    # 78 seconds
-    chunks = [[] for i in range(0, num_procs)]
-    tic = timeit.default_timer()
-    entries = mrtparse.Reader(filename)
-    next(entries) # Skip the peer table which is the first entry in the RIB dump
-    for idx, entry in enumerate(entries):
-        chunks[idx % num_procs].append(entry.data)
-
-    toc = timeit.default_timer()
-    print(f"Duration: {toc - tic}")
-    print(f"No. of entries: {idx}, No. of chunks: {len(chunks)}, chunk size: {len(chunks[0])}, No. of procs: {num_procs}")
-
-    try:
-        entries.close()
-    except StopIteration:
-        pass
-
-    del(entries)
-    """
-
-
-    """
-    80 seconds
-    chunks = [[] for i in range(0, num_procs)]
-    tic = timeit.default_timer()
-
-    entries2 = mrtparse.Reader(filename)
-    next(entries2)
-    it = iter(entries2)
-    for idx, entry in enumerate(entries2):
-        chunks[idx % num_procs].append(itertools.islice(it, 1))
-
-    toc = timeit.default_timer()
-    print(f"Duration: {toc - tic}")
-    """
-
-
-    """
-    # 81 seconds
-    i = 0
-    entries2 = mrtparse.Reader(filename)
-    next(entries2)
-    tic = timeit.default_timer()
-    for entry in entries2:
-        i += 1
-    toc = timeit.default_timer()
-    print(f"Duration: {toc - tic}")
-    print(f"{i} entries")
-    """
-
-    """
-    # 81 seconds
-    i = 0
-    entries3 = mrtparse.Reader(filename)
-    next(entries3)
-    it3 = iter(entries3)
-    tic = timeit.default_timer()
-    for entry in it3:
-        i += 1
-    toc = timeit.default_timer()
-    print(f"Duration: {toc - tic}")
-    print(f"{i} entries")
-    """
-
-    """
-    # cant be serialised!
-    # 1.4 seconds
-    chunks = []
-    entries4 = mrtparse.Reader(filename)
-    next(entries4) # Skip the peer table which is the first entry in the RIB dump
-    it = iter(entries4)
-    tic = timeit.default_timer()
-    for i in range(0, num_procs):
-        chunks.append(itertools.islice(it, 18502))
-    toc = timeit.default_timer()
-    print(f"Duration: {toc - tic}")
-    print(f"No. of chunks: {len(chunks)}, chunk size: {18502}, No. of procs: {num_procs}")
-    """
 
     print(f"Starting processes...")
 

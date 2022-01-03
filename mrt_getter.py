@@ -62,8 +62,8 @@ class mrt_getter:
         latest_ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
 
         latest_linx_rib = mrt_getter.RV_LINX + latest_ym + "/RIBS/rib." + latest_ymd_hm + ".bz2"
-        filename = os.path.basename(latest_linx_rib)
-        mrt_getter.download_mrt(url=latest_linx_rib)
+        filename = "/tmp/" + os.path.basename(latest_linx_rib)
+        mrt_getter.download_mrt(filename=filename, url=latest_linx_rib)
         downloaded.append(latest_linx_rib)
 
         update_base = datetime.datetime.strptime(latest_ymd_hm, "%Y%m%d.%H00")
@@ -72,8 +72,8 @@ class mrt_getter:
             update_ymd_hm = datetime.datetime.strftime(update_base+m_delta,"%Y%m%d.%H%M")
 
             latest_linx_upd = mrt_getter.RV_LINX + latest_ym + "/UPDATES/updates." + update_ymd_hm + ".bz2"
-            filename = os.path.basename(latest_linx_upd)
-            mrt_getter.download_mrt(url=latest_linx_upd)
+            filename = "/tmp/" + os.path.basename(latest_linx_upd)
+            mrt_getter.download_mrt(filename=filename, url=latest_linx_upd)
             downloaded.append(filename)
 
         return downloaded
