@@ -1,6 +1,13 @@
 import errno
+import json
 import os
 import mrtparse
+
+import sys
+sys.path.append('./')
+from mrt_entry import mrt_entry
+from mrt_data import mrt_data
+
 
 class mrt_parser:
     """
@@ -8,7 +15,48 @@ class mrt_parser:
     """
 
     @staticmethod
-    def load_rib_dump(filename):
+    def to_file(filename, mrt_data):
+            with open(filename, "w") as f:
+                f.write(mrt_parser.to_json(mrt_data))
+
+    @staticmethod
+    def to_json(mrt_data):
+        json_data = {
+            "longest_as_path": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.longest_as_path
+            ],
+            "longest_community_set": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.longest_community_set
+            ],
+            "most_advt_prefixes": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_advt_prefixes
+            ],
+            "most_upd_prefixes": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_upd_prefixes
+            ],
+            "most_withd_prefixes": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_withd_prefixes
+            ],
+            "most_advt_origin_asn": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_advt_origin_asn
+            ],
+            "most_advt_peer_asn": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_advt_peer_asn
+            ],
+            "most_upd_peer_asn": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_upd_peer_asn
+            ],
+            "most_withd_peer_asn": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_withd_peer_asn
+            ],
+            "most_origin_asns": [
+                mrt_entry.to_json() for mrt_entry in mrt_data.most_origin_asns
+            ],
+        }
+        return json.dumps(json_data, indent=2)
+
+    @staticmethod
+    def parse_rib_dump(filename):
 
         print(f"Started PID {os.getpid()} with {filename}")
 
@@ -16,14 +64,14 @@ class mrt_parser:
         mrt_entries = mrtparse.Reader(filename)
 
         #############tic = timeit.default_timer()
-        for idx, mrt_entry in enumerate(mrt_entries):
+        for idx, mrt_e in enumerate(mrt_entries):
 
             origin_asns = set()
             longest_as_path = [mrt_entry()]
             longest_community_set = [mrt_entry()]
-            prefix = mrt_entry.data["prefix"] + "/" + str(mrt_entry.data["prefix_length"])
+            prefix = mrt_e.data["prefix"] + "/" + str(mrt_e.data["prefix_length"])
 
-            for rib_entry in mrt_entry.data["rib_entries"]:
+            for rib_entry in mrt_e.data["rib_entries"]:
 
                 as_path = []
                 origin_asn = None
@@ -129,11 +177,11 @@ class mrt_parser:
         return rib_data
 
     @staticmethod
-    def load_update_dump(filename):
+    def parse_update_dump(filename):
 
         print(f"Started PID {os.getpid()} with filename {filename}")
 
-        upd_stats = mrt_stats()
+        upd_stats = mrt_data()
         longest_as_path = [mrt_entry()]
         longest_community_set = [mrt_entry()]
         origin_asns_prefix = {}
@@ -144,24 +192,24 @@ class mrt_parser:
         mrt_entries = mrtparse.Reader(filename)
         #####tic = timeit.default_timer()
 
-        for idx, entry in enumerate(mrt_entries):
+        for idx, mrt_e in enumerate(mrt_entries):
 
-            peer_asn = entry.data["peer_as"]
+            peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
                 upd_peer_asn[peer_asn] = {
                     "advertisements": 0,
                     "withdraws": 0,
                 }
 
-            timestamp = entry.data["timestamp"]
+            timestamp = mrt_e.data["timestamp"]
 
             as_path = []
             community_set = []
 
-            if len(entry.data["bgp_message"]["withdrawn_routes"]) > 0:
+            if len(mrt_e.data["bgp_message"]["withdrawn_routes"]) > 0:
                 upd_peer_asn[peer_asn]["withdraws"] += 1
 
-                for withdrawn_route in entry.data["bgp_message"]["withdrawn_routes"]:
+                for withdrawn_route in mrt_e.data["bgp_message"]["withdrawn_routes"]:
                     prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
                     if prefix not in upd_prefix:
                         upd_prefix[prefix] = {
@@ -172,11 +220,11 @@ class mrt_parser:
                     else:
                         upd_prefix[prefix]["withdraws"] += 1
 
-            if len(entry.data["bgp_message"]["path_attributes"]) > 1:
+            if len(mrt_e.data["bgp_message"]["path_attributes"]) > 1:
                 upd_peer_asn[peer_asn]["advertisements"] += 1
                 prefixes = []
 
-                for path_attr in entry.data["bgp_message"]["path_attributes"]:
+                for path_attr in mrt_e.data["bgp_message"]["path_attributes"]:
                     attr_t = path_attr["type"][0]
 
                     # AS_PATH
@@ -204,7 +252,7 @@ class mrt_parser:
                                 nlri["prefix"] + "/" + str(nlri["prefix_length"])
                             )
 
-                for nlri in entry.data["bgp_message"]["nlri"]:
+                for nlri in mrt_e.data["bgp_message"]["nlri"]:
                     prefixes.append(nlri["prefix"] + "/" + str(nlri["prefix_length"]))
 
                 for prefix in prefixes:
@@ -433,7 +481,7 @@ class mrt_parser:
 
             # Is there a noticable performance hit to wrap in a "try" ?
             #else:
-            #    print(f"Unknown type/subtype: {entry['type']}/{entry['subtype']}")
+            #    print(f"Unknown type/subtype: {mrt_e['type']}/{mrt_e['subtype']}")
 
         toc = timeit.default_timer()
         print(f"PID {os.getpid()} completed, duration: {toc - tic}, entires: {idx + 1}")
@@ -452,18 +500,18 @@ class mrt_parser:
             )
 
         mrt_entries = mrtparse.Reader(filename)
-        for idx, mrt_entry in enumerate(mrt_entries):
-            if (mrt_entry.data["type"][0] != mrtparse.MRT_T['TABLE_DUMP_V2']):
+        for idx, mrt_e in enumerate(mrt_entries):
+            if (mrt_e.data["type"][0] != mrtparse.MRT_T['TABLE_DUMP_V2']):
                 print(f"Entry {idx} in {filename} is not type TABLE_DUMP_V2")
-                print(mrt_entry.data)
+                print(mrt_e.data)
                 return idx
 
             # RIB dumps can contain both AFIs (v4 and v6)
-            if (mrt_entry.data["subtype"][0] != mrtparse.TD_V2_ST['PEER_INDEX_TABLE'] and
-                mrt_entry.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV4_UNICAST'] and
-                mrt_entry.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV6_UNICAST']):
+            if (mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['PEER_INDEX_TABLE'] and
+                mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV4_UNICAST'] and
+                mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV6_UNICAST']):
                 print(f"Entry {idx} in {filename} is not PEER_INDEX_TABLE or RIB_IPV4_UNICAST or RIB_IPV6_UNICAST")
-                print(mrt_entry.data)
+                print(mrt_e.data)
                 return idx
 
         return idx
@@ -480,17 +528,17 @@ class mrt_parser:
             )
 
         mrt_entries = mrtparse.Reader(filename)
-        for idx, mrt_entry in enumerate(mrt_entries):
-            if (mrt_entry.data["type"][0] != mrtparse.MRT_T['BGP4MP_ET']):
+        for idx, mrt_e in enumerate(mrt_entries):
+            if (mrt_e.data["type"][0] != mrtparse.MRT_T['BGP4MP_ET']):
                 print(f"Entry {idx} in {filename} is not type BGP4MP_ET")
-                print(mrt_entry.data)
+                print(mrt_e.data)
                 return idx
             
             # UPDATE dumps can contain both AFIs (v4 and v6)
-            if (mrt_entry.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4'] and
-                mrt_entry.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE']):
+            if (mrt_e.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4'] and
+                mrt_e.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE']):
                 print(f"Entry {idx} in {filename} is not BGP4MP_MESSAGE or BGP4MP_MESSAGE_AS4")
-                print(mrt_entry.data)
+                print(mrt_e.data)
                 return idx
 
         return idx

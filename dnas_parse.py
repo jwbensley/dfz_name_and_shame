@@ -9,29 +9,24 @@ pypy3 -mpip install requests
 pypy3 -mpip install redis
 """
 
-import mrtparse
-import os
+###import os
 
-
-import timeit
-import itertools
-import operator
-
-import math
 import multiprocessing
 from multiprocessing import Pool
 
 import sys
 sys.path.append('./')
+from mrt_data import mrt_data
 from mrt_getter import mrt_getter
 from mrt_parser import mrt_parser
+from mrt_splitter import mrt_splitter
 
 
 def main():
 
     # Download the RIB dump and MRT updates from 2 hours ago.
     #files = mrt_getter.get_latest_rv()
-    files = ['/tmp/rib.20220103.1200.bz2', '/tmp/updates.20220103.1200.bz2', '/tmp/updates.20220103.1215.bz2', '/tmp/updates.20220103.1230.bz2', '/tmp/updates.20220103.1245.bz2', '/tmp/updates.20220103.1300.bz2', '/tmp/updates.20220103.1315.bz2', '/tmp/updates.20220103.1330.bz2', '/tmp/updates.20220103.1345.bz2']
+    files = ['/tmp/ribv6.20211222.0600.bz2', '/tmp/updates.20220103.1200.bz2', '/tmp/updates.20220103.1215.bz2', '/tmp/updates.20220103.1230.bz2', '/tmp/updates.20220103.1245.bz2', '/tmp/updates.20220103.1300.bz2', '/tmp/updates.20220103.1315.bz2', '/tmp/updates.20220103.1330.bz2', '/tmp/updates.20220103.1345.bz2']
     num_procs =  multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(num_procs)
 
@@ -39,18 +34,21 @@ def main():
 
         splitter = mrt_splitter(file)
         no_entries, file_chunks = splitter.split(num_procs)
-        print(file_chunks)
-        stats_chunks = Pool.map(load_parse_mrt_update, file_chunks)
+        rib_chunks = Pool.map(mrt_parser.parse_rib_dump, file_chunks)
+
+        rib_data = mrt_data()
+        for chunk in rib_chunks:
+            rib_data.merge_chunk(chunk)
+
+        mrt_parser.to_file(file + ".json", rib_data)
 
         break
 
 
-    entries = mrtparse.Reader(filename)
-    timestamp = next(entries).data["timestamp"][0]
+    #entries = mrtparse.Reader(filename)
+    #timestamp = next(entries).data["timestamp"][0]
 
-
-
-    results = merge_chunks(mrt_stats_chunks)
+    #results = merge_chunks(mrt_stats_chunks)
     # ^ Add to results the filename these came from
 
 if __name__ == '__main__':

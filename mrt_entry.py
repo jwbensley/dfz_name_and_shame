@@ -1,3 +1,5 @@
+import json
+
 class mrt_entry:
 
     def __init__(
@@ -24,6 +26,21 @@ class mrt_entry:
         self.timestamp = timestamp
         self.updates = updates
         self.withdraws = withdraws
+
+    def to_json(self):
+        json_data = {
+            "advertisements": self.advertisements,
+            "as_path": self.as_path,
+            "community_set": self.community_set,
+            "next_hop": self.next_hop,
+            "origin_asns": list(self.origin_asns),
+            "peer_asn": self.peer_asn,
+            "prefix": self.prefix,
+            "timestamp": self.timestamp,
+            "updates": self.updates,
+            "withdraws": self.withdraws,
+        }
+        return json.dumps(json_data)
 
     def print(self):
 
