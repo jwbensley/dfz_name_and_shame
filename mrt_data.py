@@ -15,7 +15,7 @@ class mrt_data:
         self.most_origin_asns = [mrt_entry()]
 
 
-    def merge_chunks(self, merge_data):
+    def merge_chunk(self, merge_data):
         """
         Merge another mrt_data object into this one.
         """
@@ -38,16 +38,18 @@ class mrt_data:
 
 
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_advt_prefixes[:]):
-            for res_e in self.most_advt_prefixes:
-                if res_e.prefix == u_e.prefix:
-                    tmp.append(
-                        mrt_entry(
-                            prefix=res_e.prefix,
-                            advertisements=(res_e.advertisements + u_e.advertisements),
+        # In case a rib dump is being merged, this stat wont be present
+        if merge_data.most_advt_prefixes[0].prefix:
+            for idx, u_e in enumerate(merge_data.most_advt_prefixes[:]):
+                for res_e in self.most_advt_prefixes:
+                    if (res_e.prefix == u_e.prefix):
+                        tmp.append(
+                            mrt_entry(
+                                prefix=res_e.prefix,
+                                advertisements=(res_e.advertisements + u_e.advertisements),
+                            )
                         )
-                    )
-                    merge_data.most_advt_prefixes.remove(u_e)
+                        merge_data.most_advt_prefixes.remove(u_e)
 
         if tmp:
             for tmp_e in tmp:
@@ -64,16 +66,18 @@ class mrt_data:
 
 
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_upd_prefixes[:]):
-            for res_e in self.most_upd_prefixes:
-                if res_e.prefix == u_e.prefix:
-                    tmp.append(
-                        mrt_entry(
-                            prefix=res_e.prefix,
-                            updates=(res_e.updates + u_e.updates),
+        # In case a rib dump is being merged, this stat wont be present
+        if merge_data.most_upd_prefixes[0].prefix:
+            for idx, u_e in enumerate(merge_data.most_upd_prefixes[:]):
+                for res_e in self.most_upd_prefixes:
+                    if res_e.prefix == u_e.prefix:
+                        tmp.append(
+                            mrt_entry(
+                                prefix=res_e.prefix,
+                                updates=(res_e.updates + u_e.updates),
+                            )
                         )
-                    )
-                    merge_data.most_upd_prefixes.remove(u_e)
+                        merge_data.most_upd_prefixes.remove(u_e)
 
         if tmp:
             for tmp_e in tmp:
@@ -90,16 +94,18 @@ class mrt_data:
 
 
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_withd_prefixes[:]):
-            for res_e in self.most_withd_prefixes:
-                if res_e.prefix == u_e.prefix:
-                    tmp.append(
-                        mrt_entry(
-                            prefix=res_e.prefix,
-                            withdraws=(res_e.withdraws + u_e.withdraws),
+        # In case a rib dump is being merged, this stat wont be present
+        if merge_data.most_withd_prefixes[0].prefix:
+            for idx, u_e in enumerate(merge_data.most_withd_prefixes[:]):
+                for res_e in self.most_withd_prefixes:
+                    if res_e.prefix == u_e.prefix:
+                        tmp.append(
+                            mrt_entry(
+                                prefix=res_e.prefix,
+                                withdraws=(res_e.withdraws + u_e.withdraws),
+                            )
                         )
-                    )
-                    merge_data.most_withd_prefixes.remove(u_e)
+                        merge_data.most_withd_prefixes.remove(u_e)
 
         if tmp:
             for tmp_e in tmp:
@@ -116,16 +122,18 @@ class mrt_data:
 
 
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_advt_origin_asn[:]):
-            for res_e in self.most_advt_origin_asn:
-                if res_e.origin_asns == u_e.origin_asns:
-                    tmp.append(
-                        mrt_entry(
-                            origin_asns=res_e.origin_asns,
-                            advertisements=(res_e.advertisements + u_e.advertisements),
+        # In case a rib dump is being merged, this stat wont be present
+        if merge_data.most_advt_origin_asn[0].prefix:
+            for idx, u_e in enumerate(merge_data.most_advt_origin_asn[:]):
+                for res_e in self.most_advt_origin_asn:
+                    if res_e.origin_asns == u_e.origin_asns:
+                        tmp.append(
+                            mrt_entry(
+                                origin_asns=res_e.origin_asns,
+                                advertisements=(res_e.advertisements + u_e.advertisements),
+                            )
                         )
-                    )
-                    merge_data.most_advt_origin_asn.remove(u_e)
+                        merge_data.most_advt_origin_asn.remove(u_e)
 
         if tmp:
             for tmp_e in tmp:
@@ -142,16 +150,18 @@ class mrt_data:
 
 
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_advt_peer_asn[:]):
-            for res_e in self.most_advt_peer_asn:
-                if res_e.peer_asn == u_e.peer_asn:
-                    tmp.append(
-                        mrt_entry(
-                            peer_asn=res_e.peer_asn,
-                            advertisements=(res_e.advertisements + u_e.advertisements),
+        # In case a rib dump is being merged, this stat wont be present
+        if merge_data.most_advt_peer_asn[0].prefix:
+            for idx, u_e in enumerate(merge_data.most_advt_peer_asn[:]):
+                for res_e in self.most_advt_peer_asn:
+                    if res_e.peer_asn == u_e.peer_asn:
+                        tmp.append(
+                            mrt_entry(
+                                peer_asn=res_e.peer_asn,
+                                advertisements=(res_e.advertisements + u_e.advertisements),
+                            )
                         )
-                    )
-                    merge_data.most_advt_peer_asn.remove(u_e)
+                        merge_data.most_advt_peer_asn.remove(u_e)
 
         if tmp:
             for tmp_e in tmp:
@@ -168,16 +178,18 @@ class mrt_data:
 
 
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_upd_peer_asn[:]):
-            for res_e in self.most_upd_peer_asn:
-                if res_e.peer_asn == u_e.peer_asn:
-                    tmp.append(
-                        mrt_entry(
-                            peer_asn=res_e.peer_asn,
-                            updates=(res_e.updates + u_e.updates),
+        # In case a rib dump is being merged, this stat wont be present
+        if merge_data.most_upd_peer_asn[0].prefix:
+            for idx, u_e in enumerate(merge_data.most_upd_peer_asn[:]):
+                for res_e in self.most_upd_peer_asn:
+                    if res_e.peer_asn == u_e.peer_asn:
+                        tmp.append(
+                            mrt_entry(
+                                peer_asn=res_e.peer_asn,
+                                updates=(res_e.updates + u_e.updates),
+                            )
                         )
-                    )
-                    merge_data.most_upd_peer_asn.remove(u_e)
+                        merge_data.most_upd_peer_asn.remove(u_e)
 
         if tmp:
             for tmp_e in tmp:
@@ -193,17 +205,19 @@ class mrt_data:
                 self.most_upd_peer_asn = merge_data.most_upd_peer_asn.copy()
 
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_withd_peer_asn[:]):
-            for res_e in self.most_withd_peer_asn:
-                if res_e.peer_asn == u_e.peer_asn:
-                    tmp.append(
-                        mrt_entry(
-                            peer_asn=res_e.peer_asn,
-                            withdraws=(res_e.withdraws + u_e.withdraws),
+        # In case a rib dump is being merged, this stat wont be present
+        if merge_data.most_withd_peer_asn[0].prefix:
+            for idx, u_e in enumerate(merge_data.most_withd_peer_asn[:]):
+                for res_e in self.most_withd_peer_asn:
+                    if res_e.peer_asn == u_e.peer_asn:
+                        tmp.append(
+                            mrt_entry(
+                                peer_asn=res_e.peer_asn,
+                                withdraws=(res_e.withdraws + u_e.withdraws),
+                            )
                         )
-                    )
-                    merge_data.most_withd_peer_asn.remove(u_e)  ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
-                    ###### IF WE HAVE THIS - DO WE NEED AN "if" to check if merge_data is not empty, under the "else" below?
+                        merge_data.most_withd_peer_asn.remove(u_e)  ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
+                        ###### IF WE HAVE THIS - DO WE NEED AN "if" to check if merge_data is not empty, under the "else" below?
 
         if tmp:
             for tmp_e in tmp:
