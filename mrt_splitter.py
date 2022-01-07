@@ -70,33 +70,33 @@ class mrt_splitter():
 
     def __next__(self):
         """
-        Move to the next record in the MRT file.
+        Move to the next entri in the MRT file.
         """
-        mrt_record = bytearray(self.f.read(12))
+        mrt_entry = bytearray(self.f.read(12))
 
-        if len(mrt_record) == 0:
+        if len(mrt_entry) == 0:
             self.close()
-        elif len(mrt_record) < 12:
+        elif len(mrt_entry) < 12:
             raise MrtFormatError(
                 'Invalid MRT header length %d < 12 byte' % len(buf)
             )
 
         val = 0
         length = 0
-        for i in mrt_record[-4:]:
+        for i in mrt_entry[-4:]:
             length = (length << 8) + i
 
         if self.debug:
-            print(f"MRT record length is {length}")
-        mrt_record += bytes(self.f.read(length))
-        self.data = mrt_record
+            print(f"MRT entry length is {length}")
+        mrt_entry += bytes(self.f.read(length))
+        self.data = mrt_entry
 
         return self
 
     def split(self, no_of_chunks):
         """
         Split the MRT data into N equal chunks written to disk.
-        Return the total number of MRT records and a list of file names.
+        Return the total number of MRT entries and a list of file names.
         """
 
         if not self.f:

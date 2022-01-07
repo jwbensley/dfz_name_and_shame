@@ -24,3 +24,17 @@ class mrt_entry:
         self.timestamp = timestamp
         self.updates = updates
         self.withdraws = withdraws
+
+    def print(self):
+
+        print(f"advertisements: {self.advertisements}")
+        print(f"as_path: {self.as_path}")
+        print(f"community_set: {self.community_set}")
+        print(f"next_hop: {self.next_hop}")
+        print(f"origin_asns: {self.origin_asns}")
+        print(f"peer_asn: {self.peer_asn}")
+        print(f"prefix: {self.prefix}")
+        print(f"timestamp: {self.timestamp}")
+        print(f"updates: {self.updates}")
+        print(f"withdraws: {self.withdraws}")
+        print("")

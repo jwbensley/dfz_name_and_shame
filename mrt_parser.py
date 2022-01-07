@@ -128,7 +128,6 @@ class mrt_parser:
 
         return rib_data
 
-
     @staticmethod
     def load_update_dump(filename):
 
@@ -440,7 +439,6 @@ class mrt_parser:
         print(f"PID {os.getpid()} completed, duration: {toc - tic}, entires: {idx + 1}")
 
         return upd_stats
-
 
     @staticmethod
     def test_mrt_rib_dump(filename):
