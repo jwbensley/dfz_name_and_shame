@@ -15,45 +15,90 @@ class mrt_parser:
     """
 
     @staticmethod
-    def to_file(filename, mrt_data):
-            with open(filename, "w") as f:
-                f.write(mrt_parser.to_json(mrt_data))
+    def from_file(filename):
+        with open(filename, "r") as f:
+            json_data = json.load(f)
+        for key in json_data:
+            json_data[key] = [
+                json.loads(mrt_e) for mrt_e in json_data[key]
+            ]
+        return mrt_parser.from_json(json_data)
 
     @staticmethod
-    def to_json(mrt_data):
+    def from_json(json_data):
+        mrt_d = mrt_data()
+        mrt_d.longest_as_path = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["longest_as_path"]
+        ]
+        mrt_d.longest_community_set = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["longest_community_set"]
+        ]
+        mrt_d.most_advt_prefixes = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_advt_prefixes"]
+        ]
+        mrt_d.most_upd_prefixes = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_upd_prefixes"]
+        ]
+        mrt_d.most_withd_prefixes = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_withd_prefixes"]
+        ]
+        mrt_d.most_advt_origin_asn = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_advt_origin_asn"]
+        ]
+        mrt_d.most_advt_peer_asn = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_advt_peer_asn"]
+        ]
+        mrt_d.most_upd_peer_asn = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_upd_peer_asn"]
+        ]
+        mrt_d.most_withd_peer_asn = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_withd_peer_asn"]
+        ]
+        mrt_d.most_origin_asns = [
+            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_origin_asns"]
+        ]
+        return mrt_d
+
+    @staticmethod
+    def to_file(filename, mrt_data):
+        with open(filename, "w") as f:
+            f.write(mrt_parser.to_json(mrt_data))
+
+    @staticmethod
+    def to_json(mrt_d):
         json_data = {
             "longest_as_path": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.longest_as_path
+                mrt_e.to_json() for mrt_e in mrt_d.longest_as_path
             ],
             "longest_community_set": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.longest_community_set
+                mrt_e.to_json() for mrt_e in mrt_d.longest_community_set
             ],
             "most_advt_prefixes": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_advt_prefixes
+                mrt_e.to_json() for mrt_e in mrt_d.most_advt_prefixes
             ],
             "most_upd_prefixes": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_upd_prefixes
+                mrt_e.to_json() for mrt_e in mrt_d.most_upd_prefixes
             ],
             "most_withd_prefixes": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_withd_prefixes
+                mrt_e.to_json() for mrt_e in mrt_d.most_withd_prefixes
             ],
             "most_advt_origin_asn": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_advt_origin_asn
+                mrt_e.to_json() for mrt_e in mrt_d.most_advt_origin_asn
             ],
             "most_advt_peer_asn": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_advt_peer_asn
+                mrt_e.to_json() for mrt_e in mrt_d.most_advt_peer_asn
             ],
             "most_upd_peer_asn": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_upd_peer_asn
+                mrt_e.to_json() for mrt_e in mrt_d.most_upd_peer_asn
             ],
             "most_withd_peer_asn": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_withd_peer_asn
+                mrt_e.to_json() for mrt_e in mrt_d.most_withd_peer_asn
             ],
             "most_origin_asns": [
-                mrt_entry.to_json() for mrt_entry in mrt_data.most_origin_asns
+                mrt_e.to_json() for mrt_e in mrt_d.most_origin_asns
             ],
         }
-        return json.dumps(json_data, indent=2)
+        return json.dumps(json_data)
 
     @staticmethod
     def parse_rib_dump(filename):
@@ -65,6 +110,8 @@ class mrt_parser:
 
         #############tic = timeit.default_timer()
         for idx, mrt_e in enumerate(mrt_entries):
+            if "prefix" not in mrt_e.data:
+                continue ########################
 
             origin_asns = set()
             longest_as_path = [mrt_entry()]
