@@ -14,7 +14,6 @@ class mrt_data:
         self.most_withd_peer_asn = [mrt_entry()]
         self.most_origin_asns = [mrt_entry()]
 
-
     def merge_chunk(self, merge_data):
         """
         Merge another mrt_data object into this one.

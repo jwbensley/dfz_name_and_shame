@@ -27,6 +27,21 @@ class mrt_entry:
         self.updates = updates
         self.withdraws = withdraws
 
+    @staticmethod
+    def from_json(json_data):
+        mrt_e = mrt_entry()
+        mrt_e.advertisements = json_data["advertisements"]
+        mrt_e.as_path = json_data["as_path"]
+        mrt_e.community_set = json_data["community_set"]
+        mrt_e.next_hop = json_data["next_hop"]
+        mrt_e.prefix = json_data["prefix"]
+        mrt_e.origin_asns = set(json_data["origin_asns"])
+        mrt_e.peer_asn = json_data["peer_asn"]
+        mrt_e.timestamp = json_data["timestamp"]
+        mrt_e.updates = json_data["updates"]
+        mrt_e.withdraws = json_data["withdraws"]
+        return mrt_e
+
     def to_json(self):
         json_data = {
             "advertisements": self.advertisements,

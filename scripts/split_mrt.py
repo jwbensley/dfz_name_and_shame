@@ -1,4 +1,5 @@
 import sys
+sys.path.append('./')
 from mrt_splitter import mrt_splitter
 
 def main():
