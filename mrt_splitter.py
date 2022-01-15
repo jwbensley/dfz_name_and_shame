@@ -3,7 +3,6 @@ import errno
 import gzip
 import os
 
-
 class MrtFormatError(Exception):
     """
     Exception for invalid MRT formatted data.

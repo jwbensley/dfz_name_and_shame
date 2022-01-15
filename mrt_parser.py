@@ -1,117 +1,34 @@
 import errno
-import json
 import os
 import mrtparse
+
+import operator
 
 import sys
 sys.path.append('./')
 from mrt_entry import mrt_entry
-from mrt_data import mrt_data
+from mrt_stats import mrt_stats
 
 
 class mrt_parser:
     """
-    Class which provides various MRT file features such as parsing and testing.
+    Class which provides various MRT file format parsing and testing.
     """
 
     @staticmethod
-    def from_file(filename):
-        with open(filename, "r") as f:
-            json_data = json.load(f)
-        for key in json_data:
-            json_data[key] = [
-                json.loads(mrt_e) for mrt_e in json_data[key]
-            ]
-        return mrt_parser.from_json(json_data)
-
-    @staticmethod
-    def from_json(json_data):
-        mrt_d = mrt_data()
-        mrt_d.longest_as_path = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["longest_as_path"]
-        ]
-        mrt_d.longest_community_set = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["longest_community_set"]
-        ]
-        mrt_d.most_advt_prefixes = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_advt_prefixes"]
-        ]
-        mrt_d.most_upd_prefixes = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_upd_prefixes"]
-        ]
-        mrt_d.most_withd_prefixes = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_withd_prefixes"]
-        ]
-        mrt_d.most_advt_origin_asn = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_advt_origin_asn"]
-        ]
-        mrt_d.most_advt_peer_asn = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_advt_peer_asn"]
-        ]
-        mrt_d.most_upd_peer_asn = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_upd_peer_asn"]
-        ]
-        mrt_d.most_withd_peer_asn = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_withd_peer_asn"]
-        ]
-        mrt_d.most_origin_asns = [
-            mrt_entry.from_json(mrt_e) for mrt_e in json_data["most_origin_asns"]
-        ]
-        return mrt_d
-
-    @staticmethod
-    def to_file(filename, mrt_data):
-        with open(filename, "w") as f:
-            f.write(mrt_parser.to_json(mrt_data))
-
-    @staticmethod
-    def to_json(mrt_d):
-        json_data = {
-            "longest_as_path": [
-                mrt_e.to_json() for mrt_e in mrt_d.longest_as_path
-            ],
-            "longest_community_set": [
-                mrt_e.to_json() for mrt_e in mrt_d.longest_community_set
-            ],
-            "most_advt_prefixes": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_advt_prefixes
-            ],
-            "most_upd_prefixes": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_upd_prefixes
-            ],
-            "most_withd_prefixes": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_withd_prefixes
-            ],
-            "most_advt_origin_asn": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_advt_origin_asn
-            ],
-            "most_advt_peer_asn": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_advt_peer_asn
-            ],
-            "most_upd_peer_asn": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_upd_peer_asn
-            ],
-            "most_withd_peer_asn": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_withd_peer_asn
-            ],
-            "most_origin_asns": [
-                mrt_e.to_json() for mrt_e in mrt_d.most_origin_asns
-            ],
-        }
-        return json.dumps(json_data)
-
-    @staticmethod
     def parse_rib_dump(filename):
+        """
+        Take filename of RIB dump MRT as input and return an MRT stats obj.
+        """
 
         print(f"Started PID {os.getpid()} with {filename}")
 
-        rib_data = mrt_data()
+        rib_data = mrt_stats()
         mrt_entries = mrtparse.Reader(filename)
 
-        #############tic = timeit.default_timer()
         for idx, mrt_e in enumerate(mrt_entries):
             if "prefix" not in mrt_e.data:
-                continue ########################
+                continue #############################################
 
             origin_asns = set()
             longest_as_path = [mrt_entry()]
@@ -218,26 +135,24 @@ class mrt_parser:
             #else:
             #    print(f"Unknown type/subtype: {entry['type']}/{entry['subtype']}")
 
-        ####toc = timeit.default_timer()
-        ####print(f"PID {os.getpid()} duration: {toc - tic}")
-
         return rib_data
 
     @staticmethod
-    def parse_update_dump(filename):
+    def parse_upd_dump(filename):
+        """
+        Take filename of UPDATE dump MRT as input and return an MRT stats obj.
+        """
 
         print(f"Started PID {os.getpid()} with filename {filename}")
 
-        upd_stats = mrt_data()
+        upd_stats = mrt_stats()
         longest_as_path = [mrt_entry()]
         longest_community_set = [mrt_entry()]
         origin_asns_prefix = {}
         upd_prefix = {}
         advt_per_origin_asn = {}
         upd_peer_asn = {}
-
         mrt_entries = mrtparse.Reader(filename)
-        #####tic = timeit.default_timer()
 
         for idx, mrt_e in enumerate(mrt_entries):
 
@@ -437,16 +352,16 @@ class mrt_parser:
         most_updates = 0
         most_upd_prefixes = []
         for prefix in upd_prefix:
-            if (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"]) > heighest_updates:
-                heighest_updates = (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"])
+            if (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"]) > most_updates:
+                most_updates = (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"])
                 most_upd_prefixes = [prefix]
-            elif (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"]) == heighest_updates:
+            elif (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"]) == most_updates:
                 most_upd_prefixes.append(prefix)
 
         upd_stats.most_upd_prefixes = [
             mrt_entry(
                 prefix=prefix,
-                updates=heighest_updates,
+                updates=most_updates,
             ) for prefix in most_upd_prefixes
         ]
 
@@ -529,9 +444,6 @@ class mrt_parser:
             # Is there a noticable performance hit to wrap in a "try" ?
             #else:
             #    print(f"Unknown type/subtype: {mrt_e['type']}/{mrt_e['subtype']}")
-
-        toc = timeit.default_timer()
-        print(f"PID {os.getpid()} completed, duration: {toc - tic}, entires: {idx + 1}")
 
         return upd_stats
 
