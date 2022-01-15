@@ -27,22 +27,62 @@ class mrt_entry:
         self.updates = updates
         self.withdraws = withdraws
 
-    @staticmethod
-    def from_json(json_data):
-        mrt_e = mrt_entry()
-        mrt_e.advertisements = json_data["advertisements"]
-        mrt_e.as_path = json_data["as_path"]
-        mrt_e.community_set = json_data["community_set"]
-        mrt_e.next_hop = json_data["next_hop"]
-        mrt_e.prefix = json_data["prefix"]
-        mrt_e.origin_asns = set(json_data["origin_asns"])
-        mrt_e.peer_asn = json_data["peer_asn"]
-        mrt_e.timestamp = json_data["timestamp"]
-        mrt_e.updates = json_data["updates"]
-        mrt_e.withdraws = json_data["withdraws"]
-        return mrt_e
+    def equal_to(self, mrt_e):
+        """
+        Return True if this MRT stat entry obj is the same as mrt_e, else False.
+        """
+        if self.advertisements != mrt_e.advertisements:
+            return False
+
+        if self.as_path != mrt_e.as_path:
+            return False
+
+        if self.community_set != mrt_e.community_set:
+            return False
+
+        if self.next_hop != mrt_e.next_hop:
+            return False
+
+        if self.origin_asns != mrt_e.origin_asns:
+            return False
+
+        if self.peer_asn != mrt_e.peer_asn:
+            return False
+
+        if self.prefix != mrt_e.prefix:
+            return False
+
+        if self.timestamp != mrt_e.timestamp:
+            return False
+
+        if self.updates != mrt_e.updates:
+            return False
+
+        if self.withdraws != mrt_e.withdraws:
+            return False
+
+        return True
+
+    def from_json(self, json_str):
+        """
+        Parse a JSON str into this MRT stats entry obj.
+        """
+        json_data = json.loads(json_str)
+        self.advertisements = json_data["advertisements"]
+        self.as_path = json_data["as_path"]
+        self.community_set = json_data["community_set"]
+        self.next_hop = json_data["next_hop"]
+        self.prefix = json_data["prefix"]
+        self.origin_asns = set(json_data["origin_asns"])
+        self.peer_asn = json_data["peer_asn"]
+        self.timestamp = json_data["timestamp"]
+        self.updates = json_data["updates"]
+        self.withdraws = json_data["withdraws"]
 
     def to_json(self):
+        """
+        Return this MRT entry obj serialised to a JSON str.
+        """
         json_data = {
             "advertisements": self.advertisements,
             "as_path": self.as_path,
@@ -58,6 +98,9 @@ class mrt_entry:
         return json.dumps(json_data)
 
     def print(self):
+        """
+        Ugly print this MRT stats entry.
+        """
 
         print(f"advertisements: {self.advertisements}")
         print(f"as_path: {self.as_path}")

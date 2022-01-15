@@ -1,6 +1,7 @@
+import json
 from mrt_entry import mrt_entry
 
-class mrt_data:
+class mrt_stats:
 
     def __init__(self):
         self.longest_as_path = [mrt_entry()]
@@ -14,9 +15,198 @@ class mrt_data:
         self.most_withd_peer_asn = [mrt_entry()]
         self.most_origin_asns = [mrt_entry()]
 
-    def merge_chunk(self, merge_data):
+    def equal_to(self, mrt_s):
         """
-        Merge another mrt_data object into this one.
+        Return True if this MRT stats obj is the same as mrt_s, else False.
+        """
+
+        if len(self.longest_as_path) != len(mrt_s.longest_as_path):
+            return False
+
+        for self_e in self.longest_as_path:
+            for mrt_e in mrt_s.longest_as_path[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.longest_as_path.pop(mrt_e)
+        if mrt_e.longest_as_path:
+            return False
+
+
+        if len(self.longest_community_set) != len(mrt_s.longest_community_set):
+            return False
+
+        for self_e in self.longest_community_set:
+            for mrt_e in mrt_s.longest_community_set[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.longest_community_set.pop(mrt_e)
+        if mrt_e.longest_community_set:
+            return False
+
+
+        if len(self.most_advt_prefixes) != len(mrt_s.most_advt_prefixes):
+            return False
+
+        for self_e in self.most_advt_prefixes:
+            for mrt_e in mrt_s.most_advt_prefixes[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_advt_prefixes.pop(mrt_e)
+        if mrt_e.most_advt_prefixes:
+            return False
+
+
+        if len(self.most_upd_prefixes) != len(mrt_s.most_upd_prefixes):
+            return False
+
+        for self_e in self.most_upd_prefixes:
+            for mrt_e in mrt_s.most_upd_prefixes[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_upd_prefixes.pop(mrt_e)
+        if mrt_e.most_upd_prefixes:
+            return False
+
+
+        if len(self.most_withd_prefixes) != len(mrt_s.most_withd_prefixes):
+            return False
+
+        for self_e in self.most_withd_prefixes:
+            for mrt_e in mrt_s.most_withd_prefixes[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_withd_prefixes.pop(mrt_e)
+        if mrt_e.most_withd_prefixes:
+            return False
+
+
+        if len(self.most_advt_origin_asn) != len(mrt_s.most_advt_origin_asn):
+            return False
+
+        for self_e in self.most_advt_origin_asn:
+            for mrt_e in mrt_s.most_advt_origin_asn[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_advt_origin_asn.pop(mrt_e)
+        if mrt_e.most_advt_origin_asn:
+            return False
+
+
+        if len(self.most_advt_peer_asn) != len(mrt_s.most_advt_peer_asn):
+            return False
+
+        for self_e in self.most_advt_peer_asn:
+            for mrt_e in mrt_s.most_advt_peer_asn[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_advt_peer_asn.pop(mrt_e)
+        if mrt_e.most_advt_peer_asn:
+            return False
+
+
+        if len(self.most_upd_peer_asn) != len(mrt_s.most_upd_peer_asn):
+            return False
+
+        for self_e in self.most_upd_peer_asn:
+            for mrt_e in mrt_s.most_upd_peer_asn[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_upd_peer_asn.pop(mrt_e)
+        if mrt_e.most_upd_peer_asn:
+            return False
+
+
+        if len(self.most_withd_peer_asn) != len(mrt_s.most_withd_peer_asn):
+            return False
+
+        for self_e in self.most_withd_peer_asn:
+            for mrt_e in mrt_s.most_withd_peer_asn[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_withd_peer_asn.pop(mrt_e)
+        if mrt_e.most_withd_peer_asn:
+            return False
+
+
+        if len(self.most_origin_asns) != len(mrt_s.most_origin_asns):
+            return False
+
+        for self_e in self.most_origin_asns:
+            for mrt_e in mrt_s.most_origin_asns[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_origin_asns.pop(mrt_e)
+        if mrt_e.most_origin_asns:
+            return False
+
+        return True
+
+    def from_file(self, filename):
+        """
+        Load and parse MRT stats obj from a JSON text file.
+        """
+        with open(filename, "r") as f:
+            self.from_json(json.dumps(json.load(f)))
+
+    def from_json(self, json_str):
+        """
+        Prase the JSON string as MRT stats data.
+        """
+        json_dict = json.loads(json_str)
+
+        self.longest_as_path = []
+        for json_e in json_dict["longest_as_path"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.longest_as_path.append(mrt_e)
+
+        self.longest_community_set = []
+        for json_e in json_dict["longest_community_set"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.longest_community_set.append(mrt_e)
+
+        self.most_advt_prefixes = []
+        for json_e in json_dict["most_advt_prefixes"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_advt_prefixes.append(mrt_e)
+
+        self.most_upd_prefixes = []
+        for json_e in json_dict["most_upd_prefixes"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_upd_prefixes.append(mrt_e)
+
+        self.most_withd_prefixes = []
+        for json_e in json_dict["most_withd_prefixes"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_withd_prefixes.append(mrt_e)
+
+        self.most_advt_origin_asn = []
+        for json_e in json_dict["most_advt_origin_asn"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_advt_origin_asn.append(mrt_e)
+
+        self.most_advt_peer_asn = []
+        for json_e in json_dict["most_advt_peer_asn"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_advt_peer_asn.append(mrt_e)
+
+        self.most_upd_peer_asn = []
+        for json_e in json_dict["most_upd_peer_asn"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_upd_peer_asn.append(mrt_e)
+
+        self.most_withd_peer_asn = []
+        for json_e in json_dict["most_withd_peer_asn"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_withd_peer_asn.append(mrt_e)
+
+        self.most_origin_asns = []
+        for json_e in json_dict["most_origin_asns"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.most_origin_asns.append(mrt_e)
+
+    def merge_in(self, merge_data):
+        """
+        Merge another MRT stats object into this one.
         """
 
         if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
@@ -48,7 +238,7 @@ class mrt_data:
                                 advertisements=(res_e.advertisements + u_e.advertisements),
                             )
                         )
-                        merge_data.most_advt_prefixes.remove(u_e)
+                        merge_data.most_advt_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -76,7 +266,7 @@ class mrt_data:
                                 updates=(res_e.updates + u_e.updates),
                             )
                         )
-                        merge_data.most_upd_prefixes.remove(u_e)
+                        merge_data.most_upd_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -104,7 +294,7 @@ class mrt_data:
                                 withdraws=(res_e.withdraws + u_e.withdraws),
                             )
                         )
-                        merge_data.most_withd_prefixes.remove(u_e)
+                        merge_data.most_withd_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -132,7 +322,7 @@ class mrt_data:
                                 advertisements=(res_e.advertisements + u_e.advertisements),
                             )
                         )
-                        merge_data.most_advt_origin_asn.remove(u_e)
+                        merge_data.most_advt_origin_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -160,7 +350,7 @@ class mrt_data:
                                 advertisements=(res_e.advertisements + u_e.advertisements),
                             )
                         )
-                        merge_data.most_advt_peer_asn.remove(u_e)
+                        merge_data.most_advt_peer_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -188,7 +378,7 @@ class mrt_data:
                                 updates=(res_e.updates + u_e.updates),
                             )
                         )
-                        merge_data.most_upd_peer_asn.remove(u_e)
+                        merge_data.most_upd_peer_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -248,11 +438,11 @@ class mrt_data:
                     print(f"self prefix: {res_e.prefix}")
                     print(f"self origin_asns: {res_e.origin_asns}")
                     print(f"Merged to {tmp[-1].origin_asns}")
-                    merge_data.most_origin_asns.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
+                    #####merge_data.most_origin_asns.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
-                elif (res_e.prefix == u_e.prefix and
-                    res_e.origin_asns == u_e.origin_asns):
-                    merge_data.most_origin_asns.remove(u_e)
+                ###elif (res_e.prefix == u_e.prefix and
+                ###    res_e.origin_asns == u_e.origin_asns):
+                ###    merge_data.most_origin_asns.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -268,7 +458,9 @@ class mrt_data:
                     self.most_origin_asns = merge_data.most_origin_asns.copy()
 
     def print(self):
-
+        """
+        Ugly print the stats in this obj.
+        """
         for mrt_e in self.longest_as_path:
             print(f"longest_as_path->prefix: {mrt_e.prefix}")
             print(f"longest_as_path->advertisements: {mrt_e.advertisements}")
@@ -398,3 +590,48 @@ class mrt_data:
             print(f"most_origin_asns->updates: {mrt_e.updates}")
             print(f"most_origin_asns->withdraws: {mrt_e.withdraws}")
         print("")
+
+    def to_file(self, filename):
+        """
+        Serialise the MRT stats obj to JSON, save JSON as text file.
+        """
+        with open(filename, "w") as f:
+            f.write(self.to_json())
+
+    def to_json(self):
+        """
+        Serialise the MRT stats obj to JSON, and returns the JSON string.
+        """
+        json_data = {
+            "longest_as_path": [
+                mrt_e.to_json() for mrt_e in self.longest_as_path
+            ],
+            "longest_community_set": [
+                mrt_e.to_json() for mrt_e in self.longest_community_set
+            ],
+            "most_advt_prefixes": [
+                mrt_e.to_json() for mrt_e in self.most_advt_prefixes
+            ],
+            "most_upd_prefixes": [
+                mrt_e.to_json() for mrt_e in self.most_upd_prefixes
+            ],
+            "most_withd_prefixes": [
+                mrt_e.to_json() for mrt_e in self.most_withd_prefixes
+            ],
+            "most_advt_origin_asn": [
+                mrt_e.to_json() for mrt_e in self.most_advt_origin_asn
+            ],
+            "most_advt_peer_asn": [
+                mrt_e.to_json() for mrt_e in self.most_advt_peer_asn
+            ],
+            "most_upd_peer_asn": [
+                mrt_e.to_json() for mrt_e in self.most_upd_peer_asn
+            ],
+            "most_withd_peer_asn": [
+                mrt_e.to_json() for mrt_e in self.most_withd_peer_asn
+            ],
+            "most_origin_asns": [
+                mrt_e.to_json() for mrt_e in self.most_origin_asns
+            ],
+        }
+        return json.dumps(json_data)

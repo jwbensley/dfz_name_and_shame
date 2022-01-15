@@ -9,47 +9,60 @@ pypy3 -mpip install requests
 pypy3 -mpip install redis
 """
 
-###import os
 
 import multiprocessing
 from multiprocessing import Pool
-
+import os
 import sys
 sys.path.append('./')
-from mrt_data import mrt_data
+from mrt_stats import mrt_stats
 from mrt_getter import mrt_getter
 from mrt_parser import mrt_parser
 from mrt_splitter import mrt_splitter
+from redis_db import redis_db
 
 
 def main():
 
     # Download the RIB dump and MRT updates from 2 hours ago.
     #files = mrt_getter.get_latest_rv()
-    files = ['/tmp/ribv6.20211222.0600.bz2', '/tmp/updates.20220103.1200.bz2', '/tmp/updates.20220103.1215.bz2', '/tmp/updates.20220103.1230.bz2', '/tmp/updates.20220103.1245.bz2', '/tmp/updates.20220103.1300.bz2', '/tmp/updates.20220103.1315.bz2', '/tmp/updates.20220103.1330.bz2', '/tmp/updates.20220103.1345.bz2']
+    files = ['/tmp/ribv6.20211222.0600.bz2', '/tmp/updates.20211222.1200.bz2', '/tmp/updates.20211222.1215.bz2', '/tmp/updates.20211222.1230.bz2', '/tmp/updates.20211222.1245.bz2', '/tmp/updates.20211222.1300.bz2', '/tmp/updates.20211222.1315.bz2', '/tmp/updates.20211222.1330.bz2', '/tmp/updates.20211222.1345.bz2']
     num_procs =  multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(num_procs)
+    rdb = redis_db()
+    running_stats = mrt_stats()
 
     for file in files:
 
+        print(f"Processing file {file}...")
+
         splitter = mrt_splitter(file)
         no_entries, file_chunks = splitter.split(num_procs)
-        rib_chunks = Pool.map(mrt_parser.parse_rib_dump, file_chunks)
-
-        rib_data = mrt_data()
-        for chunk in rib_chunks:
-            rib_data.merge_chunk(chunk)
-
-        mrt_parser.to_file(file + ".json", rib_data)
-
-        break
 
 
-    #entries = mrtparse.Reader(filename)
-    #timestamp = next(entries).data["timestamp"][0]
+        rib = True if ("rib" in file) else False
+        if rib:
+            mrt_chunks = Pool.map(mrt_parser.parse_rib_dump, file_chunks)
+        else:
+            mrt_chunks = Pool.map(mrt_parser.parse_upd_dump, file_chunks)
 
-    #results = merge_chunks(mrt_stats_chunks)
-    # ^ Add to results the filename these came from
+        mrt_s = mrt_stats()
+        for chunk in mrt_chunks:
+            mrt_s.merge_in(chunk)
+
+        if rib:
+            rdb.set_stats(f"RV_LINX_RIB:{os.path.basename(file)}", mrt_s)
+        else:
+            rdb.set_stats(f"RV_LINX_UPD:{os.path.basename(file)}", mrt_s)
+
+        running_stats.merge_in(mrt_s)
+
+    rdb.set_stats(f"RV_LINX_RET:", running_stats)
+
+    global_stats = rdb.get_stats_global()
+    if not global_stats.equal_to(running_stats):
+        global_stats.merge_in(running_stats)
+        rdb.set_stats_global(global_stats)
 
 if __name__ == '__main__':
     main()
