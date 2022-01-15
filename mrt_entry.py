@@ -6,7 +6,7 @@ class mrt_entry:
         self,
         advertisements=0,
         as_path=[[]],
-        community_set=[[]],
+        comm_set=[[]],
         next_hop=None,
         prefix=None,
         origin_asns=set(),
@@ -18,7 +18,7 @@ class mrt_entry:
 
         self.advertisements = advertisements
         self.as_path = as_path
-        self.community_set = community_set
+        self.comm_set = comm_set
         self.next_hop = next_hop
         self.origin_asns = origin_asns
         self.peer_asn = peer_asn
@@ -37,7 +37,7 @@ class mrt_entry:
         if self.as_path != mrt_e.as_path:
             return False
 
-        if self.community_set != mrt_e.community_set:
+        if self.comm_set != mrt_e.comm_set:
             return False
 
         if self.next_hop != mrt_e.next_hop:
@@ -70,7 +70,7 @@ class mrt_entry:
         json_data = json.loads(json_str)
         self.advertisements = json_data["advertisements"]
         self.as_path = json_data["as_path"]
-        self.community_set = json_data["community_set"]
+        self.comm_set = json_data["comm_set"]
         self.next_hop = json_data["next_hop"]
         self.prefix = json_data["prefix"]
         self.origin_asns = set(json_data["origin_asns"])
@@ -86,7 +86,7 @@ class mrt_entry:
         json_data = {
             "advertisements": self.advertisements,
             "as_path": self.as_path,
-            "community_set": self.community_set,
+            "comm_set": self.comm_set,
             "next_hop": self.next_hop,
             "origin_asns": list(self.origin_asns),
             "peer_asn": self.peer_asn,
@@ -104,7 +104,7 @@ class mrt_entry:
 
         print(f"advertisements: {self.advertisements}")
         print(f"as_path: {self.as_path}")
-        print(f"community_set: {self.community_set}")
+        print(f"comm_set: {self.comm_set}")
         print(f"next_hop: {self.next_hop}")
         print(f"origin_asns: {self.origin_asns}")
         print(f"peer_asn: {self.peer_asn}")

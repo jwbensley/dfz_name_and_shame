@@ -1,3 +1,4 @@
+import datetime
 import redis
 import sys
 sys.path.append('./')
@@ -13,7 +14,7 @@ class redis_db():
         self.r = redis.Redis(
             host=redis_auth.host,
             port=redis_auth.port,
-            password=redis_auth.password,
+            #password=redis_auth.password,
         )
 
         """
@@ -22,12 +23,35 @@ class redis_db():
         if not self.r.exists("GLOBAL"):
             blank_stats = mrt_stats()
             self.set_stats("GLOBAL", blank_stats)
+        """
+            self.r.set(
+                "LAST",
+                datetime.datetime.now().strftime("%Y-%m-%d--%H-%m-%S")
+            )
+        if not self.r.exists("LAST"):
+            self.r.set(
+                "LAST",
+                datetime.datetime.now().strftime("%Y-%m-%d--%H-%m-%S")
+            )
+        """
+
+    def delete(self, key):
+        """
+        Delete key entry in Redis.
+        """
+        self.r.delete(key)
 
     def get(self, key):
         """
         Return the value stored in "key" from Redis
         """
         return self.r.get(key).decode("utf-8")
+
+    def get_keys(self, pattern):
+        """
+        Return list of Redis keys that match search pattern.
+        """
+        return [x.decode("utf-8") for x in self.r.keys(pattern)]
 
     def get_stats(self, key):
         """

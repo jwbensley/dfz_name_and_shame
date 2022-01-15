@@ -1,7 +1,7 @@
 import errno
 import os
 import mrtparse
-
+import datetime
 import operator
 
 import sys
@@ -20,9 +20,6 @@ class mrt_parser:
         """
         Take filename of RIB dump MRT as input and return an MRT stats obj.
         """
-
-        print(f"Started PID {os.getpid()} with {filename}")
-
         rib_data = mrt_stats()
         mrt_entries = mrtparse.Reader(filename)
 
@@ -32,14 +29,14 @@ class mrt_parser:
 
             origin_asns = set()
             longest_as_path = [mrt_entry()]
-            longest_community_set = [mrt_entry()]
+            longest_comm_set = [mrt_entry()]
             prefix = mrt_e.data["prefix"] + "/" + str(mrt_e.data["prefix_length"])
 
             for rib_entry in mrt_e.data["rib_entries"]:
 
                 as_path = []
                 origin_asn = None
-                community_set = []
+                comm_set = []
                 next_hop = None
 
                 for attr in rib_entry["path_attributes"]:
@@ -54,7 +51,7 @@ class mrt_parser:
                     # mrtparse.BGP_ATTR_T['COMMUNITY'] or
                     # mrtparse.BGP_ATTR_T['LARGE_COMMUNITY']
                     elif (attr_t == 8 or attr_t == 32):
-                        community_set = attr["value"]
+                        comm_set = attr["value"]
 
                     # mrtparse.BGP_ATTR_T['NEXT_HOP']
                     elif attr_t == 3:
@@ -69,7 +66,7 @@ class mrt_parser:
                         mrt_entry(
                             prefix=prefix,
                             as_path=as_path,
-                            community_set=community_set,
+                            comm_set=comm_set,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                         )
@@ -79,28 +76,28 @@ class mrt_parser:
                         mrt_entry(
                             prefix=prefix,
                             as_path=as_path,
-                            community_set=community_set,
+                            comm_set=comm_set,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                         )
                     ]
 
-                if len(community_set) == len(longest_community_set[0].community_set):
-                    longest_community_set.append(
+                if len(comm_set) == len(longest_comm_set[0].comm_set):
+                    longest_comm_set.append(
                         mrt_entry(
                             prefix=prefix,
                             as_path=as_path,
-                            community_set=community_set,
+                            comm_set=comm_set,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                         )
                     )
-                elif len(community_set) > len(longest_community_set[0].community_set):
-                    longest_community_set = [
+                elif len(comm_set) > len(longest_comm_set[0].comm_set):
+                    longest_comm_set = [
                         mrt_entry(
                             prefix=prefix,
                             as_path=as_path,
-                            community_set=community_set,
+                            comm_set=comm_set,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                         )
@@ -111,10 +108,10 @@ class mrt_parser:
             elif len(longest_as_path[0].as_path) > len(rib_data.longest_as_path[0].as_path):
                 rib_data.longest_as_path = longest_as_path.copy()
 
-            if len(longest_community_set[0].community_set) == len(rib_data.longest_community_set[0].community_set):
-                rib_data.longest_community_set.extend(longest_community_set)
-            elif len(longest_community_set[0].community_set) > len(rib_data.longest_community_set[0].community_set):
-                rib_data.longest_community_set = longest_community_set.copy()
+            if len(longest_comm_set[0].comm_set) == len(rib_data.longest_comm_set[0].comm_set):
+                rib_data.longest_comm_set.extend(longest_comm_set)
+            elif len(longest_comm_set[0].comm_set) > len(rib_data.longest_comm_set[0].comm_set):
+                rib_data.longest_comm_set = longest_comm_set.copy()
 
             if len(origin_asns) == len(rib_data.most_origin_asns[0].origin_asns):
                 rib_data.most_origin_asns.append(
@@ -142,12 +139,9 @@ class mrt_parser:
         """
         Take filename of UPDATE dump MRT as input and return an MRT stats obj.
         """
-
-        print(f"Started PID {os.getpid()} with filename {filename}")
-
         upd_stats = mrt_stats()
         longest_as_path = [mrt_entry()]
-        longest_community_set = [mrt_entry()]
+        longest_comm_set = [mrt_entry()]
         origin_asns_prefix = {}
         upd_prefix = {}
         advt_per_origin_asn = {}
@@ -166,7 +160,7 @@ class mrt_parser:
             timestamp = mrt_e.data["timestamp"]
 
             as_path = []
-            community_set = []
+            comm_set = []
 
             if len(mrt_e.data["bgp_message"]["withdrawn_routes"]) > 0:
                 upd_peer_asn[peer_asn]["withdraws"] += 1
@@ -204,7 +198,7 @@ class mrt_parser:
 
                     # COMMUNITY or LARGE_COMMUNITY
                     elif (attr_t == 8 or attr_t == 32):
-                        community_set = path_attr["value"]
+                        comm_set = path_attr["value"]
 
                     # MP_REACH_NLRI
                     elif attr_t == 14:
@@ -235,7 +229,7 @@ class mrt_parser:
                     longest_as_path.append(
                         mrt_entry(
                             as_path=as_path,
-                            community_set=community_set,
+                            comm_set=comm_set,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                             peer_asn=peer_asn,
@@ -248,7 +242,7 @@ class mrt_parser:
                 longest_as_path = [
                     mrt_entry(
                         as_path=as_path,
-                        community_set=community_set,
+                        comm_set=comm_set,
                         next_hop=next_hop,
                         origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
@@ -257,12 +251,12 @@ class mrt_parser:
                     ) for prefix in prefixes
                 ]
 
-            if len(community_set) == len(longest_community_set[0].community_set):
+            if len(comm_set) == len(longest_comm_set[0].comm_set):
                 for prefix in prefixes:
-                    longest_community_set.append(
+                    longest_comm_set.append(
                         mrt_entry(
                             as_path=as_path,
-                            community_set=community_set,
+                            comm_set=comm_set,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                             peer_asn=peer_asn,
@@ -271,11 +265,11 @@ class mrt_parser:
                         )
                     )
 
-            elif len(community_set) > len(longest_community_set[0].community_set):
-                longest_community_set = [
+            elif len(comm_set) > len(longest_comm_set[0].comm_set):
+                longest_comm_set = [
                     mrt_entry(
                         as_path=as_path,
-                        community_set=community_set,
+                        comm_set=comm_set,
                         next_hop=next_hop,
                         origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
@@ -301,17 +295,17 @@ class mrt_parser:
 
 
         """
-        if len(longest_community_set[0].community_set) == len(upd_stats.longest_community_set[0].community_set):
-            s_comms = [mrt_e.community_set for mrt_e in upd_stats.longest_community_set]
-            u_comms = [mrt_e.community_set for mrt_e in longest_community_set]
+        if len(longest_comm_set[0].comm_set) == len(upd_stats.longest_comm_set[0].comm_set):
+            s_comms = [mrt_e.comm_set for mrt_e in upd_stats.longest_comm_set]
+            u_comms = [mrt_e.comm_set for mrt_e in longest_comm_set]
             for u_comm in u_comms:
                 if u_comm not in s_comms:
-                    upd_stats.longest_community_set.extend(u_comm)
-        elif len(longest_community_set[0].community_set) > len(upd_stats.longest_community_set[0].community_set):
-            upd_stats.longest_community_set = longest_community_set.copy()
+                    upd_stats.longest_comm_set.extend(u_comm)
+        elif len(longest_comm_set[0].comm_set) > len(upd_stats.longest_comm_set[0].comm_set):
+            upd_stats.longest_comm_set = longest_comm_set.copy()
         """
-        if len(longest_community_set[0].community_set) > len(upd_stats.longest_community_set[0].community_set):
-            upd_stats.longest_community_set = longest_community_set.copy()
+        if len(longest_comm_set[0].comm_set) > len(upd_stats.longest_comm_set[0].comm_set):
+            upd_stats.longest_comm_set = longest_comm_set.copy()
 
 
         for prefix in upd_prefix:

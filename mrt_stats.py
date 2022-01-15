@@ -5,7 +5,7 @@ class mrt_stats:
 
     def __init__(self):
         self.longest_as_path = [mrt_entry()]
-        self.longest_community_set = [mrt_entry()]
+        self.longest_comm_set = [mrt_entry()]
         self.most_advt_prefixes = [mrt_entry()]
         self.most_upd_prefixes = [mrt_entry()]
         self.most_withd_prefixes = [mrt_entry()]
@@ -14,6 +14,7 @@ class mrt_stats:
         self.most_upd_peer_asn = [mrt_entry()]
         self.most_withd_peer_asn = [mrt_entry()]
         self.most_origin_asns = [mrt_entry()]
+        self.timestamp = None
 
     def equal_to(self, mrt_s):
         """
@@ -26,19 +27,19 @@ class mrt_stats:
         for self_e in self.longest_as_path:
             for mrt_e in mrt_s.longest_as_path[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.longest_as_path.pop(mrt_e)
-        if mrt_e.longest_as_path:
+                    mrt_s.longest_as_path.remove(mrt_e)
+        if mrt_s.longest_as_path:
             return False
 
 
-        if len(self.longest_community_set) != len(mrt_s.longest_community_set):
+        if len(self.longest_comm_set) != len(mrt_s.longest_comm_set):
             return False
 
-        for self_e in self.longest_community_set:
-            for mrt_e in mrt_s.longest_community_set[:]:
+        for self_e in self.longest_comm_set:
+            for mrt_e in mrt_s.longest_comm_set[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.longest_community_set.pop(mrt_e)
-        if mrt_e.longest_community_set:
+                    mrt_s.longest_comm_set.remove(mrt_e)
+        if mrt_s.longest_comm_set:
             return False
 
 
@@ -48,8 +49,8 @@ class mrt_stats:
         for self_e in self.most_advt_prefixes:
             for mrt_e in mrt_s.most_advt_prefixes[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_advt_prefixes.pop(mrt_e)
-        if mrt_e.most_advt_prefixes:
+                    mrt_s.most_advt_prefixes.remove(mrt_e)
+        if mrt_s.most_advt_prefixes:
             return False
 
 
@@ -59,8 +60,8 @@ class mrt_stats:
         for self_e in self.most_upd_prefixes:
             for mrt_e in mrt_s.most_upd_prefixes[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_upd_prefixes.pop(mrt_e)
-        if mrt_e.most_upd_prefixes:
+                    mrt_s.most_upd_prefixes.remove(mrt_e)
+        if mrt_s.most_upd_prefixes:
             return False
 
 
@@ -70,8 +71,8 @@ class mrt_stats:
         for self_e in self.most_withd_prefixes:
             for mrt_e in mrt_s.most_withd_prefixes[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_withd_prefixes.pop(mrt_e)
-        if mrt_e.most_withd_prefixes:
+                    mrt_s.most_withd_prefixes.remove(mrt_e)
+        if mrt_s.most_withd_prefixes:
             return False
 
 
@@ -81,8 +82,8 @@ class mrt_stats:
         for self_e in self.most_advt_origin_asn:
             for mrt_e in mrt_s.most_advt_origin_asn[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_advt_origin_asn.pop(mrt_e)
-        if mrt_e.most_advt_origin_asn:
+                    mrt_s.most_advt_origin_asn.remove(mrt_e)
+        if mrt_s.most_advt_origin_asn:
             return False
 
 
@@ -92,8 +93,8 @@ class mrt_stats:
         for self_e in self.most_advt_peer_asn:
             for mrt_e in mrt_s.most_advt_peer_asn[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_advt_peer_asn.pop(mrt_e)
-        if mrt_e.most_advt_peer_asn:
+                    mrt_s.most_advt_peer_asn.remove(mrt_e)
+        if mrt_s.most_advt_peer_asn:
             return False
 
 
@@ -103,8 +104,8 @@ class mrt_stats:
         for self_e in self.most_upd_peer_asn:
             for mrt_e in mrt_s.most_upd_peer_asn[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_upd_peer_asn.pop(mrt_e)
-        if mrt_e.most_upd_peer_asn:
+                    mrt_s.most_upd_peer_asn.remove(mrt_e)
+        if mrt_s.most_upd_peer_asn:
             return False
 
 
@@ -114,8 +115,8 @@ class mrt_stats:
         for self_e in self.most_withd_peer_asn:
             for mrt_e in mrt_s.most_withd_peer_asn[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_withd_peer_asn.pop(mrt_e)
-        if mrt_e.most_withd_peer_asn:
+                    mrt_s.most_withd_peer_asn.remove(mrt_e)
+        if mrt_s.most_withd_peer_asn:
             return False
 
 
@@ -125,8 +126,8 @@ class mrt_stats:
         for self_e in self.most_origin_asns:
             for mrt_e in mrt_s.most_origin_asns[:]:
                 if self_e.equal_to(mrt_e):
-                    mrt_s.most_origin_asns.pop(mrt_e)
-        if mrt_e.most_origin_asns:
+                    mrt_s.most_origin_asns.remove(mrt_e)
+        if mrt_s.most_origin_asns:
             return False
 
         return True
@@ -150,11 +151,11 @@ class mrt_stats:
             mrt_e.from_json(json_e)
             self.longest_as_path.append(mrt_e)
 
-        self.longest_community_set = []
-        for json_e in json_dict["longest_community_set"]:
+        self.longest_comm_set = []
+        for json_e in json_dict["longest_comm_set"]:
             mrt_e = mrt_entry()
             mrt_e.from_json(json_e)
-            self.longest_community_set.append(mrt_e)
+            self.longest_comm_set.append(mrt_e)
 
         self.most_advt_prefixes = []
         for json_e in json_dict["most_advt_prefixes"]:
@@ -204,6 +205,116 @@ class mrt_stats:
             mrt_e.from_json(json_e)
             self.most_origin_asns.append(mrt_e)
 
+        self.timestamp = json_dict["timestamp"]
+
+    def get_diff(self, mrt_s):
+        """
+        Return an mrt_stats obj with entries unique to mrt_s.
+        """
+        diff = mrt_stats()
+        diff.longest_as_path = []
+        diff.longest_comm_set = []
+        diff.most_advt_prefixes = []
+        diff.most_upd_prefixes = []
+        diff.most_withd_prefixes = []
+        diff.most_advt_origin_asn = []
+        diff.most_advt_peer_asn = []
+        diff.most_upd_peer_asn = []
+        diff.most_withd_peer_asn = []
+        diff.most_origin_asns = []
+
+        for mrt_e in mrt_s.longest_as_path:
+            found = False
+            for self_e in self.longest_as_path:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.longest_as_path.append(mrt_e)
+
+        for mrt_e in mrt_s.longest_comm_set:
+            found = False
+            for self_e in self.longest_comm_set:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.longest_comm_set.append(mrt_e)
+
+        for mrt_e in mrt_s.most_advt_prefixes:
+            found = False
+            for self_e in self.most_advt_prefixes:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_advt_prefixes.append(mrt_e)
+
+        for mrt_e in mrt_s.most_upd_prefixes:
+            found = False
+            for self_e in self.most_upd_prefixes:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_upd_prefixes.append(mrt_e)
+
+        for mrt_e in mrt_s.most_withd_prefixes:
+            found = False
+            for self_e in self.most_withd_prefixes:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_withd_prefixes.append(mrt_e)
+
+        for mrt_e in mrt_s.most_advt_origin_asn:
+            found = False
+            for self_e in self.most_advt_origin_asn:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_advt_origin_asn.append(mrt_e)
+
+        for mrt_e in mrt_s.most_advt_peer_asn:
+            found = False
+            for self_e in self.most_advt_peer_asn:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_advt_peer_asn.append(mrt_e)
+
+        for mrt_e in mrt_s.most_upd_peer_asn:
+            found = False
+            for self_e in self.most_upd_peer_asn:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_upd_peer_asn.append(mrt_e)
+
+        for mrt_e in mrt_s.most_withd_peer_asn:
+            found = False
+            for self_e in self.most_withd_peer_asn:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_withd_peer_asn.append(mrt_e)
+
+        for mrt_e in mrt_s.most_origin_asns:
+            found = False
+            for self_e in self.most_origin_asns:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_origin_asns.append(mrt_e)
+
+        return diff
+
     def merge_in(self, merge_data):
         """
         Merge another MRT stats object into this one.
@@ -217,13 +328,13 @@ class mrt_stats:
         elif len(merge_data.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
             self.longest_as_path = merge_data.longest_as_path.copy()
 
-        if len(merge_data.longest_community_set[0].community_set) == len(self.longest_community_set[0].community_set):
-            s_comms = [mrt_e.community_set for mrt_e in self.longest_community_set]
-            for mrt_e in merge_data.longest_community_set:
-                if mrt_e.community_set not in s_comms:
-                    self.longest_community_set.append(mrt_e)
-        elif len(merge_data.longest_community_set[0].community_set) > len(self.longest_community_set[0].community_set):
-            self.longest_community_set = merge_data.longest_community_set.copy()
+        if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
+            s_comms = [mrt_e.comm_set for mrt_e in self.longest_comm_set]
+            for mrt_e in merge_data.longest_comm_set:
+                if mrt_e.comm_set not in s_comms:
+                    self.longest_comm_set.append(mrt_e)
+        elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
+            self.longest_comm_set = merge_data.longest_comm_set.copy()
 
 
         tmp = []
@@ -433,11 +544,11 @@ class mrt_stats:
                             origin_asns=res_e.origin_asns.union(u_e.origin_asns),
                         )
                     )
-                    print(f"update prefix: {u_e.prefix}")
-                    print(f"update origin_asns: {u_e.origin_asns}")
-                    print(f"self prefix: {res_e.prefix}")
-                    print(f"self origin_asns: {res_e.origin_asns}")
-                    print(f"Merged to {tmp[-1].origin_asns}")
+                    ####print(f"update prefix: {u_e.prefix}")
+                    ####print(f"update origin_asns: {u_e.origin_asns}")
+                    ####print(f"self prefix: {res_e.prefix}")
+                    ####print(f"self origin_asns: {res_e.origin_asns}")
+                    ####print(f"Merged to {tmp[-1].origin_asns}")
                     #####merge_data.most_origin_asns.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
                 ###elif (res_e.prefix == u_e.prefix and
@@ -465,7 +576,7 @@ class mrt_stats:
             print(f"longest_as_path->prefix: {mrt_e.prefix}")
             print(f"longest_as_path->advertisements: {mrt_e.advertisements}")
             print(f"longest_as_path->as_path: {mrt_e.as_path}")
-            print(f"longest_as_path->community_set: {mrt_e.community_set}")
+            print(f"longest_as_path->comm_set: {mrt_e.comm_set}")
             print(f"longest_as_path->next_hop: {mrt_e.next_hop}")
             print(f"longest_as_path->origin_asns: {mrt_e.origin_asns}")
             print(f"longest_as_path->peer_asn: {mrt_e.peer_asn}")
@@ -474,24 +585,24 @@ class mrt_stats:
             print(f"longest_as_path->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.longest_community_set:
-            print(f"longest_community_set->prefix: {mrt_e.prefix}")
-            print(f"longest_community_set->advertisements: {mrt_e.advertisements}")
-            print(f"longest_community_set->as_path: {mrt_e.as_path}")
-            print(f"longest_community_set->community_set: {mrt_e.community_set}")
-            print(f"longest_community_set->next_hop: {mrt_e.next_hop}")
-            print(f"longest_community_set->origin_asns: {mrt_e.origin_asns}")
-            print(f"longest_community_set->peer_asn: {mrt_e.peer_asn}")
-            print(f"longest_community_set->timestamp: {mrt_e.timestamp}")
-            print(f"longest_community_set->updates: {mrt_e.updates}")
-            print(f"longest_community_set->withdraws: {mrt_e.withdraws}")
+        for mrt_e in results.longest_comm_set:
+            print(f"longest_comm_set->prefix: {mrt_e.prefix}")
+            print(f"longest_comm_set->advertisements: {mrt_e.advertisements}")
+            print(f"longest_comm_set->as_path: {mrt_e.as_path}")
+            print(f"longest_comm_set->comm_set: {mrt_e.comm_set}")
+            print(f"longest_comm_set->next_hop: {mrt_e.next_hop}")
+            print(f"longest_comm_set->origin_asns: {mrt_e.origin_asns}")
+            print(f"longest_comm_set->peer_asn: {mrt_e.peer_asn}")
+            print(f"longest_comm_set->timestamp: {mrt_e.timestamp}")
+            print(f"longest_comm_set->updates: {mrt_e.updates}")
+            print(f"longest_comm_set->withdraws: {mrt_e.withdraws}")
         print("")
 
         for mrt_e in results.most_advt_prefixes:
             print(f"most_advt_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_advt_prefixes->advertisements: {mrt_e.advertisements}")
             print(f"most_advt_prefixes->as_path: {mrt_e.as_path}")
-            print(f"most_advt_prefixes->community_set: {mrt_e.community_set}")
+            print(f"most_advt_prefixes->comm_set: {mrt_e.comm_set}")
             print(f"most_advt_prefixes->next_hop: {mrt_e.next_hop}")
             print(f"most_advt_prefixes->origin_asns: {mrt_e.origin_asns}")
             print(f"most_advt_prefixes->peer_asn: {mrt_e.peer_asn}")
@@ -504,7 +615,7 @@ class mrt_stats:
             print(f"most_upd_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_upd_prefixes->advertisements: {mrt_e.advertisements}")
             print(f"most_upd_prefixes->as_path: {mrt_e.as_path}")
-            print(f"most_upd_prefixes->community_set: {mrt_e.community_set}")
+            print(f"most_upd_prefixes->comm_set: {mrt_e.comm_set}")
             print(f"most_upd_prefixes->next_hop: {mrt_e.next_hop}")
             print(f"most_upd_prefixes->origin_asns: {mrt_e.origin_asns}")
             print(f"most_upd_prefixes->peer_asn: {mrt_e.peer_asn}")
@@ -517,7 +628,7 @@ class mrt_stats:
             print(f"most_withd_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_withd_prefixes->advertisements: {mrt_e.advertisements}")
             print(f"most_withd_prefixes->as_path: {mrt_e.as_path}")
-            print(f"most_withd_prefixes->community_set: {mrt_e.community_set}")
+            print(f"most_withd_prefixes->comm_set: {mrt_e.comm_set}")
             print(f"most_withd_prefixes->next_hop: {mrt_e.next_hop}")
             print(f"most_withd_prefixes->origin_asns: {mrt_e.origin_asns}")
             print(f"most_withd_prefixes->peer_asn: {mrt_e.peer_asn}")
@@ -530,7 +641,7 @@ class mrt_stats:
             print(f"most_advt_origin_asn->prefix: {mrt_e.prefix}")
             print(f"most_advt_origin_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_advt_origin_asn->as_path: {mrt_e.as_path}")
-            print(f"most_advt_origin_asn->community_set: {mrt_e.community_set}")
+            print(f"most_advt_origin_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_advt_origin_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_advt_origin_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_advt_origin_asn->peer_asn: {mrt_e.peer_asn}")
@@ -543,7 +654,7 @@ class mrt_stats:
             print(f"most_advt_peer_asn->prefix: {mrt_e.prefix}")
             print(f"most_advt_peer_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_advt_peer_asn->as_path: {mrt_e.as_path}")
-            print(f"most_advt_peer_asn->community_set: {mrt_e.community_set}")
+            print(f"most_advt_peer_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_advt_peer_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_advt_peer_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_advt_peer_asn->peer_asn: {mrt_e.peer_asn}")
@@ -556,7 +667,7 @@ class mrt_stats:
             print(f"most_upd_peer_asn->prefix: {mrt_e.prefix}")
             print(f"most_upd_peer_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_upd_peer_asn->as_path: {mrt_e.as_path}")
-            print(f"most_upd_peer_asn->community_set: {mrt_e.community_set}")
+            print(f"most_upd_peer_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_upd_peer_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_upd_peer_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_upd_peer_asn->peer_asn: {mrt_e.peer_asn}")
@@ -569,7 +680,7 @@ class mrt_stats:
             print(f"most_withd_peer_asn->prefix: {mrt_e.prefix}")
             print(f"most_withd_peer_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_withd_peer_asn->as_path: {mrt_e.as_path}")
-            print(f"most_withd_peer_asn->community_set: {mrt_e.community_set}")
+            print(f"most_withd_peer_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_withd_peer_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_withd_peer_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_withd_peer_asn->peer_asn: {mrt_e.peer_asn}")
@@ -582,7 +693,7 @@ class mrt_stats:
             print(f"most_origin_asns->prefix: {mrt_e.prefix}")
             print(f"most_origin_asns->advertisements: {mrt_e.advertisements}")
             print(f"most_origin_asns->as_path: {mrt_e.as_path}")
-            print(f"most_origin_asns->community_set: {mrt_e.community_set}")
+            print(f"most_origin_asns->comm_set: {mrt_e.comm_set}")
             print(f"most_origin_asns->next_hop: {mrt_e.next_hop}")
             print(f"most_origin_asns->origin_asns: {mrt_e.origin_asns}")
             print(f"most_origin_asns->peer_asn: {mrt_e.peer_asn}")
@@ -606,8 +717,8 @@ class mrt_stats:
             "longest_as_path": [
                 mrt_e.to_json() for mrt_e in self.longest_as_path
             ],
-            "longest_community_set": [
-                mrt_e.to_json() for mrt_e in self.longest_community_set
+            "longest_comm_set": [
+                mrt_e.to_json() for mrt_e in self.longest_comm_set
             ],
             "most_advt_prefixes": [
                 mrt_e.to_json() for mrt_e in self.most_advt_prefixes
@@ -633,5 +744,6 @@ class mrt_stats:
             "most_origin_asns": [
                 mrt_e.to_json() for mrt_e in self.most_origin_asns
             ],
+            "timestamp": self.timestamp,
         }
         return json.dumps(json_data)
