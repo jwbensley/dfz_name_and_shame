@@ -9,7 +9,8 @@ pypy3 -mpip install requests
 pypy3 -mpip install redis
 """
 
-
+import datetime
+import mrtparse
 import multiprocessing
 from multiprocessing import Pool
 import os
@@ -31,6 +32,7 @@ def main():
     Pool = multiprocessing.Pool(num_procs)
     rdb = redis_db()
     running_stats = mrt_stats()
+    now = datetime.datetime.now().strftime("%Y-%m-%d--%H-%m-%S")
 
     for file in files:
 
@@ -49,6 +51,9 @@ def main():
         mrt_s = mrt_stats()
         for chunk in mrt_chunks:
             mrt_s.merge_in(chunk)
+        _ = mrtparse.Reader(file)
+        ts = next(_).data["timestamp"][0]
+        mrt_s.timestamp = datetime.datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d--%H-%M-%S')
 
         if rib:
             rdb.set_stats(f"RV_LINX_RIB:{os.path.basename(file)}", mrt_s)
@@ -56,13 +61,20 @@ def main():
             rdb.set_stats(f"RV_LINX_UPD:{os.path.basename(file)}", mrt_s)
 
         running_stats.merge_in(mrt_s)
+        running_stats.timestamp = now
 
-    rdb.set_stats(f"RV_LINX_RET:", running_stats)
+    rdb.set_stats(f"RV_LINX_RET:{now}", running_stats)
 
     global_stats = rdb.get_stats_global()
     if not global_stats.equal_to(running_stats):
+        diff = global_stats.get_diff(running_stats)
+        rdb.set_stats(f"DIFF:{now}", diff)
+
         global_stats.merge_in(running_stats)
         rdb.set_stats_global(global_stats)
+    else:
+        print("No update to global stats")
+
 
 if __name__ == '__main__':
     main()
