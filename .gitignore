@@ -1,4 +1,6 @@
 redis_auth.py
+twitter_auth.py
+
 **/*.bz2
 **/*.gz
 __pycache__/

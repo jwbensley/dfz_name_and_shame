@@ -27,7 +27,7 @@ def main():
 
     # Download the RIB dump and MRT updates from 2 hours ago.
     #files = mrt_getter.get_latest_rv()
-    files = ['/tmp/ribv6.20211222.0600.bz2', '/tmp/updates.20211222.1200.bz2', '/tmp/updates.20211222.1215.bz2', '/tmp/updates.20211222.1230.bz2', '/tmp/updates.20211222.1245.bz2', '/tmp/updates.20211222.1300.bz2', '/tmp/updates.20211222.1315.bz2', '/tmp/updates.20211222.1330.bz2', '/tmp/updates.20211222.1345.bz2']
+    files = ['/tmp/rib.20211222.1200.bz2', '/tmp/updates.20211222.1200.bz2', '/tmp/updates.20211222.1215.bz2', '/tmp/updates.20211222.1230.bz2', '/tmp/updates.20211222.1245.bz2', '/tmp/updates.20211222.1300.bz2', '/tmp/updates.20211222.1315.bz2', '/tmp/updates.20211222.1330.bz2', '/tmp/updates.20211222.1345.bz2']
     num_procs =  multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(num_procs)
     rdb = redis_db()
@@ -68,6 +68,7 @@ def main():
     global_stats = rdb.get_stats_global()
     if not global_stats.equal_to(running_stats):
         diff = global_stats.get_diff(running_stats)
+        diff.timestamp = now
         rdb.set_stats(f"DIFF:{now}", diff)
 
         global_stats.merge_in(running_stats)
