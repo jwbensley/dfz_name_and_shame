@@ -321,18 +321,22 @@ class mrt_stats:
         """
 
         if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
+            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
             s_paths = [mrt_e.as_path for mrt_e in self.longest_as_path]
             for mrt_e in merge_data.longest_as_path:
                 if mrt_e.as_path not in s_paths:
-                    self.longest_as_path.append(mrt_e)
+                    if mrt_e.prefix not in s_prefixes:
+                        self.longest_as_path.append(mrt_e)
         elif len(merge_data.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
             self.longest_as_path = merge_data.longest_as_path.copy()
 
         if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
+            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
             s_comms = [mrt_e.comm_set for mrt_e in self.longest_comm_set]
             for mrt_e in merge_data.longest_comm_set:
                 if mrt_e.comm_set not in s_comms:
-                    self.longest_comm_set.append(mrt_e)
+                    if mrt_e.prefix not in s_prefixes:
+                        self.longest_comm_set.append(mrt_e)
         elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
             self.longest_comm_set = merge_data.longest_comm_set.copy()
 
@@ -585,7 +589,7 @@ class mrt_stats:
             print(f"longest_as_path->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.longest_comm_set:
+        for mrt_e in self.longest_comm_set:
             print(f"longest_comm_set->prefix: {mrt_e.prefix}")
             print(f"longest_comm_set->advertisements: {mrt_e.advertisements}")
             print(f"longest_comm_set->as_path: {mrt_e.as_path}")
@@ -598,7 +602,7 @@ class mrt_stats:
             print(f"longest_comm_set->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_advt_prefixes:
+        for mrt_e in self.most_advt_prefixes:
             print(f"most_advt_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_advt_prefixes->advertisements: {mrt_e.advertisements}")
             print(f"most_advt_prefixes->as_path: {mrt_e.as_path}")
@@ -611,7 +615,7 @@ class mrt_stats:
             print(f"most_advt_prefixes->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_upd_prefixes:
+        for mrt_e in self.most_upd_prefixes:
             print(f"most_upd_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_upd_prefixes->advertisements: {mrt_e.advertisements}")
             print(f"most_upd_prefixes->as_path: {mrt_e.as_path}")
@@ -624,7 +628,7 @@ class mrt_stats:
             print(f"most_upd_prefixes->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_withd_prefixes:
+        for mrt_e in self.most_withd_prefixes:
             print(f"most_withd_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_withd_prefixes->advertisements: {mrt_e.advertisements}")
             print(f"most_withd_prefixes->as_path: {mrt_e.as_path}")
@@ -637,7 +641,7 @@ class mrt_stats:
             print(f"most_withd_prefixes->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_advt_origin_asn:
+        for mrt_e in self.most_advt_origin_asn:
             print(f"most_advt_origin_asn->prefix: {mrt_e.prefix}")
             print(f"most_advt_origin_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_advt_origin_asn->as_path: {mrt_e.as_path}")
@@ -650,7 +654,7 @@ class mrt_stats:
             print(f"most_advt_origin_asn->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_advt_peer_asn:
+        for mrt_e in self.most_advt_peer_asn:
             print(f"most_advt_peer_asn->prefix: {mrt_e.prefix}")
             print(f"most_advt_peer_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_advt_peer_asn->as_path: {mrt_e.as_path}")
@@ -663,7 +667,7 @@ class mrt_stats:
             print(f"most_advt_peer_asn->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_upd_peer_asn:
+        for mrt_e in self.most_upd_peer_asn:
             print(f"most_upd_peer_asn->prefix: {mrt_e.prefix}")
             print(f"most_upd_peer_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_upd_peer_asn->as_path: {mrt_e.as_path}")
@@ -676,7 +680,7 @@ class mrt_stats:
             print(f"most_upd_peer_asn->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_withd_peer_asn:
+        for mrt_e in self.most_withd_peer_asn:
             print(f"most_withd_peer_asn->prefix: {mrt_e.prefix}")
             print(f"most_withd_peer_asn->advertisements: {mrt_e.advertisements}")
             print(f"most_withd_peer_asn->as_path: {mrt_e.as_path}")
@@ -689,7 +693,7 @@ class mrt_stats:
             print(f"most_withd_peer_asn->withdraws: {mrt_e.withdraws}")
         print("")
 
-        for mrt_e in results.most_origin_asns:
+        for mrt_e in self.most_origin_asns:
             print(f"most_origin_asns->prefix: {mrt_e.prefix}")
             print(f"most_origin_asns->advertisements: {mrt_e.advertisements}")
             print(f"most_origin_asns->as_path: {mrt_e.as_path}")
