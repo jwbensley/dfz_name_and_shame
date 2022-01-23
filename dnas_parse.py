@@ -27,6 +27,7 @@ def main():
 
     # Download the RIB dump and MRT updates from 2 hours ago.
     #files = mrt_getter.get_latest_rv()
+    #'/tmp/rib.20211222.1200.bz2',
     files = ['/tmp/rib.20211222.1200.bz2', '/tmp/updates.20211222.1200.bz2', '/tmp/updates.20211222.1215.bz2', '/tmp/updates.20211222.1230.bz2', '/tmp/updates.20211222.1245.bz2', '/tmp/updates.20211222.1300.bz2', '/tmp/updates.20211222.1315.bz2', '/tmp/updates.20211222.1330.bz2', '/tmp/updates.20211222.1345.bz2']
     num_procs =  multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(num_procs)
@@ -73,6 +74,7 @@ def main():
 
         global_stats.merge_in(running_stats)
         rdb.set_stats_global(global_stats)
+        print(f"Global stats updated")
     else:
         print("No update to global stats")
 

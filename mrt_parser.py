@@ -62,15 +62,17 @@ class mrt_parser:
                         next_hop = attr["value"]["next_hop"]
 
                 if len(as_path) == len(longest_as_path[0].as_path):
-                    longest_as_path.append(
-                        mrt_entry(
-                            prefix=prefix,
-                            as_path=as_path,
-                            comm_set=comm_set,
-                            next_hop=next_hop,
-                            origin_asns=set([origin_asn]),
+                    known_prefixes = [mrt_e.prefix for mrt_e in longest_as_path]
+                    if prefix not in known_prefixes:
+                        longest_as_path.append(
+                            mrt_entry(
+                                prefix=prefix,
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                            )
                         )
-                    )
                 elif len(as_path) > len(longest_as_path[0].as_path):
                     longest_as_path = [
                         mrt_entry(
@@ -83,15 +85,17 @@ class mrt_parser:
                     ]
 
                 if len(comm_set) == len(longest_comm_set[0].comm_set):
-                    longest_comm_set.append(
-                        mrt_entry(
-                            prefix=prefix,
-                            as_path=as_path,
-                            comm_set=comm_set,
-                            next_hop=next_hop,
-                            origin_asns=set([origin_asn]),
+                    known_prefixes = [mrt_e.prefix for mrt_e in longest_comm_set]
+                    if prefix not in known_prefixes:
+                        longest_comm_set.append(
+                            mrt_entry(
+                                prefix=prefix,
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                            )
                         )
-                    )
                 elif len(comm_set) > len(longest_comm_set[0].comm_set):
                     longest_comm_set = [
                         mrt_entry(
@@ -225,18 +229,20 @@ class mrt_parser:
 
 
             if len(as_path) == len(longest_as_path[0].as_path):
+                known_prefixes = [mrt_e.prefix for mrt_e in longest_as_path]
                 for prefix in prefixes:
-                    longest_as_path.append(
-                        mrt_entry(
-                            as_path=as_path,
-                            comm_set=comm_set,
-                            next_hop=next_hop,
-                            origin_asns=set([origin_asn]),
-                            peer_asn=peer_asn,
-                            prefix=prefix,
-                            timestamp=timestamp,
+                    if prefix not in known_prefixes:
+                        longest_as_path.append(
+                            mrt_entry(
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                                peer_asn=peer_asn,
+                                prefix=prefix,
+                                timestamp=timestamp,
+                            )
                         )
-                    )
 
             elif len(as_path) > len(longest_as_path[0].as_path):
                 longest_as_path = [
@@ -252,18 +258,20 @@ class mrt_parser:
                 ]
 
             if len(comm_set) == len(longest_comm_set[0].comm_set):
+                known_prefixes = [mrt_e.prefix for mrt_e in longest_comm_set]
                 for prefix in prefixes:
-                    longest_comm_set.append(
-                        mrt_entry(
-                            as_path=as_path,
-                            comm_set=comm_set,
-                            next_hop=next_hop,
-                            origin_asns=set([origin_asn]),
-                            peer_asn=peer_asn,
-                            prefix=prefix,
-                            timestamp=timestamp,
+                    if prefix not in known_prefixes:
+                        longest_comm_set.append(
+                            mrt_entry(
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                                peer_asn=peer_asn,
+                                prefix=prefix,
+                                timestamp=timestamp,
+                            )
                         )
-                    )
 
             elif len(comm_set) > len(longest_comm_set[0].comm_set):
                 longest_comm_set = [
@@ -429,7 +437,7 @@ class mrt_parser:
         advt_per_origin_asn = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
         upd_stats.most_advt_origin_asn = [
             mrt_entry(
-                origin_asns=set(x[0]),
+                origin_asns=set([x[0]]),
                 advertisements=x[1],
             ) for x in advt_per_origin_asn if x[1] == advt_per_origin_asn[-1][1]
         ]
