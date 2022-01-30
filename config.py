@@ -30,6 +30,9 @@ class config:
     RV_LINX_UPDS = "/UPDATES/updates."
     RV_LINX_FXT = ".bz2"
     RV_LINX_DIR = DL_DIR + "/LINX/"
+    RV_LINX_GLOB = RV_LINX_DIR + "updates.*bz2"
+    RV_LINX_RIB_KEY = "RV_LINX_RIB"
+    RV_LINX_UPD_KEY = "RV_LINX_UPD"
 
     """
     Route-Views Sydnex
@@ -43,6 +46,9 @@ class config:
     RV_SYDNEY_UPDS = "/UPDATES/updates."
     RV_SYDNEY_FXT = ".bz2"
     RV_SYDNEY_DIR = DL_DIR + "/SYDNEY/"
+    RV_SYDNEY_GLOB = RV_SYDNEY_DIR + "updates.*bz2"
+    RV_SYDNEY_RIB_KEY = "RV_SYDNEY_RIB"
+    RV_SYDNEY_UPD_KEY = "RV_SYDNEY_UPD"
 
     """
     RRC23 Singapore
@@ -56,6 +62,9 @@ class config:
     RCC_23_UPDS = "/updates."
     RCC_23_FXT = ".gz"
     RCC_23_DIR = DL_DIR + "/RCC23/"
+    RCC_23_GLOB = RCC_23_DIR + "updates.*gz"
+    RCC_23_RIB_KEY = "RCC_23_RIB"
+    RCC_23_UPD_KEY = "RCC_23_UPD"
 
     """
     RRC24 LACNIC
@@ -69,3 +78,6 @@ class config:
     RCC_24_UPDS = "/updates."
     RCC_24_FXT = ".gz"
     RCC_24_DIR = DL_DIR + "/RCC24/"
+    RCC_24_GLOB = RCC_24_DIR + "updates.*gz"
+    RCC_24_RIB_KEY = "RCC_24_RIB"
+    RCC_24_UPD_KEY = "RCC_24_UPD"

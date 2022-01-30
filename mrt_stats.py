@@ -14,11 +14,13 @@ class mrt_stats:
         self.most_upd_peer_asn = [mrt_entry()]
         self.most_withd_peer_asn = [mrt_entry()]
         self.most_origin_asns = [mrt_entry()]
+        self.file_list = []
         self.timestamp = None
 
     def equal_to(self, mrt_s):
         """
         Return True if this MRT stats obj is the same as mrt_s, else False.
+        Don't compare meta data like file list or timestamp, on the stats.
         """
 
         if len(self.longest_as_path) != len(mrt_s.longest_as_path):
@@ -137,11 +139,11 @@ class mrt_stats:
         Load and parse MRT stats obj from a JSON text file.
         """
         with open(filename, "r") as f:
-            self.from_json(json.dumps(json.load(f)))
+            self.from_json(f.read())
 
     def from_json(self, json_str):
         """
-        Prase the JSON string as MRT stats data.
+        Parse the JSON string as MRT stats data.
         """
         json_dict = json.loads(json_str)
 
@@ -205,11 +207,14 @@ class mrt_stats:
             mrt_e.from_json(json_e)
             self.most_origin_asns.append(mrt_e)
 
+        self.file_list = json_dict["file_list"]
+
         self.timestamp = json_dict["timestamp"]
 
     def get_diff(self, mrt_s):
         """
         Return an mrt_stats obj with entries unique to mrt_s.
+        Don't diff meta data like timestamp or file list.
         """
         diff = mrt_stats()
         diff.longest_as_path = []
@@ -318,7 +323,10 @@ class mrt_stats:
     def merge_in(self, merge_data):
         """
         Merge another MRT stats object into this one.
+        Only stats data is merged, not meta data like timestamp or file list.
         """
+
+        changed = False
 
         if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
             s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
@@ -327,8 +335,10 @@ class mrt_stats:
                 if mrt_e.as_path not in s_paths:
                     if mrt_e.prefix not in s_prefixes:
                         self.longest_as_path.append(mrt_e)
+                        changed = True
         elif len(merge_data.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
             self.longest_as_path = merge_data.longest_as_path.copy()
+            changed = True
 
         if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
             s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
@@ -337,8 +347,10 @@ class mrt_stats:
                 if mrt_e.comm_set not in s_comms:
                     if mrt_e.prefix not in s_prefixes:
                         self.longest_comm_set.append(mrt_e)
+                        changed = True
         elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
             self.longest_comm_set = merge_data.longest_comm_set.copy()
+            changed = True
 
 
         tmp = []
@@ -359,14 +371,18 @@ class mrt_stats:
             for tmp_e in tmp:
                 if tmp_e.advertisements == self.most_advt_prefixes[0].advertisements:
                     self.most_advt_prefixes.append(tmp_e)
+                    changed = True
                 elif tmp_e.advertisements > self.most_advt_prefixes[0].advertisements:
                     self.most_advt_prefixes = [tmp_e]
+                    changed = True
         else:
             if (merge_data.most_advt_prefixes[0].advertisements == self.most_advt_prefixes[0].advertisements and
                 self.most_advt_prefixes[0].advertisements > 0):
                 self.most_advt_prefixes.extend(merge_data.most_advt_prefixes)
+                changed = True
             elif merge_data.most_advt_prefixes[0].advertisements > self.most_advt_prefixes[0].advertisements:
                 self.most_advt_prefixes = merge_data.most_advt_prefixes.copy()
+                changed = True
 
 
         tmp = []
@@ -387,14 +403,18 @@ class mrt_stats:
             for tmp_e in tmp:
                 if tmp_e.updates == self.most_upd_prefixes[0].updates:
                     self.most_upd_prefixes.append(tmp_e)
+                    changed = True
                 elif tmp_e.updates > self.most_upd_prefixes[0].updates:
                     self.most_upd_prefixes = [tmp_e]
+                    changed = True
         else:
             if (merge_data.most_upd_prefixes[0].updates == self.most_upd_prefixes[0].updates and
                 self.most_upd_prefixes[0].updates > 0):
                 self.most_upd_prefixes.extend(merge_data.most_upd_prefixes)
+                changed = True
             elif merge_data.most_upd_prefixes[0].updates > self.most_upd_prefixes[0].updates:
                 self.most_upd_prefixes = merge_data.most_upd_prefixes.copy()
+                changed = True
 
 
         tmp = []
@@ -415,14 +435,18 @@ class mrt_stats:
             for tmp_e in tmp:
                 if tmp_e.withdraws == self.most_withd_prefixes[0].withdraws:
                     self.most_withd_prefixes.append(tmp_e)
+                    changed = True
                 elif tmp_e.withdraws > self.most_withd_prefixes[0].withdraws:
                     self.most_withd_prefixes = [tmp_e]
+                    changed = True
         else:
             if (merge_data.most_withd_prefixes[0].withdraws == self.most_withd_prefixes[0].withdraws and
                 self.most_withd_prefixes[0].withdraws > 0):
                 self.most_withd_prefixes.extend(merge_data.most_withd_prefixes)
+                changed = True
             elif merge_data.most_withd_prefixes[0].withdraws > self.most_withd_prefixes[0].withdraws:
                 self.most_withd_prefixes = merge_data.most_withd_prefixes.copy()
+                changed = True
 
 
         tmp = []
@@ -443,14 +467,18 @@ class mrt_stats:
             for tmp_e in tmp:
                 if tmp_e.advertisements == self.most_advt_origin_asn[0].advertisements:
                     self.most_advt_origin_asn.append(tmp_e)
+                    changed = True
                 elif tmp_e.advertisements > self.most_advt_origin_asn[0].advertisements:
                     self.most_advt_origin_asn = [tmp_e]
+                    changed = True
         else:
             if (merge_data.most_advt_origin_asn[0].advertisements == self.most_advt_origin_asn[0].advertisements and
                 self.most_advt_origin_asn[0].advertisements > 0):
                 self.most_advt_origin_asn.extend(merge_data.most_advt_origin_asn)
+                changed = True
             elif merge_data.most_advt_origin_asn[0].advertisements > self.most_advt_origin_asn[0].advertisements:
                 self.most_advt_origin_asn = merge_data.most_advt_origin_asn.copy()
+                changed = True
 
 
         tmp = []
@@ -471,14 +499,18 @@ class mrt_stats:
             for tmp_e in tmp:
                 if tmp_e.advertisements == self.most_advt_peer_asn[0].advertisements:
                     self.most_advt_peer_asn.append(tmp_e)
+                    changed = True
                 elif tmp_e.advertisements > self.most_advt_peer_asn[0].advertisements:
                     self.most_advt_peer_asn = [tmp_e]
+                    changed = True
         else:
             if (merge_data.most_advt_peer_asn[0].advertisements == self.most_advt_peer_asn[0].advertisements and
                 self.most_advt_peer_asn[0].advertisements > 0):
                 self.most_advt_peer_asn.extend(merge_data.most_advt_peer_asn)
+                changed = True
             elif merge_data.most_advt_peer_asn[0].advertisements > self.most_advt_peer_asn[0].advertisements:
                 self.most_advt_peer_asn = merge_data.most_advt_peer_asn.copy()
+                changed = True
 
 
         tmp = []
@@ -499,14 +531,18 @@ class mrt_stats:
             for tmp_e in tmp:
                 if tmp_e.updates == self.most_upd_peer_asn[0].updates:
                     self.most_upd_peer_asn.append(tmp_e)
+                    changed = True
                 elif tmp_e.updates > self.most_upd_peer_asn[0].updates:
                     self.most_upd_peer_asn = [tmp_e]
+                    changed = True
         else:
             if (merge_data.most_upd_peer_asn[0].updates == self.most_upd_peer_asn[0].updates and
                 self.most_upd_peer_asn[0].updates > 0):
                 self.most_upd_peer_asn.extend(merge_data.most_upd_peer_asn)
+                changed = True
             elif merge_data.most_upd_peer_asn[0].updates > self.most_upd_peer_asn[0].updates:
                 self.most_upd_peer_asn = merge_data.most_upd_peer_asn.copy()
+                changed = True
 
         tmp = []
         # In case a rib dump is being merged, this stat wont be present
@@ -527,14 +563,18 @@ class mrt_stats:
             for tmp_e in tmp:
                 if tmp_e.withdraws == self.most_withd_peer_asn[0].withdraws:
                     self.most_withd_peer_asn.append(tmp_e)
+                    changed = True
                 elif tmp_e.withdraws > self.most_withd_peer_asn[0].withdraws:
                     self.most_withd_peer_asn = [tmp_e]
+                    changed = True
         else:
             if (merge_data.most_withd_peer_asn[0].withdraws == self.most_withd_peer_asn[0].withdraws and
                 self.most_withd_peer_asn[0].withdraws > 0):
                 self.most_withd_peer_asn.extend(merge_data.most_withd_peer_asn)
+                changed = True
             elif merge_data.most_withd_peer_asn[0].withdraws > self.most_withd_peer_asn[0].withdraws:
                 self.most_withd_peer_asn = merge_data.most_withd_peer_asn.copy()
+                changed = True
 
 
         tmp = []
@@ -563,14 +603,20 @@ class mrt_stats:
             for tmp_e in tmp:
                 if len(tmp_e.origin_asns) == len(self.most_origin_asns[0].origin_asns):
                     self.most_origin_asns.append(tmp_e)
+                    changed = True
                 elif len(tmp_e.origin_asns) > len(self.most_origin_asns[0].origin_asns):
                     self.most_origin_asns = [tmp_e]
+                    changed = True
         else:
             if merge_data.most_origin_asns:
                 if len(merge_data.most_origin_asns[0].origin_asns) == len(self.most_origin_asns[0].origin_asns):
                     self.most_origin_asns.extend(merge_data.most_origin_asns)
+                    changed = True
                 elif len(merge_data.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
                     self.most_origin_asns = merge_data.most_origin_asns.copy()
+                    changed = True
+
+        return changed
 
     def print(self):
         """
@@ -706,6 +752,10 @@ class mrt_stats:
             print(f"most_origin_asns->withdraws: {mrt_e.withdraws}")
         print("")
 
+        print(f"file_list: {self.file_list}")
+
+        print(f"timestamp: {self.timestamp}")
+
     def to_file(self, filename):
         """
         Serialise the MRT stats obj to JSON, save JSON as text file.
@@ -748,6 +798,7 @@ class mrt_stats:
             "most_origin_asns": [
                 mrt_e.to_json() for mrt_e in self.most_origin_asns
             ],
+            "file_list": self.file_list,
             "timestamp": self.timestamp,
         }
         return json.dumps(json_data)

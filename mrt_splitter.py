@@ -123,7 +123,7 @@ class mrt_splitter():
         for idx, entry in enumerate(self):
             chunk_files[idx % no_of_chunks].write(entry.data)
 
-        for i in range(0, no_of_chunks):
+        for i in range(0, len(chunk_files)):
             chunk_files[i].close()
 
         total = idx + 1

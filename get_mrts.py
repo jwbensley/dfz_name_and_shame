@@ -14,22 +14,17 @@ def main():
     g = mrt_getter()
     rdb = redis_db()
 
-    #this_month = datetime.datetime.now().strftime("%Y-%m")
-    #in_files = rdb.get_keys(f"IN_FILES")
-
-    file_list = []
-
-
-    """
     g.get_range_rv_upd(
         base_url=cfg.RV_LINX_BASE,
         dl_dir=cfg.RV_LINX_DIR,
-        end_date="20220101.0200",
         file_ext=cfg.RV_LINX_FXT,
         replace=False,
-        start_date="20220101.0000",
         upd_pfx=cfg.RV_LINX_UPDS,
+        start_date="20220102.0000",
+        end_date="20220102.2359",
     )
+
+    exit(0)
 
     g.get_range_rv_upd(
         base_url=cfg.RV_SYDNEY_BASE,
@@ -40,8 +35,7 @@ def main():
         start_date="20220101.0000",
         upd_pfx=cfg.RV_SYDNEY_UPDS,
     )
-    """
-
+    
     print(
         g.get_rv_latest_rib(
             base_url=cfg.RV_LINX_BASE,
