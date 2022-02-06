@@ -1,9 +1,9 @@
 import datetime
+import json
 import redis
-import sys
-sys.path.append('./')
-from redis_auth import redis_auth
-from mrt_stats import mrt_stats
+
+from dnas.redis_auth import redis_auth
+from dnas.mrt_stats import mrt_stats
 
 class redis_db():
     """
@@ -14,32 +14,35 @@ class redis_db():
         self.r = redis.Redis(
             host=redis_auth.host,
             port=redis_auth.port,
-            #password=redis_auth.password,
+            password=redis_auth.password,
         )
 
+    def close(self):
         """
-        Perform some initial setup if this is a new/blank RedisDB.
+        Close the redis connection.
         """
-        if not self.r.exists("GLOBAL"):
-            blank_stats = mrt_stats()
-            self.set_stats("GLOBAL", blank_stats)
-        """
-            self.r.set(
-                "LAST",
-                datetime.datetime.now().strftime("%Y-%m-%d--%H-%m-%S")
-            )
-        if not self.r.exists("LAST"):
-            self.r.set(
-                "LAST",
-                datetime.datetime.now().strftime("%Y-%m-%d--%H-%m-%S")
-            )
-        """
+        self.r.close()
 
     def delete(self, key):
         """
         Delete key entry in Redis.
         """
         self.r.delete(key)
+
+    def from_file(self, filename):
+        """
+        Restore redis DB from JSON file.
+        """
+        with open(filename, "r") as f:
+            self.from_json(f.read())
+
+    def from_json(self, json_str):
+        """
+        Restore redis DB from a JSON string
+        """
+        json_dict = json.loads(json_str)
+        for k in json_dict.keys():
+            self.r.set(k, json_dict[k])
 
     def get(self, key):
         """
@@ -58,14 +61,12 @@ class redis_db():
         Return MRT stats from Redis as JSON, and return as an MRT stats object.
         """
         mrt_s = mrt_stats()
-        mrt_s.from_json(self.r.get(key).decode("utf-8"))
-        return mrt_s
-
-    def get_stats_global(self):
-        """
-        Return the last global stats data.
-        """
-        return self.get_stats("GLOBAL")
+        json_str = self.r.get(key)
+        if not json_str:
+            return None
+        else:
+            mrt_s.from_json(json_str.decode("utf-8"))
+            return mrt_s
 
     def get_stats_json(self, key):
         """
@@ -75,15 +76,9 @@ class redis_db():
 
     def set_stats(self, key, mrt_s):
         """
-        Take an MRT stats object, serialisesit to JSON, store in Redis.
+        Take an MRT stats object, serialise it to JSON, store in Redis.
         """
         self.r.set(key, mrt_s.to_json())
-
-    def set_stats_global(self, mrt_s):
-        """
-        Set the global stats data.
-        """
-        self.set_stats("GLOBAL", mrt_s)
 
     def set_stats_json(self, key, json_str):
         """
@@ -91,3 +86,19 @@ class redis_db():
         """
         self.r.set(key, json_str)
 
+    def to_file(self, filename):
+        """
+        Dump the entire redis DB to a JSON file.
+        """
+        with open(filename, "w") as f:
+            f.write(self.to_json())
+
+    def to_json(self):
+        """
+        Dump the entire redis DB to JSON
+        """
+        d = {}
+        for k in self.r.keys("*"):
+            k = k.decode("utf-8")
+            d[k] = self.r.get(k).decode("utf-8")
+        return json.dumps(d)

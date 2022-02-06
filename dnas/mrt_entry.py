@@ -7,6 +7,7 @@ class mrt_entry:
         advertisements=0,
         as_path=[[]],
         comm_set=[[]],
+        filename=None,
         next_hop=None,
         prefix=None,
         origin_asns=set(),
@@ -19,6 +20,7 @@ class mrt_entry:
         self.advertisements = advertisements
         self.as_path = as_path
         self.comm_set = comm_set
+        self.filename = filename
         self.next_hop = next_hop
         self.origin_asns = origin_asns
         self.peer_asn = peer_asn
@@ -30,6 +32,7 @@ class mrt_entry:
     def equal_to(self, mrt_e):
         """
         Return True if this MRT stat entry obj is the same as mrt_e, else False.
+        Doesn't compare meta data like filename.
         """
         if self.advertisements != mrt_e.advertisements:
             return False
@@ -71,6 +74,7 @@ class mrt_entry:
         self.advertisements = json_data["advertisements"]
         self.as_path = json_data["as_path"]
         self.comm_set = json_data["comm_set"]
+        self.filename = json_data["filename"]
         self.next_hop = json_data["next_hop"]
         self.prefix = json_data["prefix"]
         self.origin_asns = set(json_data["origin_asns"])
@@ -87,6 +91,7 @@ class mrt_entry:
             "advertisements": self.advertisements,
             "as_path": self.as_path,
             "comm_set": self.comm_set,
+            "filename": self.filename,
             "next_hop": self.next_hop,
             "origin_asns": list(self.origin_asns),
             "peer_asn": self.peer_asn,
@@ -105,6 +110,7 @@ class mrt_entry:
         print(f"advertisements: {self.advertisements}")
         print(f"as_path: {self.as_path}")
         print(f"comm_set: {self.comm_set}")
+        print(f"filename: {self.filename}")
         print(f"next_hop: {self.next_hop}")
         print(f"origin_asns: {self.origin_asns}")
         print(f"peer_asn: {self.peer_asn}")
