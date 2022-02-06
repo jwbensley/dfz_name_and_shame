@@ -4,10 +4,8 @@ import mrtparse
 import datetime
 import operator
 
-import sys
-sys.path.append('./')
-from mrt_entry import mrt_entry
-from mrt_stats import mrt_stats
+from dnas.mrt_entry import mrt_entry
+from dnas.mrt_stats import mrt_stats
 
 
 class mrt_parser:
@@ -21,6 +19,7 @@ class mrt_parser:
         Take filename of RIB dump MRT as input and return an MRT stats obj.
         """
         rib_data = mrt_stats()
+        orig_filename = '_'.join(filename.split("_")[:-1])
         mrt_entries = mrtparse.Reader(filename)
 
         for idx, mrt_e in enumerate(mrt_entries):
@@ -69,6 +68,7 @@ class mrt_parser:
                                 prefix=prefix,
                                 as_path=as_path,
                                 comm_set=comm_set,
+                                filename=orig_filename,
                                 next_hop=next_hop,
                                 origin_asns=set([origin_asn]),
                             )
@@ -79,6 +79,7 @@ class mrt_parser:
                             prefix=prefix,
                             as_path=as_path,
                             comm_set=comm_set,
+                            filename=orig_filename,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                         )
@@ -92,6 +93,7 @@ class mrt_parser:
                                 prefix=prefix,
                                 as_path=as_path,
                                 comm_set=comm_set,
+                                filename=orig_filename,
                                 next_hop=next_hop,
                                 origin_asns=set([origin_asn]),
                             )
@@ -102,6 +104,7 @@ class mrt_parser:
                             prefix=prefix,
                             as_path=as_path,
                             comm_set=comm_set,
+                            filename=orig_filename,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
                         )
@@ -120,15 +123,17 @@ class mrt_parser:
             if len(origin_asns) == len(rib_data.most_origin_asns[0].origin_asns):
                 rib_data.most_origin_asns.append(
                     mrt_entry(
-                        prefix = prefix,
+                        filename=orig_filename,
                         origin_asns = origin_asns,
+                        prefix = prefix,
                     )
                 )
             elif len(origin_asns) > len(rib_data.most_origin_asns[0].origin_asns):
                 rib_data.most_origin_asns = [
                     mrt_entry(
-                        prefix = prefix,
                         origin_asns = origin_asns,
+                        filename=orig_filename,
+                        prefix = prefix,
                     )
                 ]
 
@@ -144,6 +149,7 @@ class mrt_parser:
         Take filename of UPDATE dump MRT as input and return an MRT stats obj.
         """
         upd_stats = mrt_stats()
+        orig_filename = '_'.join(filename.split("_")[:-1])
         longest_as_path = [mrt_entry()]
         longest_comm_set = [mrt_entry()]
         origin_asns_prefix = {}
@@ -236,6 +242,7 @@ class mrt_parser:
                             mrt_entry(
                                 as_path=as_path,
                                 comm_set=comm_set,
+                                filename=orig_filename,
                                 next_hop=next_hop,
                                 origin_asns=set([origin_asn]),
                                 peer_asn=peer_asn,
@@ -249,6 +256,7 @@ class mrt_parser:
                     mrt_entry(
                         as_path=as_path,
                         comm_set=comm_set,
+                        filename=orig_filename,
                         next_hop=next_hop,
                         origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
@@ -265,6 +273,7 @@ class mrt_parser:
                             mrt_entry(
                                 as_path=as_path,
                                 comm_set=comm_set,
+                                filename=orig_filename,
                                 next_hop=next_hop,
                                 origin_asns=set([origin_asn]),
                                 peer_asn=peer_asn,
@@ -278,6 +287,7 @@ class mrt_parser:
                     mrt_entry(
                         as_path=as_path,
                         comm_set=comm_set,
+                        filename=orig_filename,
                         next_hop=next_hop,
                         origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
@@ -321,15 +331,17 @@ class mrt_parser:
                 upd_stats.most_advt_prefixes[0].advertisements > 0):
                 upd_stats.most_advt_prefixes.append(
                     mrt_entry(
-                        prefix=prefix,
                         advertisements=upd_prefix[prefix]["advertisements"],
+                        filename=orig_filename,
+                        prefix=prefix,
                     )
                 )
             elif upd_prefix[prefix]["advertisements"] > upd_stats.most_advt_prefixes[0].advertisements:
                 upd_stats.most_advt_prefixes = [
                     mrt_entry(
-                        prefix=prefix,
                         advertisements=upd_prefix[prefix]["advertisements"],
+                        filename=orig_filename,
+                        prefix=prefix,
                     )
                 ]
 
@@ -339,6 +351,7 @@ class mrt_parser:
                 upd_stats.most_withd_prefixes[0].withdraws > 0):
                 upd_stats.most_withd_prefixes.append(
                     mrt_entry(
+                        filename=orig_filename,
                         prefix=prefix,
                         withdraws=upd_prefix[prefix]["withdraws"],
                     )
@@ -346,6 +359,7 @@ class mrt_parser:
             elif upd_prefix[prefix]["withdraws"] > upd_stats.most_withd_prefixes[0].withdraws:
                 upd_stats.most_withd_prefixes = [
                     mrt_entry(
+                        filename=orig_filename,
                         prefix=prefix,
                         withdraws=upd_prefix[prefix]["withdraws"],
                     )
@@ -362,6 +376,7 @@ class mrt_parser:
 
         upd_stats.most_upd_prefixes = [
             mrt_entry(
+                filename=orig_filename,
                 prefix=prefix,
                 updates=most_updates,
             ) for prefix in most_upd_prefixes
@@ -373,15 +388,17 @@ class mrt_parser:
                 upd_stats.most_advt_peer_asn[0].advertisements > 0):
                 upd_stats.most_advt_peer_asn.append(
                     mrt_entry(
-                        peer_asn=asn,
                         advertisements=upd_peer_asn[asn]["advertisements"],
+                        filename=orig_filename,
+                        peer_asn=asn,
                     )
                 )
             elif upd_peer_asn[asn]["advertisements"] > upd_stats.most_advt_peer_asn[0].advertisements:
                 upd_stats.most_advt_peer_asn = [
                     mrt_entry(
-                        peer_asn=asn,
                         advertisements=upd_peer_asn[asn]["advertisements"],
+                        filename=orig_filename,
+                        peer_asn=asn,
                     )
                 ]
 
@@ -390,6 +407,7 @@ class mrt_parser:
                 upd_stats.most_withd_peer_asn[0].withdraws > 0):
                 upd_stats.most_withd_peer_asn.append(
                     mrt_entry(
+                        filename=orig_filename,
                         peer_asn=asn,
                         withdraws=upd_peer_asn[asn]["withdraws"],
                     )
@@ -397,6 +415,7 @@ class mrt_parser:
             elif upd_peer_asn[asn]["withdraws"] > upd_stats.most_withd_peer_asn[0].withdraws:
                 upd_stats.most_withd_peer_asn = [
                     mrt_entry(
+                        filename=orig_filename,
                         peer_asn=asn,
                         withdraws=upd_peer_asn[asn]["withdraws"],
                     )
@@ -413,6 +432,7 @@ class mrt_parser:
 
         upd_stats.most_upd_peer_asn = [
             mrt_entry(
+                filename=orig_filename,
                 peer_asn=asn,
                 updates=most_updates,
             ) for asn in most_upd_asns
@@ -429,6 +449,7 @@ class mrt_parser:
 
         upd_stats.most_origin_asns = [
             mrt_entry(
+                filename=orig_filename,
                 prefix=prefix,
                 origin_asns=origin_asns_prefix[prefix],
             ) for prefix in most_origin_prefixes
@@ -437,6 +458,7 @@ class mrt_parser:
         advt_per_origin_asn = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
         upd_stats.most_advt_origin_asn = [
             mrt_entry(
+                filename=orig_filename,
                 origin_asns=set([x[0]]),
                 advertisements=x[1],
             ) for x in advt_per_origin_asn if x[1] == advt_per_origin_asn[-1][1]

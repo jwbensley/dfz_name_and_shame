@@ -1,5 +1,5 @@
 import json
-from mrt_entry import mrt_entry
+from dnas.mrt_entry import mrt_entry
 
 class mrt_stats:
 

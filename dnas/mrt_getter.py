@@ -3,10 +3,7 @@ import logging
 import os
 import requests
 
-import sys
-sys.path.append('./')
-from config import config as cfg
-
+from dnas.config import config as cfg
 
 class mrt_getter:
     """
@@ -16,10 +13,10 @@ class mrt_getter:
     @staticmethod
     def get_ripe_latest_rib(
         base_url=None,
-        dl_dir=None,
+        mrt_dir=None,
         file_ext=None,
+        rib_url=None,
         replace=False,
-        rib_pfx=None,
     ):
         """
         Download the lastest RIB dump MRT from a RIPE MRT archive.
@@ -28,16 +25,16 @@ class mrt_getter:
 
         if (not base_url or
             not file_ext or
-            not rib_pfx or
-            not dl_dir):
+            not rib_url or
+            not mrt_dir):
 
             raise ValueError(
-                f"Missing required options {base_url}, {rib_pfx}, {dl_dir}"
+                f"Missing required options {base_url}, {rib_url}, {mrt_dir}"
             )
 
-        os.makedirs(dl_dir, exist_ok=True)
-        if not os.path.isdir(dl_dir):
-            raise ValueError(f"Output directory does not exist {dl_dir}")
+        os.makedirs(mrt_dir, exist_ok=True)
+        if not os.path.isdir(mrt_dir):
+            raise ValueError(f"Output directory does not exist {mrt_dir}")
 
         """
         When downloading rib dumps from RIPE, we calculate the time of the
@@ -60,24 +57,23 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
 
-        rib_url = base_url + ym + rib_pfx + ymd_hm + file_ext
-        filename = dl_dir + os.path.basename(rib_url)
+        url = base_url + ym + rib_url + ymd_hm + file_ext
+        filename = mrt_dir + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
                 logging.info(f"Skipping existing file {filename}")
         else:
-            mrt_getter.download_mrt(filename=filename, url=rib_url)
+            mrt_getter.download_mrt(filename=filename, url=url)
 
-        return (filename, rib_url)
-
+        return (filename, url)
 
     @staticmethod
     def get_ripe_latest_upd(
         base_url=None,
-        dl_dir=None,
+        mrt_dir=None,
         file_ext=None,
         replace=False,
-        upd_pfx=None,
+        upd_url=None,
     ):
 
         """
@@ -87,16 +83,16 @@ class mrt_getter:
 
         if (not base_url or
             not file_ext or
-            not upd_pfx or
-            not dl_dir):
+            not upd_url or
+            not mrt_dir):
 
             raise ValueError(
-                f"Missing required options {base_url}, {upd_pfx}, {dl_dir}"
+                f"Missing required options {base_url}, {upd_url}, {mrt_dir}"
             )
 
-        os.makedirs(dl_dir, exist_ok=True)
-        if not os.path.isdir(dl_dir):
-            raise ValueError(f"Output directory does not exist {dl_dir}")
+        os.makedirs(mrt_dir, exist_ok=True)
+        if not os.path.isdir(mrt_dir):
+            raise ValueError(f"Output directory does not exist {mrt_dir}")
 
         """
         When downloading updates from RIPE, we calculate the name of
@@ -129,23 +125,88 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta,"%Y%m%d.%H%M")
 
-        udp_url = base_url + ym + upd_pfx + ymd_hm + file_ext
-        filename = dl_dir + os.path.basename(udp_url)
+        url = base_url + ym + upd_url + ymd_hm + file_ext
+        filename = mrt_dir + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
                 logging.info(f"Skipping existing file {filename}")
         else:
-            mrt_getter.download_mrt(filename=filename, url=udp_url)
+            mrt_getter.download_mrt(filename=filename, url=url)
 
-        return (filename, udp_url)
+        return (filename, url)
+
+    @staticmethod
+    def get_ripe_range_rib(
+        base_url=None,
+        mrt_dir=None,
+        end_date=None,
+        file_ext=None,
+        replace=False,
+        rib_url=None,
+        start_date=None,
+    ):
+        print(f"get_ripe_range_rib() is not implemented yet!")
+
+    @staticmethod
+    def get_ripe_range_upd(
+        base_url=None,
+        mrt_dir=None,
+        end_date=None,
+        file_ext=None,
+        replace=False,
+        start_date=None,
+        upd_url=None,
+    ):
+
+        """
+        Download a range of MRT update dump files from RIPE archive.
+        All update MRT files from and inclusive of start_date to and inclusive
+        of end_date.
+
+        start_date: In the MRT date format yyyymmdd.hhmm "20220129.0915"
+        end_date: In the MRT date format yyyymmdd.hhmm "20220129.0915"
+        """
+
+        if (not start_date or not end_date):
+            raise ValueError(
+                f"Missing required options {start_date}, {end_date}"
+            )
+
+        start = datetime.datetime.strptime(start_date, "%Y%m%d.%H%M")
+        end = datetime.datetime.strptime(end_date, "%Y%m%d.%H%M")
+
+        if end < start:
+            raise ValueError(
+                f"End date is before start date {start_date}, {end_date}"
+            )
+
+        diff = end - start
+        count = diff.seconds // 300 # RIPE updates are every % minutes
+        downloaded = []
+
+        for i in range(0, count + 1):
+            m_delta = datetime.timedelta(minutes=(i*5))
+            ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
+            ymd_hm = datetime.datetime.strftime(start+m_delta,"%Y%m%d.%H%M")
+
+            url = base_url + ym + upd_url + ymd_hm + file_ext
+            filename = mrt_dir + os.path.basename(url)
+
+            if (not replace and os.path.exists(filename)):
+                    logging.info(f"Skipping existing file {filename}")
+            else:
+                mrt_getter.download_mrt(filename=filename, url=url)
+                downloaded.append((filename, url))
+
+        return downloaded
 
     @staticmethod
     def get_rv_latest_rib(
         base_url=None,
-        dl_dir=None,
+        mrt_dir=None,
         file_ext=None,
+        rib_url=None,
         replace=False,
-        rib_pfx=None,
     ):
         """
         Download the lastest RIB dump MRT from a route-views MRT archive.
@@ -154,16 +215,16 @@ class mrt_getter:
 
         if (not base_url or
             not file_ext or
-            not rib_pfx or
-            not dl_dir):
+            not rib_url or
+            not mrt_dir):
 
             raise ValueError(
-                f"Missing required options {base_url}, {rib_pfx}, {dl_dir}"
+                f"Missing required options {base_url}, {rib_url}, {mrt_dir}"
             )
 
-        os.makedirs(dl_dir, exist_ok=True)
-        if not os.path.isdir(dl_dir):
-            raise ValueError(f"Output directory does not exist {dl_dir}")
+        os.makedirs(mrt_dir, exist_ok=True)
+        if not os.path.isdir(mrt_dir):
+            raise ValueError(f"Output directory does not exist {mrt_dir}")
 
         """
         When downloading rib dumps from route-views, we calculate the
@@ -186,23 +247,23 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
 
-        rib_url = base_url + ym + rib_pfx + ymd_hm + file_ext
-        filename = dl_dir + os.path.basename(rib_url)
+        url = base_url + ym + rib_url + ymd_hm + file_ext
+        filename = mrt_dir + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
                 logging.info(f"Skipping existing file {filename}")
         else:
-            mrt_getter.download_mrt(filename=filename, url=rib_url)
+            mrt_getter.download_mrt(filename=filename, url=url)
 
-        return (filename, rib_url)
+        return (filename, url)
 
     @staticmethod
     def get_rv_latest_upd(
         base_url=None,
-        dl_dir=None,
+        mrt_dir=None,
         file_ext=None,
         replace=False,
-        upd_pfx=None,
+        upd_url=None,
     ):
 
         """
@@ -212,16 +273,16 @@ class mrt_getter:
 
         if (not base_url or
             not file_ext or
-            not upd_pfx or
-            not dl_dir):
+            not upd_url or
+            not mrt_dir):
 
             raise ValueError(
-                f"Missing required options {base_url}, {upd_pfx}, {dl_dir}"
+                f"Missing required options {base_url}, {upd_url}, {mrt_dir}"
             )
 
-        os.makedirs(dl_dir, exist_ok=True)
-        if not os.path.isdir(dl_dir):
-            raise ValueError(f"Output directory does not exist {dl_dir}")
+        os.makedirs(mrt_dir, exist_ok=True)
+        if not os.path.isdir(mrt_dir):
+            raise ValueError(f"Output directory does not exist {mrt_dir}")
 
         """
         When downloading updates from route-views, we calculate the name of
@@ -254,25 +315,37 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta,"%Y%m%d.%H%M")
 
-        udp_url = base_url + ym + upd_pfx + ymd_hm + file_ext
-        filename = dl_dir + os.path.basename(udp_url)
+        url = base_url + ym + upd_url + ymd_hm + file_ext
+        filename = mrt_dir + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
                 logging.info(f"Skipping existing file {filename}")
         else:
-            mrt_getter.download_mrt(filename=filename, url=udp_url)
+            mrt_getter.download_mrt(filename=filename, url=url)
 
-        return (filename, udp_url)
+        return (filename, url)
 
     @staticmethod
-    def get_range_rv_upd(
+    def get_rv_range_rib(
         base_url=None,
-        dl_dir=None,
+        mrt_dir=None,
+        end_date=None,
+        file_ext=None,
+        replace=False,
+        rib_url=None,
+        start_date=None,
+    ):
+        print(f"get_rv_range_upd() is not implemented yet!")
+
+    @staticmethod
+    def get_rv_range_upd(
+        base_url=None,
+        mrt_dir=None,
         end_date=None,
         file_ext=None,
         replace=False,
         start_date=None,
-        upd_pfx=None,
+        upd_url=None,
     ):
 
         """
@@ -306,17 +379,16 @@ class mrt_getter:
             ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
             ymd_hm = datetime.datetime.strftime(start+m_delta,"%Y%m%d.%H%M")
 
-            udp_url = base_url + ym + upd_pfx + ymd_hm + file_ext
-            filename = dl_dir + os.path.basename(udp_url)
+            url = base_url + ym + upd_url + ymd_hm + file_ext
+            filename = mrt_dir + os.path.basename(url)
 
             if (not replace and os.path.exists(filename)):
                     logging.info(f"Skipping existing file {filename}")
             else:
-                mrt_getter.download_mrt(filename=filename, url=udp_url)
-                downloaded.append((filename, udp_url))
+                mrt_getter.download_mrt(filename=filename, url=url)
+                downloaded.append((filename, url))
 
         return downloaded
-
 
     @staticmethod
     def download_mrt(filename=None, url=None, debug=False):

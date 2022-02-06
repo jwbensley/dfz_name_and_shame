@@ -1,10 +1,9 @@
 import tweepy
 
-import sys
-sys.path.append('./')
-from config import config as cfg
-from twitter_auth import twitter_auth
 
+from dnas.config import config as cfg
+from dnas.twitter_auth import twitter_auth
+    
 class twitter:
     """
     Class for interacting with Twitter API.
