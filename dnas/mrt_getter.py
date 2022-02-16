@@ -46,7 +46,7 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
 
-        url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + arch.MRT_EXT
+        url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
@@ -102,7 +102,7 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta,"%Y%m%d.%H%M")
 
-        url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + arch.MRT_EXT
+        url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
@@ -151,7 +151,7 @@ class mrt_getter:
             ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
             ymd_hm = datetime.datetime.strftime(start+m_delta,"%Y%m%d.%H%M")
 
-            url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + arch.MRT_EXT
+            url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
             if (not replace and os.path.exists(filename)):
@@ -201,7 +201,7 @@ class mrt_getter:
             ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
             ymd_hm = datetime.datetime.strftime(start+m_delta,"%Y%m%d.%H%M")
 
-            url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + arch.MRT_EXT
+            url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
             if (not replace and os.path.exists(filename)):
@@ -211,118 +211,6 @@ class mrt_getter:
                 downloaded.append((filename, url))
 
         return downloaded
-
-    @staticmethod
-    def get_ripe_rib_url(
-        arch=None,
-        filename=None,
-    ):
-        """
-        Return the URL for a specifc RIB MRT file from a RIPE MRT archive.
-        """
-        if (not arch or
-            not filename):
-
-            raise ValueError(
-                f"Missing required options: arch={arch}, filename{filename}"
-            )
-
-        if filename[0:len(arch.RIB_PREFIX)] != arch.RIB_PREFIX:
-            raise ValueError(
-                f"MRT file prefix {filename[0:len(arch.RIB_PREFIX)]} "
-                f"is not {arch.RIB_PREFIX}"
-            )
-
-        ym = filename.split(".")[1][0:6]
-        ymd_hm = '.'.join(filename.split(".")[1:3])
-
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
-
-        if filename.split(".")[-1] != arch.MRT_EXT:
-            raise ValueError(
-                f"MRT file extension {filename.split('.')[-1]} "
-                f"is not {arch.MRT_EXT}"
-            )
-
-        y = ym[0:5]
-        m = ym[4:]
-        url = arch.BASE_URL + ym + arch.RIB_URL + filename
-
-    @staticmethod
-    def get_ripe_upd_url(
-        arch=None,
-        filename=None,
-    ):
-        """
-        Return the URL for a specifc UPDATE MRT file from a RIPE MRT archive.
-        """
-        if (not arch or
-            not filename):
-
-            raise ValueError(
-                f"Missing required options: arch={arch}, filename{filename}"
-            )
-
-        if filename[0:len(arch.UPD_PREFIX)] != arch.UPD_PREFIX:
-            raise ValueError(
-                f"MRT file prefix {filename[0:len(arch.UPD_PREFIX)]} "
-                f"is not {arch.UPD_PREFIX}"
-            )
-
-        ym = filename.split(".")[1][0:6]
-        ymd_hm = '.'.join(filename.split(".")[1:3])
-
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
-
-        if filename.split(".")[-1] != arch.MRT_EXT:
-            raise ValueError(
-                f"MRT file extension {filename.split('.')[-1]} "
-                f"is not {arch.MRT_EXT}"
-            )
-
-        y = ym[0:5]
-        m = ym[4:]
-        url = arch.BASE_URL + ym + arch.UPD_URL + filename
 
     @staticmethod
     def get_rv_latest_rib(
@@ -360,7 +248,7 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
 
-        url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + arch.MRT_EXT
+        url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
@@ -416,7 +304,7 @@ class mrt_getter:
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta,"%Y%m%d.%H%M")
 
-        url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + arch.MRT_EXT
+        url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
         if (not replace and os.path.exists(filename)):
@@ -465,7 +353,7 @@ class mrt_getter:
             ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
             ymd_hm = datetime.datetime.strftime(start+m_delta,"%Y%m%d.%H%M")
 
-            url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + arch.MRT_EXT
+            url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
             if (not replace and os.path.exists(filename)):
@@ -515,7 +403,7 @@ class mrt_getter:
             ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
             ymd_hm = datetime.datetime.strftime(start+m_delta,"%Y%m%d.%H%M")
 
-            url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + arch.MRT_EXT
+            url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
             if (not replace and os.path.exists(filename)):
@@ -525,118 +413,6 @@ class mrt_getter:
                 downloaded.append((filename, url))
 
         return downloaded
-
-    @staticmethod
-    def get_rv_rib_url(
-        arch=None,
-        filename=None,
-    ):
-        """
-        Return the URL for a specifc RIB MRT file from a route-views MRT archive.
-        """
-        if (not arch or
-            not filename):
-
-            raise ValueError(
-                f"Missing required options: arch={arch}, filename{filename}"
-            )
-
-        if filename[0:len(arch.RIB_PREFIX)] != arch.RIB_PREFIX:
-            raise ValueError(
-                f"MRT file prefix {filename[0:len(arch.RIB_PREFIX)]} "
-                f"is not {arch.RIB_PREFIX}"
-            )
-
-        ym = filename.split(".")[1][0:6]
-        ymd_hm = '.'.join(filename.split(".")[1:3])
-
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
-
-        if filename.split(".")[-1] != arch.MRT_EXT:
-            raise ValueError(
-                f"MRT file extension {filename.split('.')[-1]} "
-                f"is not {arch.MRT_EXT}"
-            )
-
-        y = ym[0:5]
-        m = ym[4:]
-        url = arch.BASE_URL + y + "." + m + arch.RIB_URL + filename
-
-    @staticmethod
-    def get_rv_upd_url(
-        arch=None,
-        filename=None,
-    ):
-        """
-        Return the URL for a specifc UPDATE MRT file from a route-views MRT archive.
-        """
-        if (not arch or
-            not filename):
-
-            raise ValueError(
-                f"Missing required options: arch={arch}, filename{filename}"
-            )
-
-        if filename[0:len(arch.UPD_PREFIX)] != arch.UPD_PREFIX:
-            raise ValueError(
-                f"MRT file prefix {filename[0:len(arch.UPD_PREFIX)]} "
-                f"is not {arch.UPD_PREFIX}"
-            )
-
-        ym = filename.split(".")[1][0:6]
-        ymd_hm = '.'.join(filename.split(".")[1:3])
-
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
-
-        if filename.split(".")[-1] != arch.MRT_EXT:
-            raise ValueError(
-                f"MRT file extension {filename.split('.')[-1]} "
-                f"is not {arch.MRT_EXT}"
-            )
-
-        y = ym[0:5]
-        m = ym[4:]
-        url = arch.BASE_URL + y + "." + m + arch.UPD_URL + filename
 
     @staticmethod
     def download_mrt(debug=False, filename=None, replace=False, url=None):

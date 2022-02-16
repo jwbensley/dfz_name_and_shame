@@ -25,6 +25,8 @@ class mrt_archive:
         get_latest_upd=None,
         get_range_rib=None,
         get_range_upd=None,
+        get_rib_url=None,
+        get_upd_url=None,
 
     ):
 
@@ -49,8 +51,7 @@ class mrt_archive:
         self.get_range_rib = get_range_rib
         self.get_range_upd = get_range_upd
 
-    @staticmethod
-    def gen_rib_filenames(ymd):
+    def gen_rib_filenames(self, ymd):
         """
         Return a list of all the RIB MRT files for a specific day.
         """
@@ -73,12 +74,119 @@ class mrt_archive:
             datetime.timedelta(minutes=minutes)
             hh = f"{minutes//60:02}"
             mm = f"{minutes%60:02}"
-            filenames.append(f"{self.RIB_PREFIX}.{ymd}.{hh}{mm}.{self.MRT_EXT}")
+            filenames.append(f"{self.RIB_PREFIX}{ymd}.{hh}{mm}.{self.MRT_EXT}")
             minutes += self.RIB_INTERVAL
         return filenames
 
-    @staticmethod
-    def gen_upd_filenames(ymd):
+    def gen_rib_url(self, filename):
+        if self.TYPE == "RIPE":
+            return self.gen_rib_ripe_url(filename)
+        elif self.TYPE == "RV":
+            return self.gen_rib_rv_url(filename)
+        else:
+            raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
+    def gen_rib_ripe_url(self, filename):
+        """
+        Return the URL for a specifc RIB MRT file from a RIPE MRT archive.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename{filename}"
+            )
+
+        if filename[0:len(self.RIB_PREFIX)] != self.RIB_PREFIX:
+            raise ValueError(
+                f"MRT file prefix {filename[0:len(self.RIB_PREFIX)]} "
+                f"is not {self.RIB_PREFIX}"
+            )
+
+        ym = filename.split(".")[1][0:6]
+        ymd_hm = '.'.join(filename.split(".")[1:3])
+
+        """
+        No MRTs available from before 1999, and I assume this conde won't be
+        running in 2030, I'm a realist :(
+        """
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
+        ):
+            raise ValueError(
+                f"Invalid year and month format for filename: {filename}. "
+                "Must be yyyymm e.g., 202201"
+            )
+            exit(1)
+
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
+        ):
+            raise ValueError(
+                f"Invalid year, month, day, hour, minute format for filename: "
+                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
+            )
+            exit(1)
+
+        if filename.split(".")[-1] != self.MRT_EXT:
+            raise ValueError(
+                f"MRT file extension {filename.split('.')[-1]} "
+                f"is not {self.MRT_EXT}"
+            )
+
+        y = ym[0:5]
+        m = ym[4:]
+        url = self.BASE_URL + ym + self.RIB_URL + filename
+
+    def gen_rib_rv_url(self, filename):
+        """
+        Return the URL for a specifc RIB MRT file from a route-views MRT archive.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename{filename}"
+            )
+
+        if filename[0:len(self.RIB_PREFIX)] != self.RIB_PREFIX:
+            raise ValueError(
+                f"MRT file prefix {filename[0:len(self.RIB_PREFIX)]} "
+                f"is not {self.RIB_PREFIX}"
+            )
+
+        ym = filename.split(".")[1][0:6]
+        ymd_hm = '.'.join(filename.split(".")[1:3])
+
+        """
+        No MRTs available from before 1999, and I assume this conde won't be
+        running in 2030, I'm a realist :(
+        """
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
+        ):
+            raise ValueError(
+                f"Invalid year and month format for filename: {filename}. "
+                "Must be yyyymm e.g., 202201"
+            )
+            exit(1)
+
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
+        ):
+            raise ValueError(
+                f"Invalid year, month, day, hour, minute format for filename: "
+                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
+            )
+            exit(1)
+
+        if filename.split(".")[-1] != self.MRT_EXT:
+            raise ValueError(
+                f"MRT file extension {filename.split('.')[-1]} "
+                f"is not {self.MRT_EXT}"
+            )
+
+        y = ym[0:5]
+        m = ym[4:]
+        return self.BASE_URL + y + "." + m + self.RIB_URL + filename
+
+    def gen_upd_filenames(self, ymd):
         """
         Return a list of all the RIB MRT files for a specific day.
         """
@@ -101,6 +209,114 @@ class mrt_archive:
             datetime.timedelta(minutes=minutes)
             hh = f"{minutes//60:02}"
             mm = f"{minutes%60:02}"
-            filenames.append(f"{self.UPD_PREFIX}.{ymd}.{hh}{mm}.{self.MRT_EXT}")
+            filenames.append(f"{self.UPD_PREFIX}{ymd}.{hh}{mm}.{self.MRT_EXT}")
             minutes += self.UPD_INTERVAL
         return filenames
+
+    def gen_upd_url(self, filename):
+        if self.TYPE == "RIPE":
+            return self.gen_upd_ripe_url(filename)
+        elif self.TYPE == "RV":
+            return self.gen_upd_rv_url(filename)
+        else:
+            raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
+    def get_upd_ripe_url(self, filename):
+        """
+        Return the URL for a specifc UPDATE MRT file from a RIPE MRT archive.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename{filename}"
+            )
+
+        if filename[0:len(self.UPD_PREFIX)] != self.UPD_PREFIX:
+            raise ValueError(
+                f"MRT file prefix {filename[0:len(self.UPD_PREFIX)]} "
+                f"is not {self.UPD_PREFIX}"
+            )
+
+        ym = filename.split(".")[1][0:6]
+        ymd_hm = '.'.join(filename.split(".")[1:3])
+
+        """
+        No MRTs available from before 1999, and I assume this conde won't be
+        running in 2030, I'm a realist :(
+        """
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
+        ):
+            raise ValueError(
+                f"Invalid year and month format for filename: {filename}. "
+                "Must be yyyymm e.g., 202201"
+            )
+            exit(1)
+
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
+        ):
+            raise ValueError(
+                f"Invalid year, month, day, hour, minute format for filename: "
+                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
+            )
+            exit(1)
+
+        if filename.split(".")[-1] != self.MRT_EXT:
+            raise ValueError(
+                f"MRT file extension {filename.split('.')[-1]} "
+                f"is not {self.MRT_EXT}"
+            )
+
+        y = ym[0:5]
+        m = ym[4:]
+        url = self.BASE_URL + ym + self.UPD_URL + filename
+
+    def gen_upd_rv_url(self, filename):
+        """
+        Return the URL for a specifc UPDATE MRT file from a route-views MRT archive.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename{filename}"
+            )
+
+        if filename[0:len(self.UPD_PREFIX)] != self.UPD_PREFIX:
+            raise ValueError(
+                f"MRT file prefix {filename[0:len(self.UPD_PREFIX)]} "
+                f"is not {self.UPD_PREFIX}"
+            )
+
+        ym = filename.split(".")[1][0:6]
+        ymd_hm = '.'.join(filename.split(".")[1:3])
+
+        """
+        No MRTs available from before 1999, and I assume this conde won't be
+        running in 2030, I'm a realist :(
+        """
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
+        ):
+            raise ValueError(
+                f"Invalid year and month format for filename: {filename}. "
+                "Must be yyyymm e.g., 202201"
+            )
+            exit(1)
+
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
+        ):
+            raise ValueError(
+                f"Invalid year, month, day, hour, minute format for filename: "
+                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
+            )
+            exit(1)
+
+        if filename.split(".")[-1] != self.MRT_EXT:
+            raise ValueError(
+                f"MRT file extension {filename.split('.')[-1]} "
+                f"is not {self.MRT_EXT}"
+            )
+
+        y = ym[0:5]
+        m = ym[4:]
+        return self.BASE_URL + y + "." + m + self.UPD_URL + filename

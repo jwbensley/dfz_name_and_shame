@@ -74,7 +74,7 @@ class mrt_entry:
         self.advertisements = json_data["advertisements"]
         self.as_path = json_data["as_path"]
         self.comm_set = json_data["comm_set"]
-        self.filename = json_data["filename"]
+        self.filename = json_data["filename"] if ("filename" in json_data) else None ##### FIX ME
         self.next_hop = json_data["next_hop"]
         self.prefix = json_data["prefix"]
         self.origin_asns = set(json_data["origin_asns"])
