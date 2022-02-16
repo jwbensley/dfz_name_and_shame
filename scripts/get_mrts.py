@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
-import datetime ################################ REMOVE
 import logging
 import os
-import re
 import sys
 import time
 
@@ -19,7 +17,7 @@ sys.path.append(
 from dnas.mrt_archives import mrt_archives
 from dnas.config import config as cfg
 from dnas.redis_db import redis_db
-from dnas.mrt_getting import mrt_getter
+from dnas.mrt_getter import mrt_getter
 
 def backfill(args):
     """
@@ -37,33 +35,39 @@ def backfill(args):
                 day_stats = rdb.get_stats(day_key)
 
                 all_filenames = arch.gen_rib_filenames(ymd)
-                for filename in day_stats.file_list:
-                    if filename in all_filenames:
-                        all_filenames.remove(filename)
+                if day_stats:
+                    for filename_w_path in day_stats.file_list:
+                        filename = os.path.basename(filename_w_path)
+                        if filename in all_filenames:
+                            all_filenames.remove(filename)
 
                 if all_filenames:
+                    print(f"Need to backfill: {all_filenames}")
                     for filename in all_filenames:
                         mrt_getter.download_mrt(
                             filename=arch.MRT_DIR + "/" + filename,
                             replace=args["replace"],
-                            url=arch.get_rib_url(arch=arch, filename=filename),
+                            url=arch.gen_rib_url(filename=filename),
                         )
 
             if args["update"]:
                 day_key = arch.UPD_KEY + ":" + ymd
                 day_stats = rdb.get_stats(day_key)
 
-                all_filenames = arch.gen_update_filenames(ymd)
-                for filename in day_stats.file_list:
-                    if filename in all_filenames:
-                        all_filenames.remove(filename)
+                all_filenames = arch.gen_upd_filenames(ymd)
+                if day_stats:
+                    for filename_w_path in day_stats.file_list:
+                        filename = os.path.basename(filename_w_path)
+                        if filename in all_filenames:
+                            all_filenames.remove(filename)
 
                 if all_filenames:
+                    print(f"Need to backfill: {all_filenames}")
                     for filename in all_filenames:
                         mrt_getter.download_mrt(
                             filename=arch.MRT_DIR + "/" + filename,
                             replace=args["replace"],
-                            url=arch.get_upd_url(arch=arch, filename=filename),
+                            url=arch.gen_upd_url(filename=filename),
                         )
 
 def continuous(args):

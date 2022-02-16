@@ -30,7 +30,5 @@ class mrt_archives:
                     get_latest_upd = mrt_getter.get_rv_latest_upd if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_latest_upd,
                     get_range_rib = mrt_getter.get_rv_range_rib if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_range_rib,
                     get_range_upd = mrt_getter.get_rv_range_upd if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_range_upd,
-                    get_rib_url = mrt_getter.get_rv_rib_url if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_rib_url,
-                    get_upd_url = mrt_getter.get_rv_upd_url if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_upd_url,
                 )
             )
