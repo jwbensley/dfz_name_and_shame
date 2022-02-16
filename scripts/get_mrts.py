@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-import datetime
+import datetime ################################ REMOVE
 import logging
 import os
+import re
 import sys
 import time
 
@@ -17,6 +18,53 @@ sys.path.append(
 
 from dnas.mrt_archives import mrt_archives
 from dnas.config import config as cfg
+from dnas.redis_db import redis_db
+from dnas.mrt_getting import mrt_getter
+
+def backfill(args):
+    """
+    Download any MRT which are missing from the stored stats, for a specific
+    day.
+    """
+    ymd = args["backfill"]
+    rdb = redis_db()
+    mrt_a = mrt_archives()
+
+    for arch in mrt_a.archives:
+        if arch.ENABLED:
+            if args["rib"]:
+                day_key = arch.RIB_KEY + ":" + ymd
+                day_stats = rdb.get_stats(day_key)
+
+                all_filenames = arch.gen_rib_filenames(ymd)
+                for filename in day_stats.file_list:
+                    if filename in all_filenames:
+                        all_filenames.remove(filename)
+
+                if all_filenames:
+                    for filename in all_filenames:
+                        mrt_getter.download_mrt(
+                            filename=arch.MRT_DIR + "/" + filename,
+                            replace=args["replace"],
+                            url=arch.get_rib_url(arch=arch, filename=filename),
+                        )
+
+            if args["update"]:
+                day_key = arch.UPD_KEY + ":" + ymd
+                day_stats = rdb.get_stats(day_key)
+
+                all_filenames = arch.gen_update_filenames(ymd)
+                for filename in day_stats.file_list:
+                    if filename in all_filenames:
+                        all_filenames.remove(filename)
+
+                if all_filenames:
+                    for filename in all_filenames:
+                        mrt_getter.download_mrt(
+                            filename=arch.MRT_DIR + "/" + filename,
+                            replace=args["replace"],
+                            url=arch.get_upd_url(arch=arch, filename=filename),
+                        )
 
 def continuous(args):
     """
@@ -59,6 +107,14 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Download MRT files from predefined source archives.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--backfill",
+        help="Download any MRT files which are missing for a specific day. "
+        "Specify the day in the MRT format yyyymmdd.",
+        type=str,
+        required=False,
+        default=None,
     )
     parser.add_argument(
         "--continuous",
@@ -130,7 +186,7 @@ def parse_args():
 
 def range(args):
     """
-    Download a specific range of MRT files from al of the MRT archives which
+    Download a specific range of MRT files from all of the MRT archives which
     are enabled in the config.
     """
 
@@ -144,27 +200,21 @@ def range(args):
 
         if arch.ENABLED:
             logging.debug(f"Archive {arch.NAME} is enabled")
-            
+
             if args["rib"]:
                 arch.get_range_rib(
-                    base_url=arch.BASE_URL,
-                    mrt_dir=arch.MRT_DIR,
+                    arch=arch,
                     end_date=args["end"],
-                    file_ext=arch.MRT_EXT,
                     replace=args["replace"],
-                    rib_url=arch.UPD_URL,
                     start_date=args["start"],
                 )
 
             if args["update"]:
                 arch.get_range_upd(
-                    base_url=arch.BASE_URL,
-                    mrt_dir=arch.MRT_DIR,
+                    arch=arch,
                     end_date=args["end"],
-                    file_ext=arch.MRT_EXT,
                     replace=args["replace"],
                     start_date=args["start"],
-                    upd_url=arch.UPD_URL,
                 )
 
 def main():
@@ -178,6 +228,13 @@ def main():
 
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=level)
     logging.info(f"Starting MRT downloader with logging level {level}")
+
+    if not args["rib"] and not args["update"]:
+        print("At least one of --rib and/or --update must be specified!")
+        exit(1)
+
+    if args["backfill"]:
+        backfill(args)
 
     if args["range"]:
         range(args)
