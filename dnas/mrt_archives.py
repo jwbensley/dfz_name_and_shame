@@ -46,7 +46,8 @@ class mrt_archives:
             )
 
         for arch in self.archives:
-            if os.path.dirname(file_path) == arch.MRT_DIR:
+            if (os.path.normpath(os.path.dirname(file_path)) == 
+                os.path.normpath(arch.MRT_DIR)):
                 logging.debug(f"Assuming file is from {arch.NAME} archive")
                 return arch
         logging.error(f"Couldn't match {file_path} to any MRT archive")
@@ -64,7 +65,7 @@ class mrt_archives:
 
         # Example: /path/to/route-views/LINX/updates.20220101.0600.bz2
         arch = self.arch_from_file_path(file_path)
-        day = file.split(".")[1]
+        day = file_path.split(".")[1]
         if self.is_rib_from_filename(file_path):
             return arch.RIB_KEY + ":" + day
         else:
@@ -79,8 +80,7 @@ class mrt_archives:
                 f"Missing required arguments: file_path={file_path}."
             )
 
-        filename = os.basename(file_path)
-
+        filename = os.path.basename(file_path)
         is_rib = False
         for arch in self.archives:
             if arch.RIB_PREFIX in filename:

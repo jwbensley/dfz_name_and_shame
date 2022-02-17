@@ -91,7 +91,7 @@ def process_mrt_file(filename):
     mrt_a = mrt_archives()
     arch = mrt_a.arch_from_file_path(filename)
     if arch:
-        process_files(db_key=arch.RIB_KEY, filelist=[filename], remove=False)
+        process_files(filelist=[filename], remove=False)
     else:
         exit(1)
 
@@ -114,12 +114,12 @@ def process_mrt_files(args):
         if args["rib"]:
             glob_str = arch.MRT_DIR + arch.RIB_GLOB
             filelist = glob.glob(glob_str)
-            process_files(db_key=arch.RIB_KEY, filelist=filelist, remove=False)
+            process_files(filelist=filelist, remove=False)
 
         if args["update"]:
             glob_str = arch.MRT_DIR + arch.RIB_GLOB
             filelist = glob.glob(glob_str)
-            process_files(db_key=arch.UPD_KEY, filelist=filelist, remove=False)
+            process_files(filelist=filelist, remove=False)
 
 def process_files(filelist, remove):
     """
