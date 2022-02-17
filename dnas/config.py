@@ -1,13 +1,15 @@
+import os
+
 class config:
     """
     Class to store global config options.
     """
 
     # Application root for everything (logging, downloads, tmp files, etc.)
-    BASE_DIR = "/opt/dnas/"
+    BASE_DIR = "/media/usb0/"
 
     # Base dir to save MRT files to
-    DL_DIR = BASE_DIR + "/downloads/"
+    DL_DIR = os.path.join(BASE_DIR, "downloads/")
 
     # Twitter username
     twitter_user = "bgp_shamer"
@@ -43,7 +45,7 @@ class config:
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
             "MRT_EXT": "bz2",
-            "MRT_DIR": DL_DIR + "/LINX/",
+            "MRT_DIR": os.path.join(DL_DIR, "LINX/"),
             "RIB_GLOB": "rib.*bz2",
             "UPD_GLOB": "updates.*bz2",
             "RIB_KEY": "RV_LINX_RIB",
@@ -71,7 +73,7 @@ class config:
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
             "MRT_EXT": "bz2",
-            "MRT_DIR": DL_DIR + "/SYDNEY/",
+            "MRT_DIR": os.path.join(DL_DIR, "/SYDNEY/"),
             "RIB_GLOB": "rib.*bz2",
             "UPD_GLOB": "updates.*bz2",
             "RIB_KEY": "RV_SYDNEY_RIB",
@@ -99,7 +101,7 @@ class config:
             "RIB_URL": "/",
             "UPD_URL": "/",
             "MRT_EXT": "gz",
-            "MRT_DIR": DL_DIR + "/RCC23/",
+            "MRT_DIR": os.path.join(DL_DIR, "/RCC23/"),
             "RIB_GLOB": "bview.*gz",
             "UPD_GLOB": "updates.*gz",
             "RIB_KEY": "RCC_23_RIB",
@@ -127,7 +129,7 @@ class config:
             "RIB_URL": "/",
             "UPD_URL": "/",
             "MRT_EXT": "gz",
-            "MRT_DIR": DL_DIR + "/RCC24/",
+            "MRT_DIR": os.path.join(DL_DIR, "/RCC24/"),
             "RIB_GLOB": "bview.*gz",
             "UPD_GLOB": "updates.*gz",
             "RIB_KEY": "RCC_24_RIB",
