@@ -117,7 +117,7 @@ def process_mrt_files(args):
             process_files(filelist=filelist, remove=args["remove"])
 
         if args["update"]:
-            glob_str = arch.MRT_DIR + arch.RIB_GLOB
+            glob_str = arch.MRT_DIR + arch.UPD_GLOB
             filelist = glob.glob(glob_str)
             process_files(filelist=filelist, remove=args["remove"])
 
