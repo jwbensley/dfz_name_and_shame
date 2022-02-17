@@ -31,6 +31,8 @@ def backfill(args):
 
     for arch in mrt_a.archives:
         if arch.ENABLED:
+            logging.debug(f"Archive {arch.NAME} is enabled")
+            
             if args["rib"]:
                 day_key = arch.RIB_KEY + ":" + ymd
                 day_stats = rdb.get_stats(day_key)
