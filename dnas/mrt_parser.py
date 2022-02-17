@@ -14,6 +14,24 @@ class mrt_parser:
     """
 
     @staticmethod
+    def get_timestamp(filename):
+        """
+        Return the timestamp from the start of an MRT file.
+        """
+        _ = mrtparse.Reader(filename)
+        d = next(_).data["timestamp"]
+        ts = iter(d).__next__()
+        # Use the MRT file format timestamp:
+        timestamp = datetime.datetime.utcfromtimestamp(ts).strftime(
+            '%Y%m%d.%H%M'
+        )
+        try:
+            _.close()
+        except StopIteration:
+            pass
+        return timestamp
+
+    @staticmethod
     def parse_rib_dump(filename):
         """
         Take filename of RIB dump MRT as input and return an MRT stats obj.
@@ -39,7 +57,8 @@ class mrt_parser:
                 next_hop = None
 
                 for attr in rib_entry["path_attributes"]:
-                    attr_t = attr["type"][0]
+                    #attr_t = path_attr["type"][0]   ##### FIX ME
+                    attr_t = iter(path_attr["type"]).__next__()
 
                     # mrtparse.BGP_ATTR_T['AS_PATH']
                     if attr_t == 2:
@@ -167,7 +186,7 @@ class mrt_parser:
                     "withdraws": 0,
                 }
 
-            timestamp = mrt_e.data["timestamp"]
+            timestamp = mrt_parser.get_timestamp(filename)
 
             as_path = []
             comm_set = []
@@ -191,7 +210,8 @@ class mrt_parser:
                 prefixes = []
 
                 for path_attr in mrt_e.data["bgp_message"]["path_attributes"]:
-                    attr_t = path_attr["type"][0]
+                    #attr_t = path_attr["type"][0]   ##### FIX ME
+                    attr_t = iter(path_attr["type"]).__next__()
 
                     # AS_PATH
                     if attr_t == 2:
