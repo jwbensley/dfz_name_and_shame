@@ -85,20 +85,14 @@ def continuous(args):
 
             if args["rib"]:
                 arch.get_latest_rib(
-                    base_url=arch.BASE_URL,
-                    mrt_dir=arch.MRT_DIR,
-                    file_ext=arch.MRT_EXT,
+                    arch=arch,
                     replace=args["replace"],
-                    rib_url=arch.UPD_URL,
                 )
 
             if args["update"]:
                 arch.get_latest_upd(
-                    base_url=arch.BASE_URL,
-                    mrt_dir=arch.MRT_DIR,
-                    file_ext=arch.MRT_EXT,
+                    arch=arch,
                     replace=args["replace"],
-                    upd_url=arch.UPD_URL,
                 )
 
         time.sleep(60)
