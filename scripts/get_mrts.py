@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import requests
 import sys
 import time
 
@@ -80,20 +81,35 @@ def continuous(args):
 
     while(True):
         for arch in mrt_a.archives:
-            if arch.ENABLED:
-                logging.debug(f"Archive {arch.NAME} is enabled")
+            if not arch.ENABLED:
+                continue
+
+            logging.debug(f"Archive {arch.NAME} is enabled")
 
             if args["rib"]:
-                arch.get_latest_rib(
-                    arch=arch,
-                    replace=args["replace"],
-                )
+                """
+                In continuous mode we ignore HTTP erros like 404s.
+                From time to time the MRT archives are unavailable, so any
+                missed files will have to be backfiled later :(
+                """
+                try:
+                    arch.get_latest_rib(
+                        arch=arch,
+                        replace=args["replace"],
+                    )
+                except requests.exceptions.HTTPError as e:
+                    print(e)
+                    pass
 
             if args["update"]:
-                arch.get_latest_upd(
-                    arch=arch,
-                    replace=args["replace"],
-                )
+                try:
+                    arch.get_latest_upd(
+                        arch=arch,
+                        replace=args["replace"],
+                    )
+                except requests.exceptions.HTTPError as e:
+                    print(e)
+                    pass
 
         time.sleep(60)
 

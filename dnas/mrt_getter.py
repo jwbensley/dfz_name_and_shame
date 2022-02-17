@@ -37,11 +37,11 @@ class mrt_getter:
         additional offset is required, RIPE_RIB_OFFSET.
         """
         hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
-        mod = hours % 8
+        mod = hours % (arch.RIB_INTERVAL // 60)
         if mod == 0:
-            h_delta = datetime.timedelta(hours=8)
+            h_delta = datetime.timedelta(hours=(arch.RIB_INTERVAL // 60))
         else:
-            h_delta = datetime.timedelta(hours=(8 + mod))
+            h_delta = datetime.timedelta(hours=((arch.RIB_INTERVAL // 60) + mod))
 
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
@@ -49,11 +49,7 @@ class mrt_getter:
         url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
-        if (not replace and os.path.exists(filename)):
-                logging.info(f"Skipping existing file {filename}")
-        else:
-            mrt_getter.download_mrt(filename=filename, url=url)
-
+        mrt_getter.download_mrt(filename=filename, replace=replace, url=url)
         return (filename, url)
 
     @staticmethod
@@ -91,11 +87,11 @@ class mrt_getter:
         additional offset is required, RCC_UPD_OFFSET.
         """
         minutes = int(datetime.datetime.strftime(datetime.datetime.now(), "%M"))
-        mod = minutes % 5
+        mod = minutes % arch.UPD_INTERVAL
         if mod == 0:
-            m_delta = datetime.timedelta(minutes=10)
+            m_delta = datetime.timedelta(minutes=(arch.UPD_INTERVAL*2))
         else:
-            m_delta = datetime.timedelta(minutes=(5 + mod))
+            m_delta = datetime.timedelta(minutes=(arch.UPD_INTERVAL + mod))
 
         h_delta = datetime.timedelta(hours=cfg.RCC_UPD_OFFSET)
 
@@ -105,11 +101,7 @@ class mrt_getter:
         url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
-        if (not replace and os.path.exists(filename)):
-                logging.info(f"Skipping existing file {filename}")
-        else:
-            mrt_getter.download_mrt(filename=filename, url=url)
-
+        mrt_getter.download_mrt(filename=filename, replace=replace, url=url)
         return (filename, url)
 
     @staticmethod
@@ -154,10 +146,9 @@ class mrt_getter:
             url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
-            if (not replace and os.path.exists(filename)):
-                    logging.info(f"Skipping existing file {filename}")
-            else:
-                #mrt_getter.download_mrt(filename=filename, url=url)
+            if mrt_getter.download_mrt(
+                filename=filename, replace=replace, url=url
+            ):
                 downloaded.append((filename, url))
 
         return downloaded
@@ -204,10 +195,9 @@ class mrt_getter:
             url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
-            if (not replace and os.path.exists(filename)):
-                    logging.info(f"Skipping existing file {filename}")
-            else:
-                mrt_getter.download_mrt(filename=filename, url=url)
+            if mrt_getter.download_mrt(
+                filename=filename, replace=replace, url=url
+            ):
                 downloaded.append((filename, url))
 
         return downloaded
@@ -239,10 +229,10 @@ class mrt_getter:
         additional offset is required, RV_RIB_OFFSET.
         """
         hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
-        if hours % 2 != 0:
-            hours = 3 + cfg.RV_RIB_OFFSET
+        if hours % (arch.RIB_INTERVAL // 60) != 0:
+            hours = ((arch.RIB_INTERVAL // 60) + 1) + cfg.RV_RIB_OFFSET
         else:
-            hours = 2 + cfg.RV_RIB_OFFSET
+            hours = (arch.RIB_INTERVAL // 60) + cfg.RV_RIB_OFFSET
         h_delta = datetime.timedelta(hours=hours)
 
         ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
@@ -251,11 +241,7 @@ class mrt_getter:
         url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
-        if (not replace and os.path.exists(filename)):
-                logging.info(f"Skipping existing file {filename}")
-        else:
-            mrt_getter.download_mrt(filename=filename, url=url)
-
+        mrt_getter.download_mrt(filename=filename, replace=replace, url=url)
         return (filename, url)
 
     @staticmethod
@@ -293,11 +279,11 @@ class mrt_getter:
         additional offset is required, RV_UPD_OFFSET.
         """
         minutes = int(datetime.datetime.strftime(datetime.datetime.now(), "%M"))
-        mod = minutes % 15
+        mod = minutes % arch.UPD_INTERVAL
         if mod == 0:
-            m_delta = datetime.timedelta(minutes=30)
+            m_delta = datetime.timedelta(minutes=2*arch.UPD_INTERVAL)
         else:
-            m_delta = datetime.timedelta(minutes=(15 + mod))
+            m_delta = datetime.timedelta(minutes=(arch.UPD_INTERVAL + mod))
 
         h_delta = datetime.timedelta(hours=cfg.RV_UPD_OFFSET)
 
@@ -307,11 +293,7 @@ class mrt_getter:
         url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
         filename = arch.MRT_DIR + os.path.basename(url)
 
-        if (not replace and os.path.exists(filename)):
-                logging.info(f"Skipping existing file {filename}")
-        else:
-            mrt_getter.download_mrt(filename=filename, url=url)
-
+        mrt_getter.download_mrt(filename=filename, replace=replace, url=url)
         return (filename, url)
 
     @staticmethod
@@ -356,10 +338,9 @@ class mrt_getter:
             url = arch.BASE_URL + ym + arch.RIB_URL + "/" + arch.RIB_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
-            if (not replace and os.path.exists(filename)):
-                    logging.info(f"Skipping existing file {filename}")
-            else:
-                mrt_getter.download_mrt(filename=filename, url=url)
+            if mrt_getter.download_mrt(
+                filename=filename, replace=replace, url=url
+            ):
                 downloaded.append((filename, url))
 
         return downloaded
@@ -406,21 +387,19 @@ class mrt_getter:
             url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
-            if (not replace and os.path.exists(filename)):
-                    logging.info(f"Skipping existing file {filename}")
-            else:
-                mrt_getter.download_mrt(filename=filename, url=url)
+            if mrt_getter.download_mrt(
+                filename=filename, replace=replace, url=url
+            ):
                 downloaded.append((filename, url))
 
         return downloaded
 
     @staticmethod
-    def download_mrt(debug=False, filename=None, replace=False, url=None):
+    def download_mrt(filename=None, replace=False, url=None):
         """
         Download an MRT file from the given url,
         and save it as the given filename.
         """
-
         if not url:
             raise ValueError("Missing ULR")
 
@@ -431,49 +410,48 @@ class mrt_getter:
 
         if (not replace and os.path.exists(filename)):
                 logging.info(f"Not overwriting existing file {filename}")
-                return
+                return False
+
+        """
+        Need to open the HTTP connection before the local file, otherwise we
+        create a blank local file, and then get a HTTP 404 for example, and if
+        we use replace=false, then we're stuck with a bank local file, after
+        the HTTP issue is fixed and the fail is available for download.
+        """
+        logging.info(f"Downloading {url} to {filename}")
+        try:
+            req = requests.get(url, stream=True)
+        except requests.exceptions.ConnectionError as e:
+            logging.info(f"Couldn't connect to MRT server: {e}")
+            raise requests.exceptions.ConnectionError
+        
+        file_len = req.headers['Content-length']
+
+        if req.status_code != 200:
+            logging.info(f"HTTP error: {req.status_code}")
+            logging.debug(req.url)
+            logging.debug(req.text)
+            logging.debug(req.content)
+            req.raise_for_status()
+
+        if file_len is None or file_len == 0:
+            logging.debug(req.url)
+            logging.debug(req.text)
+            logging.debug(req.content)
+            raise ValueError("Missing file length!")
+
+        file_len = int(file_len)
+        rcvd = 0
+        logging.info(f"File size is {file_len/1024/1024:.7}MBs")
+        progress = 0
 
         with open(filename, "wb") as f:
-            logging.info(f"Downloading {url} to {filename}")
-            try:
-                req = requests.get(url, stream=True)
-            except requests.exceptions.ConnectionError as e:
-                if debug:
-                    logging.debug(f"Couldn't connect to MRT server: {e}")
-                f.close()
-                raise requests.exceptions.ConnectionError
-
-            file_len = req.headers['Content-length']
-
-            if req.status_code != 200:
-                if debug:
-                    logging.debug(f"HTTP error: {req.status_code}")
-                    logging.debug(req.url)
-                    logging.debug(req.text)
-                f.write(req.content)
-                f.close()
-                req.raise_for_status()
-
-            if file_len is None:
-                if debug:
-                    logging.debug(req.url)
-                    logging.debug(req.text)
-                f.write(req.content)
-                f.close()
-                raise ValueError("Missing file length!")
-
-            file_len = int(file_len)
-            rcvd = 0
-            logging.info(f"File size is {file_len/1024/1024:.7}MBs")
-            progress = 0
             for chunk in req.iter_content(chunk_size=1024):
-
                 if req.status_code != 200:
-                    if debug:
-                        logging.debug(f"HTTP error: {req.status_code}")
-                        logging.debug(req.url)
-                        logging.debug(req.text)
-                    f.write(req.content)
+                    logging.info(f"HTTP error: {req.status_code}")
+                    logging.debug(req.url)
+                    logging.debug(req.text)
+                    logging.debug(req.content)
                     f.close()
                     req.raise_for_status()
 
@@ -486,3 +464,5 @@ class mrt_getter:
                 elif ((rcvd/file_len)*100)//10 > progress:
                     print(f"\rDownloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)", end="\r")
                     progress = ((rcvd/file_len)*100)//10
+
+        return filename
