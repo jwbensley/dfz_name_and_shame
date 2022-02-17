@@ -132,8 +132,6 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        y = ym[0:5]
-        m = ym[4:]
         url = self.BASE_URL + ym + self.RIB_URL + filename
 
     def gen_rib_rv_url(self, filename):
@@ -182,7 +180,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        y = ym[0:5]
+        y = ym[0:4]
         m = ym[4:]
         return self.BASE_URL + y + "." + m + self.RIB_URL + filename
 
@@ -267,8 +265,6 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        y = ym[0:5]
-        m = ym[4:]
         url = self.BASE_URL + ym + self.UPD_URL + filename
 
     def gen_upd_rv_url(self, filename):
@@ -317,6 +313,6 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        y = ym[0:5]
+        y = ym[0:4]
         m = ym[4:]
         return self.BASE_URL + y + "." + m + self.UPD_URL + filename
