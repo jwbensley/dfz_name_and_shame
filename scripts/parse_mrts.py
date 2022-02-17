@@ -79,7 +79,7 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def process_mrt_file(filename):
+def process_mrt_file(filename, remove):
     """
     Pass a single filename to the parser function.
     """
@@ -91,7 +91,7 @@ def process_mrt_file(filename):
     mrt_a = mrt_archives()
     arch = mrt_a.arch_from_file_path(filename)
     if arch:
-        process_files(filelist=[filename], remove=False)
+        process_files(filelist=[filename], remove=remove)
     else:
         exit(1)
 
@@ -114,12 +114,12 @@ def process_mrt_files(args):
         if args["rib"]:
             glob_str = arch.MRT_DIR + arch.RIB_GLOB
             filelist = glob.glob(glob_str)
-            process_files(filelist=filelist, remove=False)
+            process_files(filelist=filelist, remove=args["remove"])
 
         if args["update"]:
             glob_str = arch.MRT_DIR + arch.RIB_GLOB
             filelist = glob.glob(glob_str)
-            process_files(filelist=filelist, remove=False)
+            process_files(filelist=filelist, remove=args["remove"])
 
 def process_files(filelist, remove):
     """
@@ -221,7 +221,7 @@ def main():
     logging.info(f"Starting MRT parser with logging level {level}")
 
     if args["single"]:
-        process_mrt_file(args["single"])
+        process_mrt_file(filename=args["single"], remove=args["remove"])
     else:
         process_mrt_files(args)
 
