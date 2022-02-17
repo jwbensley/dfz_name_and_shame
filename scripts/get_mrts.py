@@ -46,12 +46,13 @@ def backfill(args):
 
                 if all_filenames:
                     print(f"Need to backfill: {all_filenames}")
-                    for filename in all_filenames:
+                    for idx, filename in enumerate(all_filenames):
                         mrt_getter.download_mrt(
                             filename=arch.MRT_DIR + "/" + filename,
                             replace=args["replace"],
                             url=arch.gen_rib_url(filename=filename),
                         )
+                        logging.info(f"Done {idx+1}/{len(all_filenames)}")
 
             if args["update"]:
                 day_key = arch.UPD_KEY + ":" + ymd
@@ -66,12 +67,13 @@ def backfill(args):
 
                 if all_filenames:
                     print(f"Need to backfill: {all_filenames}")
-                    for filename in all_filenames:
+                    for idx, filename in enumerate(all_filenames):
                         mrt_getter.download_mrt(
                             filename=arch.MRT_DIR + "/" + filename,
                             replace=args["replace"],
                             url=arch.gen_upd_url(filename=filename),
                         )
+                        logging.info(f"Done {idx+1}/{len(all_filenames)}")
 
 def continuous(args):
     """
