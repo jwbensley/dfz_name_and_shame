@@ -48,12 +48,18 @@ def parse_args():
         action="store_true",
         required=False,
     )
-
     parser.add_argument(
         "--rib",
         help="Parse RIB dump MRT files.",
         default=False,
         action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--single",
+        help="Specify the path to a single MRT file to parse.",
+        type=str,
+        default=None,
         required=False,
     )
     parser.add_argument(
@@ -73,26 +79,65 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def process_mrt_files(db_key=None, glob_str=None, remove=False):
+def process_mrt_file(filename):
     """
-    File all MRT files that match a file glob and store their parsed stats
+    Pass a single filename to the parser function.
+    """
+    if not filename:
+        raise ValueError(
+            f"Missing required arguments: filename={filename}"
+        )
+
+    mrt_a = mrt_archives()
+    arch = mrt_a.arch_from_file_path(filename)
+    if arch:
+        process_files(db_key=arch.RIB_KEY, filelist=[filename], remove=False)
+    else:
+        exit(1)
+
+def process_mrt_files(args):
+    """
+    Build the list of file to be parsed and pass them to the parser function.
+    """
+    if (not args):
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    mrt_a = mrt_archives()
+    for arch in mrt_a.archives:
+        if (args["enabled"] and not arch.ENABLED):
+            continue
+
+        logging.debug(f"Archive {arch.NAME} is enabled")
+
+        if args["rib"]:
+            glob_str = arch.MRT_DIR + arch.RIB_GLOB
+            filelist = glob.glob(glob_str)
+            process_files(db_key=arch.RIB_KEY, filelist=filelist, remove=False)
+
+        if args["update"]:
+            glob_str = arch.MRT_DIR + arch.RIB_GLOB
+            filelist = glob.glob(glob_str)
+            process_files(db_key=arch.UPD_KEY, filelist=filelist, remove=False)
+
+def process_files(filelist, remove):
+    """
+    Parse all MRT files that match a file glob and store their parsed stats
     in redis.
     """
-
-    if (not db_key or not glob_str):
+    if not filelist:
         raise ValueError(
-            f"Missing required arguments: {db_key}, {glob_str}"
+            f"Missing required arguments: filelist={filelist}"
         )
 
     rdb = redis_db()
+    mrt_a = mrt_archives()
 
-    for file in glob.glob(glob_str):
+    for file in filelist:
         logging.info(f"Checking file {file}")
 
-        # Example: updates.20220101.0600.bz2 or bview.20220129.0000.gz
-        day = file.split(".")[1]
-        day_key = db_key + ":" + day
-        day_stats = rdb.get_stats(day_key)
+        day_stats = rdb.get_stats(mrt_a.get_day_key(file))
 
         if day_stats:
             if file in day_stats.file_list:
@@ -127,23 +172,23 @@ def process_file(filename=None, keep_chunks=False):
 
     if not filename:
         raise ValueError(
-            f"Missing required arguments: {glob_str}, {rib_key}, {upd_key}"
+            f"Missing required arguments: filename={filename}."
         )
 
     no_cpu =  multiprocessing.cpu_count()
     Pool = multiprocessing.Pool(no_cpu)
+    mrt_a = mrt_archives()
 
     logging.info(f"Processing {filename}...")
 
     splitter = mrt_splitter(filename)
-    no_entries, file_chunks = splitter.split(no_cpu)
+    num_entries, file_chunks = splitter.split(no_cpu)
     try:
         splitter.close()
     except StopIteration:
         pass
 
-    is_rib = True if ("rib" in filename or "bview" in filename) else False
-    if is_rib:
+    if mrt_a.is_rib_from_filename(filename):
         mrt_chunks = Pool.map(mrt_parser.parse_rib_dump, file_chunks)
     else:
         mrt_chunks = Pool.map(mrt_parser.parse_upd_dump, file_chunks)
@@ -182,21 +227,10 @@ def main():
     )
     logging.info(f"Starting MRT parser with logging level {level}")
 
-    mrt_a = mrt_archives()
-    for arch in mrt_a.archives:
-        if (args["enabled"] and not arch.ENABLED):
-            continue
-
-        if args["rib"]:
-            process_mrt_files(
-                db_key=arch.RIB_KEY,
-                glob_str=arch.MRT_DIR + arch.RIB_GLOB,
-            )
-        if args["update"]:
-            process_mrt_files(
-                db_key=arch.UPD_KEY,
-                glob_str=arch.MRT_DIR + arch.UPD_GLOB,
-            )
+    if args["single"]:
+        process_mrt_file(args["single"])
+    else:
+        process_mrt_files(args)
 
 if __name__ == '__main__':
     main()
