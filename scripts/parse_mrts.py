@@ -137,7 +137,8 @@ def process_files(filelist, remove):
     for file in filelist:
         logging.info(f"Checking file {file}")
 
-        day_stats = rdb.get_stats(mrt_a.get_day_key(file))
+        day_key = mrt_a.get_day_key(file)
+        day_stats = rdb.get_stats(day_key)
 
         if day_stats:
             if file in day_stats.file_list:
@@ -201,16 +202,8 @@ def process_file(filename=None, keep_chunks=False):
     mrt_s = mrt_stats()
     for chunk in mrt_chunks:
         mrt_s.merge_in(chunk)
-    _ = mrtparse.Reader(filename)
-    ts = next(_).data["timestamp"][0]
-    mrt_s.timestamp = datetime.datetime.utcfromtimestamp(ts).strftime(
-        '%Y-%m-%d--%H-%M-%S'
-    )
-    try:
-        _.close()
-    except StopIteration:
-        pass
 
+    mrt_s.timestamp = mrt_parser.get_timestamp(filename)
     return mrt_s
 
 def main():
