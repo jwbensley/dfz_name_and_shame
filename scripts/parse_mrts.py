@@ -147,8 +147,8 @@ def process_files(filelist, remove):
             mrt_s = process_file(file)
             day_stats.file_list.append(file)
 
-            if day_stats.merge_in(mrt_s):
-                logging.info(f"Updated {day_key} with {file}")
+            if day_stats.add(mrt_s):
+                logging.info(f"Added {file} to {day_key}")
             else:
                 logging.info(f"Added {file} to {day_key} file list")
             rdb.set_stats(day_key, day_stats)
@@ -200,7 +200,7 @@ def process_file(filename=None, keep_chunks=False):
 
     mrt_s = mrt_stats()
     for chunk in mrt_chunks:
-        mrt_s.merge_in(chunk)
+        mrt_s.add(chunk)
 
     mrt_s.timestamp = mrt_parser.get_timestamp(filename)
     return mrt_s
