@@ -108,7 +108,6 @@ def process_mrt_files(args):
     for arch in mrt_a.archives:
         if (args["enabled"] and not arch.ENABLED):
             continue
-
         logging.debug(f"Archive {arch.NAME} is enabled")
 
         if args["rib"]:

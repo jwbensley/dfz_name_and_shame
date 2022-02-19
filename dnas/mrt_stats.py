@@ -1,5 +1,6 @@
 import json
 from dnas.mrt_entry import mrt_entry
+from dnas.mrt_archive import mrt_archive
 
 class mrt_stats:
 
@@ -211,9 +212,31 @@ class mrt_stats:
 
         self.timestamp = json_dict["timestamp"]
 
+    @staticmethod
+    def gen_daily_key(ymd):
+        """
+        Generate the redis key used to store the global stats obj for a
+        specific day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        mrt_archive.valid_ymd(ymd)
+
+        return "DAILY:" + ymd
+
+    @staticmethod
+    def gen_global_key():
+        """
+        Generate the key used to store the running global stats obj in redis.
+        """
+        return "GLOBAL"
+
     def get_diff(self, mrt_s):
         """
-        Return an mrt_stats obj with entries unique to mrt_s.
+        Generate an mrt_stats obj with entries unique to mrt_s.
         Don't diff meta data like timestamp or file list.
         """
         diff = mrt_stats()
@@ -320,6 +343,27 @@ class mrt_stats:
 
         return diff
 
+    @staticmethod
+    def is_empty(mrt_s):
+        """
+        Check if an mrt_stats object is empty. Don't check meta data like
+        file list or timestamp.
+        """
+        if (not diff.longest_as_path and
+            not diff.longest_comm_set and
+            not diff.most_advt_prefixes and
+            not diff.most_upd_prefixes and
+            not diff.most_withd_prefixes and
+            not diff.most_advt_origin_asn and
+            not diff.most_advt_peer_asn and
+            not diff.most_upd_peer_asn and
+            not diff.most_withd_peer_asn and
+            not diff.most_origin_asns
+        ):
+            return True
+        else:
+            return False
+
     def merge_in(self, merge_data):
         """
         Merge another MRT stats object into this one.
@@ -341,7 +385,7 @@ class mrt_stats:
             changed = True
 
         if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
-            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
+            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_comm_set]
             s_comms = [mrt_e.comm_set for mrt_e in self.longest_comm_set]
             for mrt_e in merge_data.longest_comm_set:
                 if mrt_e.comm_set not in s_comms:
@@ -362,25 +406,25 @@ class mrt_stats:
                         tmp.append(
                             mrt_entry(
                                 prefix=res_e.prefix,
-                                advertisements=(res_e.advertisements + u_e.advertisements),
+                                advt=(res_e.advt + u_e.advt),
                             )
                         )
                         merge_data.most_advt_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
-                if tmp_e.advertisements == self.most_advt_prefixes[0].advertisements:
+                if tmp_e.advt == self.most_advt_prefixes[0].advt:
                     self.most_advt_prefixes.append(tmp_e)
                     changed = True
-                elif tmp_e.advertisements > self.most_advt_prefixes[0].advertisements:
+                elif tmp_e.advt > self.most_advt_prefixes[0].advt:
                     self.most_advt_prefixes = [tmp_e]
                     changed = True
         else:
-            if (merge_data.most_advt_prefixes[0].advertisements == self.most_advt_prefixes[0].advertisements and
-                self.most_advt_prefixes[0].advertisements > 0):
+            if (merge_data.most_advt_prefixes[0].advt == self.most_advt_prefixes[0].advt and
+                self.most_advt_prefixes[0].advt > 0):
                 self.most_advt_prefixes.extend(merge_data.most_advt_prefixes)
                 changed = True
-            elif merge_data.most_advt_prefixes[0].advertisements > self.most_advt_prefixes[0].advertisements:
+            elif merge_data.most_advt_prefixes[0].advt > self.most_advt_prefixes[0].advt:
                 self.most_advt_prefixes = merge_data.most_advt_prefixes.copy()
                 changed = True
 
@@ -458,25 +502,25 @@ class mrt_stats:
                         tmp.append(
                             mrt_entry(
                                 origin_asns=res_e.origin_asns,
-                                advertisements=(res_e.advertisements + u_e.advertisements),
+                                advt=(res_e.advt + u_e.advt),
                             )
                         )
                         merge_data.most_advt_origin_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
-                if tmp_e.advertisements == self.most_advt_origin_asn[0].advertisements:
+                if tmp_e.advt == self.most_advt_origin_asn[0].advt:
                     self.most_advt_origin_asn.append(tmp_e)
                     changed = True
-                elif tmp_e.advertisements > self.most_advt_origin_asn[0].advertisements:
+                elif tmp_e.advt > self.most_advt_origin_asn[0].advt:
                     self.most_advt_origin_asn = [tmp_e]
                     changed = True
         else:
-            if (merge_data.most_advt_origin_asn[0].advertisements == self.most_advt_origin_asn[0].advertisements and
-                self.most_advt_origin_asn[0].advertisements > 0):
+            if (merge_data.most_advt_origin_asn[0].advt == self.most_advt_origin_asn[0].advt and
+                self.most_advt_origin_asn[0].advt > 0):
                 self.most_advt_origin_asn.extend(merge_data.most_advt_origin_asn)
                 changed = True
-            elif merge_data.most_advt_origin_asn[0].advertisements > self.most_advt_origin_asn[0].advertisements:
+            elif merge_data.most_advt_origin_asn[0].advt > self.most_advt_origin_asn[0].advt:
                 self.most_advt_origin_asn = merge_data.most_advt_origin_asn.copy()
                 changed = True
 
@@ -490,25 +534,25 @@ class mrt_stats:
                         tmp.append(
                             mrt_entry(
                                 peer_asn=res_e.peer_asn,
-                                advertisements=(res_e.advertisements + u_e.advertisements),
+                                advt=(res_e.advt + u_e.advt),
                             )
                         )
                         merge_data.most_advt_peer_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
-                if tmp_e.advertisements == self.most_advt_peer_asn[0].advertisements:
+                if tmp_e.advt == self.most_advt_peer_asn[0].advt:
                     self.most_advt_peer_asn.append(tmp_e)
                     changed = True
-                elif tmp_e.advertisements > self.most_advt_peer_asn[0].advertisements:
+                elif tmp_e.advt > self.most_advt_peer_asn[0].advt:
                     self.most_advt_peer_asn = [tmp_e]
                     changed = True
         else:
-            if (merge_data.most_advt_peer_asn[0].advertisements == self.most_advt_peer_asn[0].advertisements and
-                self.most_advt_peer_asn[0].advertisements > 0):
+            if (merge_data.most_advt_peer_asn[0].advt == self.most_advt_peer_asn[0].advt and
+                self.most_advt_peer_asn[0].advt > 0):
                 self.most_advt_peer_asn.extend(merge_data.most_advt_peer_asn)
                 changed = True
-            elif merge_data.most_advt_peer_asn[0].advertisements > self.most_advt_peer_asn[0].advertisements:
+            elif merge_data.most_advt_peer_asn[0].advt > self.most_advt_peer_asn[0].advt:
                 self.most_advt_peer_asn = merge_data.most_advt_peer_asn.copy()
                 changed = True
 
@@ -609,9 +653,22 @@ class mrt_stats:
                     changed = True
         else:
             if merge_data.most_origin_asns:
-                if len(merge_data.most_origin_asns[0].origin_asns) == len(self.most_origin_asns[0].origin_asns):
+                if (
+                    len(merge_data.most_origin_asns[0].origin_asns) == len(self.most_origin_asns[0].origin_asns) and
+                    len(self.most_origin_asns[0].origin_asns) > 0
+                ):
                     self.most_origin_asns.extend(merge_data.most_origin_asns)
+
+                    """
+                    self.most_advt_origin_asn[0].advt > 0):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.most_advt_origin_asn]
+                    for mrt_e in merge_data.most_advt_origin_asn:
+                            if mrt_e.prefix not in s_prefixes:
+                                self.most_advt_origin_asn.append(mrt_e)
+                                changed = True
+
                     changed = True
+                    """
                 elif len(merge_data.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
                     self.most_origin_asns = merge_data.most_origin_asns.copy()
                     changed = True
@@ -624,7 +681,7 @@ class mrt_stats:
         """
         for mrt_e in self.longest_as_path:
             print(f"longest_as_path->prefix: {mrt_e.prefix}")
-            print(f"longest_as_path->advertisements: {mrt_e.advertisements}")
+            print(f"longest_as_path->advt: {mrt_e.advt}")
             print(f"longest_as_path->as_path: {mrt_e.as_path}")
             print(f"longest_as_path->comm_set: {mrt_e.comm_set}")
             print(f"longest_as_path->next_hop: {mrt_e.next_hop}")
@@ -637,7 +694,7 @@ class mrt_stats:
 
         for mrt_e in self.longest_comm_set:
             print(f"longest_comm_set->prefix: {mrt_e.prefix}")
-            print(f"longest_comm_set->advertisements: {mrt_e.advertisements}")
+            print(f"longest_comm_set->advt: {mrt_e.advt}")
             print(f"longest_comm_set->as_path: {mrt_e.as_path}")
             print(f"longest_comm_set->comm_set: {mrt_e.comm_set}")
             print(f"longest_comm_set->next_hop: {mrt_e.next_hop}")
@@ -650,7 +707,7 @@ class mrt_stats:
 
         for mrt_e in self.most_advt_prefixes:
             print(f"most_advt_prefixes->prefix: {mrt_e.prefix}")
-            print(f"most_advt_prefixes->advertisements: {mrt_e.advertisements}")
+            print(f"most_advt_prefixes->advt: {mrt_e.advt}")
             print(f"most_advt_prefixes->as_path: {mrt_e.as_path}")
             print(f"most_advt_prefixes->comm_set: {mrt_e.comm_set}")
             print(f"most_advt_prefixes->next_hop: {mrt_e.next_hop}")
@@ -663,7 +720,7 @@ class mrt_stats:
 
         for mrt_e in self.most_upd_prefixes:
             print(f"most_upd_prefixes->prefix: {mrt_e.prefix}")
-            print(f"most_upd_prefixes->advertisements: {mrt_e.advertisements}")
+            print(f"most_upd_prefixes->advt: {mrt_e.advt}")
             print(f"most_upd_prefixes->as_path: {mrt_e.as_path}")
             print(f"most_upd_prefixes->comm_set: {mrt_e.comm_set}")
             print(f"most_upd_prefixes->next_hop: {mrt_e.next_hop}")
@@ -676,7 +733,7 @@ class mrt_stats:
 
         for mrt_e in self.most_withd_prefixes:
             print(f"most_withd_prefixes->prefix: {mrt_e.prefix}")
-            print(f"most_withd_prefixes->advertisements: {mrt_e.advertisements}")
+            print(f"most_withd_prefixes->advt: {mrt_e.advt}")
             print(f"most_withd_prefixes->as_path: {mrt_e.as_path}")
             print(f"most_withd_prefixes->comm_set: {mrt_e.comm_set}")
             print(f"most_withd_prefixes->next_hop: {mrt_e.next_hop}")
@@ -689,7 +746,7 @@ class mrt_stats:
 
         for mrt_e in self.most_advt_origin_asn:
             print(f"most_advt_origin_asn->prefix: {mrt_e.prefix}")
-            print(f"most_advt_origin_asn->advertisements: {mrt_e.advertisements}")
+            print(f"most_advt_origin_asn->advt: {mrt_e.advt}")
             print(f"most_advt_origin_asn->as_path: {mrt_e.as_path}")
             print(f"most_advt_origin_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_advt_origin_asn->next_hop: {mrt_e.next_hop}")
@@ -702,7 +759,7 @@ class mrt_stats:
 
         for mrt_e in self.most_advt_peer_asn:
             print(f"most_advt_peer_asn->prefix: {mrt_e.prefix}")
-            print(f"most_advt_peer_asn->advertisements: {mrt_e.advertisements}")
+            print(f"most_advt_peer_asn->advt: {mrt_e.advt}")
             print(f"most_advt_peer_asn->as_path: {mrt_e.as_path}")
             print(f"most_advt_peer_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_advt_peer_asn->next_hop: {mrt_e.next_hop}")
@@ -715,7 +772,7 @@ class mrt_stats:
 
         for mrt_e in self.most_upd_peer_asn:
             print(f"most_upd_peer_asn->prefix: {mrt_e.prefix}")
-            print(f"most_upd_peer_asn->advertisements: {mrt_e.advertisements}")
+            print(f"most_upd_peer_asn->advt: {mrt_e.advt}")
             print(f"most_upd_peer_asn->as_path: {mrt_e.as_path}")
             print(f"most_upd_peer_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_upd_peer_asn->next_hop: {mrt_e.next_hop}")
@@ -728,7 +785,7 @@ class mrt_stats:
 
         for mrt_e in self.most_withd_peer_asn:
             print(f"most_withd_peer_asn->prefix: {mrt_e.prefix}")
-            print(f"most_withd_peer_asn->advertisements: {mrt_e.advertisements}")
+            print(f"most_withd_peer_asn->advt: {mrt_e.advt}")
             print(f"most_withd_peer_asn->as_path: {mrt_e.as_path}")
             print(f"most_withd_peer_asn->comm_set: {mrt_e.comm_set}")
             print(f"most_withd_peer_asn->next_hop: {mrt_e.next_hop}")
@@ -741,7 +798,7 @@ class mrt_stats:
 
         for mrt_e in self.most_origin_asns:
             print(f"most_origin_asns->prefix: {mrt_e.prefix}")
-            print(f"most_origin_asns->advertisements: {mrt_e.advertisements}")
+            print(f"most_origin_asns->advt: {mrt_e.advt}")
             print(f"most_origin_asns->as_path: {mrt_e.as_path}")
             print(f"most_origin_asns->comm_set: {mrt_e.comm_set}")
             print(f"most_origin_asns->next_hop: {mrt_e.next_hop}")

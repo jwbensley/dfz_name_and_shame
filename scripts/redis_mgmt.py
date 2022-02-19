@@ -21,6 +21,13 @@ def dump_json(filename):
     """
     rdb.to_file(filename)
 
+
+def get_stats():
+def get_stats_diff():
+def get_stats_daily():
+def get_stats_global():
+
+
 def load_json(filename):
     """
     Import a JOSN dump into redis.

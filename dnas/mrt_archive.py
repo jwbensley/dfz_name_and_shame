@@ -53,20 +53,14 @@ class mrt_archive:
 
     def gen_rib_filenames(self, ymd):
         """
-        Return a list of all the RIB MRT files for a specific day.
+        Generate a list of all the RIB MRT filenames for a this MRT archive,
+        for a specific day.
         """
-
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])", ymd
-        ):
+        if not ymd:
             raise ValueError(
-                f"Invalid year, month, day format: {ymd}. "
-                "Must be yyyymmdd e.g., 20220110"
+                f"Missing required arguments: ymd={ymd}"
             )
+        mrt_archive.valid_ymd(ymd)
 
         filenames = []
         minutes = 0
@@ -78,17 +72,23 @@ class mrt_archive:
             minutes += self.RIB_INTERVAL
         return filenames
 
-    def gen_rib_url(self, filename):
-        if self.TYPE == "RIPE":
-            return self.gen_rib_ripe_url(filename)
-        elif self.TYPE == "RV":
-            return self.gen_rib_rv_url(filename)
-        else:
-            raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+    def gen_rib_key(self, ymd):
+        """
+        Generate the redis DB key used to store RIB stats for this
+        archive, on a specific day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        self.valid_ymd(ymd)
+
+        return self.RIB_KEY + ":" + ymd
 
     def gen_rib_ripe_url(self, filename):
         """
-        Return the URL for a specifc RIB MRT file from a RIPE MRT archive.
+        Generate the URL for a specifc RIB MRT file, for a RIPE MRT archive.
         """
         if not filename:
             raise ValueError(
@@ -104,27 +104,8 @@ class mrt_archive:
         ym = filename.split(".")[1][0:6]
         ymd_hm = '.'.join(filename.split(".")[1:3])
 
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
+        mrt_archive.valid_ym(ym)
+        mrt_archive.valid_ymd_hm(ymd_hm)
 
         if filename.split(".")[-1] != self.MRT_EXT:
             raise ValueError(
@@ -136,7 +117,8 @@ class mrt_archive:
 
     def gen_rib_rv_url(self, filename):
         """
-        Return the URL for a specifc RIB MRT file from a route-views MRT archive.
+        Generate the URL for a specifc RIB MRT file, from a route-views MRT
+        archive.
         """
         if not filename:
             raise ValueError(
@@ -152,27 +134,8 @@ class mrt_archive:
         ym = filename.split(".")[1][0:6]
         ymd_hm = '.'.join(filename.split(".")[1:3])
 
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
+        mrt_archive.valid_ym(ym)
+        mrt_archive.valid_ymd_hm(ymd_hm)
 
         if filename.split(".")[-1] != self.MRT_EXT:
             raise ValueError(
@@ -184,22 +147,33 @@ class mrt_archive:
         m = ym[4:]
         return self.BASE_URL + y + "." + m + self.RIB_URL + filename
 
+    def gen_rib_url(self, filename):
+        """
+        Generate the URL of a RIB MRT dump for a specific MRT archive type.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
+        if self.TYPE == "RIPE":
+            return self.gen_rib_ripe_url(filename)
+        elif self.TYPE == "RV":
+            return self.gen_rib_rv_url(filename)
+        else:
+            raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
     def gen_upd_filenames(self, ymd):
         """
-        Return a list of all the RIB MRT files for a specific day.
+        Generate a list of all the RIB MRT filename for a specific day, for
+        a specific MRT archive.
         """
-
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])", ymd
-        ):
+        if not ymd:
             raise ValueError(
-                f"Invalid year, month, day format: {ymd}. "
-                "Must be yyyymmdd e.g., 20220110"
+                f"Missing required arguments: ymd={ymd}"
             )
+
+        mrt_archive.valid_ymd(ymd)
 
         filenames = []
         minutes = 0
@@ -211,7 +185,30 @@ class mrt_archive:
             minutes += self.UPD_INTERVAL
         return filenames
 
+    def gen_upd_key(self, ymd):
+        """
+        Generate the redis DB key used to store update stats for this
+        archive, on a specific day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        self.valid_ymd(ymd)
+
+        return self.UPD_KEY + ":" + ymd
+
     def gen_upd_url(self, filename):
+        """
+        Generate the URL for a specifc update MRT file, for a specific MRT
+        archive.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
         if self.TYPE == "RIPE":
             return self.gen_upd_ripe_url(filename)
         elif self.TYPE == "RV":
@@ -221,7 +218,7 @@ class mrt_archive:
 
     def get_upd_ripe_url(self, filename):
         """
-        Return the URL for a specifc UPDATE MRT file from a RIPE MRT archive.
+        Generate the URL for a specifc UPDATE MRT file from a RIPE MRT archive.
         """
         if not filename:
             raise ValueError(
@@ -237,27 +234,8 @@ class mrt_archive:
         ym = filename.split(".")[1][0:6]
         ymd_hm = '.'.join(filename.split(".")[1:3])
 
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
+        mrt_archive.valid_ym(ym)
+        mrt_archive.valid_ymd_hm(ymd_hm)
 
         if filename.split(".")[-1] != self.MRT_EXT:
             raise ValueError(
@@ -269,7 +247,8 @@ class mrt_archive:
 
     def gen_upd_rv_url(self, filename):
         """
-        Return the URL for a specifc UPDATE MRT file from a route-views MRT archive.
+        Return the URL for a specifc UPDATE MRT file from a route-views MRT
+        archive.
         """
         if not filename:
             raise ValueError(
@@ -285,27 +264,8 @@ class mrt_archive:
         ym = filename.split(".")[1][0:6]
         ymd_hm = '.'.join(filename.split(".")[1:3])
 
-        """
-        No MRTs available from before 1999, and I assume this conde won't be
-        running in 2030, I'm a realist :(
-        """
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
-        ):
-            raise ValueError(
-                f"Invalid year and month format for filename: {filename}. "
-                "Must be yyyymm e.g., 202201"
-            )
-            exit(1)
-
-        if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
-        ):
-            raise ValueError(
-                f"Invalid year, month, day, hour, minute format for filename: "
-                f"{filename}. Must be yyyymmdd.hhmm e.g., 20220115.1045"
-            )
-            exit(1)
+        mrt_archive.valid_ym(ym)
+        mrt_archive.valid_ymd_hm(ymd_hm)
 
         if filename.split(".")[-1] != self.MRT_EXT:
             raise ValueError(
@@ -316,3 +276,73 @@ class mrt_archive:
         y = ym[0:4]
         m = ym[4:]
         return self.BASE_URL + y + "." + m + self.UPD_URL + filename
+
+    @staticmethod
+    def valid_ym(ym):
+        """
+        Check if the ym string is correctly formated.
+        Must be "yyyymm" e.g., "202201".
+        """
+        if not ym:
+            raise ValueError(
+                f"Missing required arguments: ym={ym}"
+            )
+
+        """
+        No MRTs available from before 1999, and I assume this conde won't be
+        running in 2030, I'm a realist :(
+        """
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
+        ):
+            raise ValueError(
+                f"Invalid year and month format: {ym}. "
+                "Must be yyyymm e.g., 202201."
+            )
+
+    @staticmethod
+    def valid_ymd(ymd):
+        """
+        Check if the ymd string is correctly formated.
+        Must be "yyyymm" e.g., "20220101".
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        """
+        No MRTs available from before 1999, and I assume this code won't be
+        running in 2030, I'm a realist :(
+        """
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])", ymd
+        ):
+            raise ValueError(
+                f"Invalid year, month, day format: {ymd}. "
+                "Must be yyyymmdd e.g., 20220110."
+            )
+
+    @staticmethod
+    def valid_ymd_hm(ymd_hm):
+        """
+        Check if the ymd_hm string is correctly formated.
+        Must be "yyyymm" e.g., "20220101.1000".
+        """
+        if not ymd_hm:
+            raise ValueError(
+                f"Missing required arguments: ymd_hm={ymd_hm}"
+            )
+
+        """
+        No MRTs available from before 1999, and I assume this code won't be
+        running in 2030, I'm a realist :(
+        """
+
+        if not re.match(
+            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
+        ):
+            raise ValueError(
+                f"Invalid year, month, day, hour, minute format: {ymd_hm}. "
+                "Must be yyyymmdd.hhmm e.g., 20220115.1045."
+            )

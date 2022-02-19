@@ -9,7 +9,7 @@ class test_mrt_entry(unittest.TestCase):
 
     def test_init(self):
         self.assertTrue(isinstance(self.mtr_e, mrt_entry))
-        self.assertTrue(isinstance(self.mtr_e.advertisements, int))
+        self.assertTrue(isinstance(self.mtr_e.advt, int))
         self.assertTrue(isinstance(self.mtr_e.as_path, list))
         self.assertTrue(isinstance(self.mtr_e.as_path[0], list))
         self.assertTrue(isinstance(self.mtr_e.comm_set, list))
