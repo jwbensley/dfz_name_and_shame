@@ -34,7 +34,7 @@ def backfill(args):
             logging.debug(f"Archive {arch.NAME} is enabled")
             
             if args["rib"]:
-                day_key = arch.RIB_KEY + ":" + ymd
+                day_key = arch.gen_rib_key(ymd)
                 day_stats = rdb.get_stats(day_key)
 
                 all_filenames = arch.gen_rib_filenames(ymd)
@@ -55,7 +55,7 @@ def backfill(args):
                         logging.info(f"Done {idx+1}/{len(all_filenames)}")
 
             if args["update"]:
-                day_key = arch.UPD_KEY + ":" + ymd
+                day_key = arch.gen_upd_key(ymd)
                 day_stats = rdb.get_stats(day_key)
 
                 all_filenames = arch.gen_upd_filenames(ymd)
@@ -74,6 +74,8 @@ def backfill(args):
                             url=arch.gen_upd_url(filename=filename),
                         )
                         logging.info(f"Done {idx+1}/{len(all_filenames)}")
+
+    rdb.close()
 
 def continuous(args):
     """
