@@ -1,10 +1,11 @@
+import datetime
 import json
 
 class mrt_entry:
 
     def __init__(
         self,
-        advertisements=0,
+        advt=0,
         as_path=[[]],
         comm_set=[[]],
         filename=None,
@@ -17,7 +18,7 @@ class mrt_entry:
         withdraws=0,
     ):
 
-        self.advertisements = advertisements
+        self.advt = advt
         self.as_path = as_path
         self.comm_set = comm_set
         self.filename = filename
@@ -34,7 +35,7 @@ class mrt_entry:
         Return True if this MRT stat entry obj is the same as mrt_e, else False.
         Doesn't compare meta data like filename.
         """
-        if self.advertisements != mrt_e.advertisements:
+        if self.advt != mrt_e.advt:
             return False
 
         if self.as_path != mrt_e.as_path:
@@ -71,7 +72,7 @@ class mrt_entry:
         Parse a JSON str into this MRT stats entry obj.
         """
         json_data = json.loads(json_str)
-        self.advertisements = json_data["advertisements"]
+        self.advt = json_data["advt"]
         self.as_path = json_data["as_path"]
         self.comm_set = json_data["comm_set"]
         self.filename = json_data["filename"] if ("filename" in json_data) else None ##### FIX ME
@@ -83,12 +84,20 @@ class mrt_entry:
         self.updates = json_data["updates"]
         self.withdraws = json_data["withdraws"]
 
+    @staticmethod
+    def gen_timestamp():
+        """
+        Generate the timestamp to insert into a newly created MRT entry obj.
+        This returns the same format as used by the MRT archives.
+        """
+        return datetime.datetime.now().strftime("%Y%m%d.%H%m")
+
     def to_json(self):
         """
         Return this MRT entry obj serialised to a JSON str.
         """
         json_data = {
-            "advertisements": self.advertisements,
+            "advt": self.advt,
             "as_path": self.as_path,
             "comm_set": self.comm_set,
             "filename": self.filename,
@@ -107,7 +116,7 @@ class mrt_entry:
         Ugly print this MRT stats entry.
         """
 
-        print(f"advertisements: {self.advertisements}")
+        print(f"advt: {self.advt}")
         print(f"as_path: {self.as_path}")
         print(f"comm_set: {self.comm_set}")
         print(f"filename: {self.filename}")

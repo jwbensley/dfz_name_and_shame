@@ -71,10 +71,10 @@ def global_stats:
     if diff.most_advt_prefixes:
         msg = twitter_msg()
         msg.hdr = (
-            f"New most BGP advertisements per prefix: "
+            f"New most BGP advt per prefix: "
             f"on {diff.timestamp.split('--')[0]} "
             f"{len(diff.most_advt_prefixes)} prefix(es) had "
-            f"{diff.most_advt_prefixes[0].advertisements} advertisements"
+            f"{diff.most_advt_prefixes[0].advt} advt"
         )
 
         msg.body = "Prefix(es)"
@@ -123,10 +123,10 @@ def global_stats:
     if diff.most_advt_origin_asn:
         msg = twitter_msg()
         msg.hdr = (
-            f"New most BGP advertisements per origin ASN: "
+            f"New most BGP advt per origin ASN: "
             f"on {diff.timestamp.split('--')[0]} "
             f"{len(diff.most_advt_origin_asn)} origin ASN(s) sent "
-            f"{diff.most_advt_origin_asn[0].advertisements} advertisements"
+            f"{diff.most_advt_origin_asn[0].advt} advt"
         )
         msg.body = "Origin ASN(s)"
         for mrt_e in diff.most_advt_origin_asn:
@@ -146,10 +146,10 @@ def global_stats:
     if diff.most_advt_peer_asn:
         msg = twitter_msg()
         msg.hdr = (
-            f"New most BGP advertisements per peer ASN: "
+            f"New most BGP advt per peer ASN: "
             f"on {diff.timestamp.split('--')[0]} "
             f"{len(diff.most_advt_peer_asn)} peer ASN(s) sent "
-            f"{diff.most_advt_peer_asn[0].advertisements} advertisements"
+            f"{diff.most_advt_peer_asn[0].advt} advt"
         )
         msg.body = "Peer ASN(s)"
         for mrt_e in diff.most_advt_peer_asn:
@@ -246,6 +246,8 @@ def global_stats:
     for diff_key in diff_keys:
         rdb.delete(diff_key)
     """
+
+    rdb.close()
 
 def main():
 

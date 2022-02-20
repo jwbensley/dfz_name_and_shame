@@ -182,7 +182,7 @@ class mrt_parser:
             peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
                 upd_peer_asn[peer_asn] = {
-                    "advertisements": 0,
+                    "advt": 0,
                     "withdraws": 0,
                 }
 
@@ -198,7 +198,7 @@ class mrt_parser:
                     prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
                     if prefix not in upd_prefix:
                         upd_prefix[prefix] = {
-                            "advertisements": 0,
+                            "advt": 0,
                             "withdraws": 1,
                         }
                         origin_asns_prefix[prefix] = set()
@@ -206,7 +206,7 @@ class mrt_parser:
                         upd_prefix[prefix]["withdraws"] += 1
 
             if len(mrt_e.data["bgp_message"]["path_attributes"]) > 1:
-                upd_peer_asn[peer_asn]["advertisements"] += 1
+                upd_peer_asn[peer_asn]["advt"] += 1
                 prefixes = []
 
                 for path_attr in mrt_e.data["bgp_message"]["path_attributes"]:
@@ -245,12 +245,12 @@ class mrt_parser:
 
                     if prefix not in upd_prefix:
                         upd_prefix[prefix] = {
-                            "advertisements": 1,
+                            "advt": 1,
                             "withdraws": 0,
                         }
                         origin_asns_prefix[prefix] = set([origin_asn])
                     else:
-                        upd_prefix[prefix]["advertisements"] += 1
+                        upd_prefix[prefix]["advt"] += 1
                         origin_asns_prefix[prefix].add(origin_asn)
 
 
@@ -347,19 +347,19 @@ class mrt_parser:
 
 
         for prefix in upd_prefix:
-            if (upd_prefix[prefix]["advertisements"] == upd_stats.most_advt_prefixes[0].advertisements and
-                upd_stats.most_advt_prefixes[0].advertisements > 0):
+            if (upd_prefix[prefix]["advt"] == upd_stats.most_advt_prefixes[0].advt and
+                upd_stats.most_advt_prefixes[0].advt > 0):
                 upd_stats.most_advt_prefixes.append(
                     mrt_entry(
-                        advertisements=upd_prefix[prefix]["advertisements"],
+                        advt=upd_prefix[prefix]["advt"],
                         filename=orig_filename,
                         prefix=prefix,
                     )
                 )
-            elif upd_prefix[prefix]["advertisements"] > upd_stats.most_advt_prefixes[0].advertisements:
+            elif upd_prefix[prefix]["advt"] > upd_stats.most_advt_prefixes[0].advt:
                 upd_stats.most_advt_prefixes = [
                     mrt_entry(
-                        advertisements=upd_prefix[prefix]["advertisements"],
+                        advt=upd_prefix[prefix]["advt"],
                         filename=orig_filename,
                         prefix=prefix,
                     )
@@ -388,10 +388,10 @@ class mrt_parser:
         most_updates = 0
         most_upd_prefixes = []
         for prefix in upd_prefix:
-            if (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"]) > most_updates:
-                most_updates = (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"])
+            if (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]) > most_updates:
+                most_updates = (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"])
                 most_upd_prefixes = [prefix]
-            elif (upd_prefix[prefix]["advertisements"] + upd_prefix[prefix]["withdraws"]) == most_updates:
+            elif (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]) == most_updates:
                 most_upd_prefixes.append(prefix)
 
         upd_stats.most_upd_prefixes = [
@@ -404,19 +404,19 @@ class mrt_parser:
 
 
         for asn in upd_peer_asn:
-            if (upd_peer_asn[asn]["advertisements"] == upd_stats.most_advt_peer_asn[0].advertisements and
-                upd_stats.most_advt_peer_asn[0].advertisements > 0):
+            if (upd_peer_asn[asn]["advt"] == upd_stats.most_advt_peer_asn[0].advt and
+                upd_stats.most_advt_peer_asn[0].advt > 0):
                 upd_stats.most_advt_peer_asn.append(
                     mrt_entry(
-                        advertisements=upd_peer_asn[asn]["advertisements"],
+                        advt=upd_peer_asn[asn]["advt"],
                         filename=orig_filename,
                         peer_asn=asn,
                     )
                 )
-            elif upd_peer_asn[asn]["advertisements"] > upd_stats.most_advt_peer_asn[0].advertisements:
+            elif upd_peer_asn[asn]["advt"] > upd_stats.most_advt_peer_asn[0].advt:
                 upd_stats.most_advt_peer_asn = [
                     mrt_entry(
-                        advertisements=upd_peer_asn[asn]["advertisements"],
+                        advt=upd_peer_asn[asn]["advt"],
                         filename=orig_filename,
                         peer_asn=asn,
                     )
@@ -444,10 +444,10 @@ class mrt_parser:
         most_updates = 0
         most_upd_asns = []
         for asn in upd_peer_asn:
-            if (upd_peer_asn[asn]["advertisements"] + upd_peer_asn[asn]["withdraws"]) > most_updates:
-                most_updates = (upd_peer_asn[asn]["advertisements"] + upd_peer_asn[asn]["withdraws"])
+            if (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"]) > most_updates:
+                most_updates = (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"])
                 most_upd_asns = [asn]
-            elif (upd_peer_asn[asn]["advertisements"] + upd_peer_asn[asn]["withdraws"]) == most_updates:
+            elif (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"]) == most_updates:
                 most_upd_asns.append(asn)
 
         upd_stats.most_upd_peer_asn = [
@@ -480,7 +480,7 @@ class mrt_parser:
             mrt_entry(
                 filename=orig_filename,
                 origin_asns=set([x[0]]),
-                advertisements=x[1],
+                advt=x[1],
             ) for x in advt_per_origin_asn if x[1] == advt_per_origin_asn[-1][1]
         ]
 
