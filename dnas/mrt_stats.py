@@ -187,7 +187,7 @@ class mrt_stats:
         # Most advertisement per origin ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_advt_origin_asn[0].prefix:
+        if merge_data.most_advt_origin_asn[0].origin_asns:
             for idx, u_e in enumerate(merge_data.most_advt_origin_asn[:]):
                 for res_e in self.most_advt_origin_asn:
                     if res_e.origin_asns == u_e.origin_asns:
@@ -225,7 +225,7 @@ class mrt_stats:
         # Most advertisement per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_advt_peer_asn[0].prefix:
+        if merge_data.most_advt_peer_asn[0].peer_asn:
             for idx, u_e in enumerate(merge_data.most_advt_peer_asn[:]):
                 for res_e in self.most_advt_peer_asn:
                     if res_e.peer_asn == u_e.peer_asn:
@@ -263,7 +263,7 @@ class mrt_stats:
         # Most updates per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_upd_peer_asn[0].prefix:
+        if merge_data.most_upd_peer_asn[0].peer_asn:
             for idx, u_e in enumerate(merge_data.most_upd_peer_asn[:]):
                 for res_e in self.most_upd_peer_asn:
                     if res_e.peer_asn == u_e.peer_asn:
@@ -301,7 +301,7 @@ class mrt_stats:
         # Most withdraws per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_withd_peer_asn[0].prefix:
+        if merge_data.most_withd_peer_asn[0].peer_asn:
             for idx, u_e in enumerate(merge_data.most_withd_peer_asn[:]):
                 for res_e in self.most_withd_peer_asn:
                     if res_e.peer_asn == u_e.peer_asn:
@@ -349,22 +349,24 @@ class mrt_stats:
                             origin_asns=res_e.origin_asns.union(u_e.origin_asns),
                         )
                     )
-                    ####print(f"update prefix: {u_e.prefix}")
-                    ####print(f"update origin_asns: {u_e.origin_asns}")
-                    ####print(f"self prefix: {res_e.prefix}")
-                    ####print(f"self origin_asns: {res_e.origin_asns}")
-                    ####print(f"Merged to {tmp[-1].origin_asns}")
+                    ###print(f"update prefix: {u_e.prefix}")
+                    ###print(f"update origin_asns: {u_e.origin_asns}")
+                    ###print(f"self prefix: {res_e.prefix}")
+                    ###print(f"self origin_asns: {res_e.origin_asns}")
+                    ###print(f"Merged to {tmp[-1].origin_asns}")
                     #####merge_data.most_origin_asns.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
                 ###elif (res_e.prefix == u_e.prefix and
                 ###    res_e.origin_asns == u_e.origin_asns):
                 ###    merge_data.most_origin_asns.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
+            ###print(tmp)
+            ###print("")
 
         if tmp:
             for tmp_e in tmp:
                 if len(tmp_e.origin_asns) == len(self.most_origin_asns[0].origin_asns):
                     s_prefixes = [mrt_e.prefix for mrt_e in self.most_origin_asns]
-                    if tmp_e.prefix in s_prefixes:
+                    if tmp_e.prefix not in s_prefixes:
                         self.most_origin_asns.append(tmp_e)
                         changed = True
                 elif len(tmp_e.origin_asns) > len(self.most_origin_asns[0].origin_asns):
@@ -840,9 +842,8 @@ class mrt_stats:
 
 
         # Most advertisement per origin ASN
-        tmp = []
         # If stats from a rib dump are being merged this wont be present:
-        if merge_data.most_advt_origin_asn[0].prefix:
+        if merge_data.most_advt_origin_asn[0].origin_asns:
             if (merge_data.most_advt_origin_asn[0].advt == self.most_advt_origin_asn[0].advt and
                 self.most_advt_origin_asn[0].advt > 0):
                 s_origin_asns = [mrt_e.origin_asns for mrt_e in self.most_advt_origin_asn]
@@ -856,9 +857,8 @@ class mrt_stats:
 
 
         # Most advertisement per peer ASN
-        tmp = []
         # If stats from a rib dump are being merged this wont be present:
-        if merge_data.most_advt_peer_asn[0].prefix:
+        if merge_data.most_advt_peer_asn[0].peer_asn:
             if (merge_data.most_advt_peer_asn[0].advt == self.most_advt_peer_asn[0].advt and
                 self.most_advt_peer_asn[0].advt > 0):
                 s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_advt_peer_asn]
@@ -872,9 +872,8 @@ class mrt_stats:
 
 
         # Most updates per peer ASN
-        tmp = []
         # If stats from a rib dump are being merged this wont be present:
-        if merge_data.most_upd_peer_asn[0].prefix:
+        if merge_data.most_upd_peer_asn[0].peer_asn:
             if (merge_data.most_upd_peer_asn[0].updates == self.most_upd_peer_asn[0].updates and
                 self.most_upd_peer_asn[0].updates > 0):
                 s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_upd_peer_asn]
@@ -888,9 +887,8 @@ class mrt_stats:
 
 
         # Most withdraws per peer ASN
-        tmp = []
         # If stats from a rib dump are being merged this wont be present:
-        if merge_data.most_withd_peer_asn[0].prefix:
+        if merge_data.most_withd_peer_asn[0].peer_asn:
             if (merge_data.most_withd_peer_asn[0].withdraws == self.most_withd_peer_asn[0].withdraws and
                 self.most_withd_peer_asn[0].withdraws > 0):
                 s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_withd_peer_asn]
