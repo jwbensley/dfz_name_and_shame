@@ -20,6 +20,7 @@ sys.path.append(
 
 from dnas.config import config as cfg
 from dnas.mrt_archives import mrt_archives
+from dnas.mrt_archive import mrt_archive
 from dnas.mrt_stats import mrt_stats
 from dnas.mrt_parser import mrt_parser
 from dnas.mrt_splitter import mrt_splitter
@@ -76,8 +77,55 @@ def parse_args():
         action="store_true",
         required=False,
     )
+    parser.add_argument(
+        "--ymd",
+        help="Specify a day to parse all MRT files from that specific day. "
+        "Must use yyyymmdd formate e.g., 20220101.",
+        type=str,
+        default=None,
+        required=False,
+    )
 
     return vars(parser.parse_args())
+
+def process_day(args):
+    """
+    Build the list of file to be parsed and pass them to the parser function.
+    This function builds a list MRT files from a specific day, from eligble MRT
+    archives.
+    """
+    if (not args):
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    if (not args["rib"] and not args["update"]):
+        raise ValueError(
+            "At least one of --rib and/or --update must be specified with "
+            "--ymd"
+        )
+
+    mrt_archive.valid_ymd(args["ymd"])
+    mrt_a = mrt_archives()
+    filelist = []
+    for arch in mrt_a.archives:
+        if (args["enabled"] and not arch.ENABLED):
+            continue
+        logging.debug(f"Archive {arch.NAME} is enabled")
+
+        if args["rib"]:
+            glob_str = arch.MRT_DIR + arch.RIB_PREFIX + "*" + args["ymd"] + "*"
+            filelist.extend(glob.glob(glob_str))
+
+        if args["update"]:
+            glob_str = arch.MRT_DIR + arch.UPD_PREFIX + "*" + args["ymd"] + "*"
+            filelist.extend(glob.glob(glob_str))
+
+    if not filelist:
+        print(f"No files found to process for this day")
+        return
+
+    process_files(filelist=filelist, remove=args["remove"])
 
 def process_mrt_file(filename, remove):
     """
@@ -98,6 +146,8 @@ def process_mrt_file(filename, remove):
 def process_mrt_files(args):
     """
     Build the list of file to be parsed and pass them to the parser function.
+    This function builds a list of all available MRT files from all eligble MRT
+    archives.
     """
     if (not args):
         raise ValueError(
@@ -105,21 +155,21 @@ def process_mrt_files(args):
         )
 
     mrt_a = mrt_archives()
+    filelist = []
     for arch in mrt_a.archives:
         if (args["enabled"] and not arch.ENABLED):
             continue
-
         logging.debug(f"Archive {arch.NAME} is enabled")
 
         if args["rib"]:
             glob_str = arch.MRT_DIR + arch.RIB_GLOB
-            filelist = glob.glob(glob_str)
-            process_files(filelist=filelist, remove=args["remove"])
+            filelist.extend(glob.glob(glob_str))
 
         if args["update"]:
             glob_str = arch.MRT_DIR + arch.UPD_GLOB
-            filelist = glob.glob(glob_str)
-            process_files(filelist=filelist, remove=args["remove"])
+            filelist.extend(glob.glob(glob_str))
+    
+    process_files(filelist=filelist, remove=args["remove"])
 
 def process_files(filelist, remove):
     """
@@ -134,7 +184,8 @@ def process_files(filelist, remove):
     rdb = redis_db()
     mrt_a = mrt_archives()
 
-    for file in filelist:
+    print(f"Done 0/{len(filelist)}")
+    for idx, file in enumerate(filelist):
         logging.info(f"Checking file {file}")
 
         day_key = mrt_a.get_day_key(file)
@@ -148,8 +199,8 @@ def process_files(filelist, remove):
             mrt_s = process_file(file)
             day_stats.file_list.append(file)
 
-            if day_stats.merge_in(mrt_s):
-                logging.info(f"Updated {day_key} with {file}")
+            if day_stats.add(mrt_s):
+                logging.info(f"Added {file} to {day_key}")
             else:
                 logging.info(f"Added {file} to {day_key} file list")
             rdb.set_stats(day_key, day_stats)
@@ -163,6 +214,8 @@ def process_files(filelist, remove):
         if remove:
             os.remove(file)
             logging.debug(f"Deleted {file}")
+
+        print(f"Done {idx+1}/{len(filelist)}")
 
     rdb.close()
 
@@ -201,7 +254,7 @@ def process_file(filename=None, keep_chunks=False):
 
     mrt_s = mrt_stats()
     for chunk in mrt_chunks:
-        mrt_s.merge_in(chunk)
+        mrt_s.add(chunk)
 
     mrt_s.timestamp = mrt_parser.get_timestamp(filename)
     return mrt_s
@@ -222,6 +275,8 @@ def main():
 
     if args["single"]:
         process_mrt_file(filename=args["single"], remove=args["remove"])
+    elif args["ymd"]:
+        process_day(args)
     else:
         process_mrt_files(args)
 

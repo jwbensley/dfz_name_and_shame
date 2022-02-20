@@ -25,69 +25,80 @@ def backfill(args):
     Download any MRT which are missing from the stored stats, for a specific
     day.
     """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
     ymd = args["backfill"]
     rdb = redis_db()
     mrt_a = mrt_archives()
 
     for arch in mrt_a.archives:
-        if arch.ENABLED:
-            logging.debug(f"Archive {arch.NAME} is enabled")
-            
-            if args["rib"]:
-                day_key = arch.RIB_KEY + ":" + ymd
-                day_stats = rdb.get_stats(day_key)
+        if (args["enabled"] and not arch.ENABLED):
+            continue
+        logging.debug(f"Archive {arch.NAME} is enabled")
+        
+        if args["rib"]:
+            day_key = arch.gen_rib_key(ymd)
+            day_stats = rdb.get_stats(day_key)
 
-                all_filenames = arch.gen_rib_filenames(ymd)
-                if day_stats:
-                    for filename_w_path in day_stats.file_list:
-                        filename = os.path.basename(filename_w_path)
-                        if filename in all_filenames:
-                            all_filenames.remove(filename)
+            all_filenames = arch.gen_rib_filenames(ymd)
+            if day_stats:
+                for filename_w_path in day_stats.file_list:
+                    filename = os.path.basename(filename_w_path)
+                    if filename in all_filenames:
+                        all_filenames.remove(filename)
 
-                if all_filenames:
-                    print(f"Need to backfill: {all_filenames}")
-                    for idx, filename in enumerate(all_filenames):
-                        mrt_getter.download_mrt(
-                            filename=arch.MRT_DIR + "/" + filename,
-                            replace=args["replace"],
-                            url=arch.gen_rib_url(filename=filename),
-                        )
-                        logging.info(f"Done {idx+1}/{len(all_filenames)}")
+            if all_filenames:
+                print(f"Need to backfill: {all_filenames}")
+                for idx, filename in enumerate(all_filenames):
+                    mrt_getter.download_mrt(
+                        filename=arch.MRT_DIR + "/" + filename,
+                        replace=args["replace"],
+                        url=arch.gen_rib_url(filename=filename),
+                    )
+                    logging.info(f"Done {idx+1}/{len(all_filenames)}")
 
-            if args["update"]:
-                day_key = arch.UPD_KEY + ":" + ymd
-                day_stats = rdb.get_stats(day_key)
+        if args["update"]:
+            day_key = arch.gen_upd_key(ymd)
+            day_stats = rdb.get_stats(day_key)
 
-                all_filenames = arch.gen_upd_filenames(ymd)
-                if day_stats:
-                    for filename_w_path in day_stats.file_list:
-                        filename = os.path.basename(filename_w_path)
-                        if filename in all_filenames:
-                            all_filenames.remove(filename)
+            all_filenames = arch.gen_upd_filenames(ymd)
+            if day_stats:
+                for filename_w_path in day_stats.file_list:
+                    filename = os.path.basename(filename_w_path)
+                    if filename in all_filenames:
+                        all_filenames.remove(filename)
 
-                if all_filenames:
-                    print(f"Need to backfill: {all_filenames}")
-                    for idx, filename in enumerate(all_filenames):
-                        mrt_getter.download_mrt(
-                            filename=arch.MRT_DIR + "/" + filename,
-                            replace=args["replace"],
-                            url=arch.gen_upd_url(filename=filename),
-                        )
-                        logging.info(f"Done {idx+1}/{len(all_filenames)}")
+            if all_filenames:
+                print(f"Need to backfill: {all_filenames}")
+                for idx, filename in enumerate(all_filenames):
+                    mrt_getter.download_mrt(
+                        filename=arch.MRT_DIR + "/" + filename,
+                        replace=args["replace"],
+                        url=arch.gen_upd_url(filename=filename),
+                    )
+                    logging.info(f"Done {idx+1}/{len(all_filenames)}")
+
+    rdb.close()
 
 def continuous(args):
     """
     Continuous check for new MRT files and download them from the MRT archives
     enabled in the config.
     """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
 
     mrt_a = mrt_archives()
 
     while(True):
         for arch in mrt_a.archives:
-            if not arch.ENABLED:
+            if (args["enabled"] and not arch.ENABLED):
                 continue
-
             logging.debug(f"Archive {arch.NAME} is enabled")
 
             if args["rib"]:
@@ -150,6 +161,13 @@ def parse_args():
         required=False,
     )
     parser.add_argument(
+        "--enabled",
+        help="Only download MRT files for MRT archives enabled in the config.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "--end",
         help="End date in format 'yyyymmdd.hhmm' e.g., '20220101.2359'.",
         type=str,
@@ -207,15 +225,23 @@ def range(args):
     Download a specific range of MRT files from all of the MRT archives which
     are enabled in the config.
     """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
 
     if (not args["start"] or not args["end"]):
-        print("Both a '--start' and '--end' date are required for '--range'")
-        exit(1)
+        raise ValueError(
+            "Both a '--start' and '--end' date are required for '--range'"
+        )
 
     mrt_a = mrt_archives()
 
     for arch in mrt_a.archives:
-
+        if (args["enabled"] and not arch.ENABLED):
+            continue
+        logging.debug(f"Archive {arch.NAME} is enabled")
+            
         if arch.ENABLED:
             logging.debug(f"Archive {arch.NAME} is enabled")
 

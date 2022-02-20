@@ -65,11 +65,11 @@ class mrt_archives:
 
         # Example: /path/to/route-views/LINX/updates.20220101.0600.bz2
         arch = self.arch_from_file_path(file_path)
-        day = file_path.split(".")[1]
+        ymd = file_path.split(".")[1]
         if self.is_rib_from_filename(file_path):
-            return arch.RIB_KEY + ":" + day
+            return arch.gen_rib_key(ymd)
         else:
-            return arch.UPD_KEY + ":" + day
+            return arch.gen_upd_key(ymd)
 
     def is_rib_from_filename(self, file_path):
         """
