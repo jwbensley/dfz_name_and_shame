@@ -51,9 +51,15 @@ def gen_day_stats(args):
         arch_stats = rdb.get_stats(day_key)
         if arch_stats:
             if day_stats.merge(arch_stats):
-                logging.info(f"Merged {day_key} stats into daily stats")
+                logging.info(
+                    f"Compiling {day_key} stats into daily stats for "
+                    f"{args['ymd']}"
+                )
             else:
-                logging.info(f"No updates to daily stats from {day_key}")
+                logging.info(
+                    f"No contribution from {day_key} to daily stats for "
+                    f"args['ymd']"
+                )
 
     day_key = mrt_stats.gen_daily_key(args["ymd"])
     db_day_stats = rdb.get_stats(day_key)
@@ -162,7 +168,7 @@ def upd_global_with_day(args):
     day_key = mrt_stats.gen_daily_key(args["ymd"])
     day_stats = rdb.get_stats(day_key)
 
-    if not day_key:
+    if not day_stats:
         logging.info(
             f"No existing day stats for {args['ymd']} in redis. Nothing to "
             "update"
@@ -178,11 +184,14 @@ def upd_global_with_day(args):
     
     # Else there are global stats and day stats to merge
     else:
+        diff = global_stats.get_diff(day_stats)
         if global_stats.merge(day_stats):
             logging.info(
                 f"Global stats merged with day stats from {args['ymd']}"
             )
             rdb.set_stats(global_key, global_stats)
+            diff.print()
+
         else:
             logging.info(
                 f"No update to global stats with day stats from {args['ymd']}"
