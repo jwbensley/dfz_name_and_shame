@@ -6,7 +6,7 @@ from dnas.twitter_auth import twitter_auth
     
 class twitter:
     """
-    Class for interacting with Twitter API.
+    Class for interacting with Twitter API using Tweepy.
     """
 
     max_len = 280
