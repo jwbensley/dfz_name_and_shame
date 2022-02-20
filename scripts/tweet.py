@@ -1,21 +1,57 @@
-import datetime
+#!/usr/bin/env python3
 
+import argparse
+import logging
+import os
 import sys
-sys.path.append('./')
-from config import config as cfg
-from redis_db import redis_db
-from twitter import twitter
-from twitter import twitter_msg
 
+# Accomodate the use of the script, even when the dnas library isn't installed
+sys.path.append(
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__))
+        , "../"
+    )
+)
 
-def global_stats:
+from dnas.config import config as cfg
+from dnas.redis_db import redis_db
+from dnas.twitter import twitter
+from dnas.twitter import twitter_msg
 
-    rdb = redis_db()
-
+def gen_tweet_yesterday():
+    """
+    Generate Tweets based on for yesterday's stats changes.
+    """
     delta = datetime.timedelta(days=1)
     yesterday = datetime.datetime.strftime(datetime.datetime.now() - delta,"%Y%m%d")
-    day_key = cfg.RV_LINX_UPD_KEY + ":" + yesterday
+    gen_global_tweet(yesterday)
 
+
+def gen_tweet(ymd):
+    """
+    Generate Tweets based on stat changes for a specific day.
+    """
+    if not args["ymd"]:
+        raise ValueError(
+            f"Missing required arguments: ymd={args['ymd']}, use --ymd"
+        )
+
+    rdb = redis_db()
+    day_key = mrt_stats.gen_daily_key(ymd)
+    day_stats = rdb.get_stats(day_key)
+
+    prev_ymd = datetime.datetime.strftime(
+        datetime.datetime.strptime(ymd, "%Y%m%d") - datetime.timedelta(days=1),
+        "%Y%m%d"
+    )
+    prev_key = mrt_stats.gen_daily_key(prev_ymd)
+    prev_sats = rdb.get_stats(prev_key)
+
+    diff = prev_sats.get_diff(day_stats)
+    if diff.is_empty():
+
+
+    day_key = cfg.RV_LINX_UPD_KEY + ":" + yesterday
     day_stats = rdb.get_stats(day_key)
 
     if day_stats.longest_as_path:
@@ -249,8 +285,51 @@ def global_stats:
 
     rdb.close()
 
+def parse_args():
+    """
+    Parse the CLI args to this script.
+    """
+
+    parser = argparse.ArgumentParser(
+        description="Generate and publish Tweets based on stats in redis.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--debug",
+        help="Enable debug logging for this script",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--yesterday",
+        help="Generate Tweets for yesterdays stat changes, add to tweet queue",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--tweet-all",
+        help="Tweet all tweets in the tweet queue",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    return vars(parser.parse_args())
+
 def main():
 
+    args = parse_args()
+
+    if args["debug"]:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    
+    logging.basicConfig(
+        format='%(asctime)s %(levelname)s %(message)s', level=level
+    )
+    logging.info(f"Starting global stats compiler with logging level {level}")
 
 if __name__ == '__main__':
     main()
