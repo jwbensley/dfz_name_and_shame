@@ -1,5 +1,5 @@
+import logging
 import tweepy
-
 
 from dnas.config import config as cfg
 from dnas.twitter_auth import twitter_auth

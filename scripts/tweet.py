@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+impot datetime
 import logging
 import os
 import sys
@@ -24,7 +25,7 @@ def gen_tweet_yesterday():
     """
     delta = datetime.timedelta(days=1)
     yesterday = datetime.datetime.strftime(datetime.datetime.now() - delta,"%Y%m%d")
-    gen_global_tweet(yesterday)
+    gen_tweet(yesterday)
 
 
 def gen_tweet(ymd):
@@ -37,24 +38,13 @@ def gen_tweet(ymd):
         )
 
     rdb = redis_db()
-    day_key = mrt_stats.gen_daily_key(ymd)
-    day_stats = rdb.get_stats(day_key)
+    diff_key = mrt_stats.gen_diff_key(ymd)
+    diff = rdb.get_stats(diff_key)
+    if not diff_stats:
+        logging.info(f"No daily diff stored for {ymd}")
+        return
 
-    prev_ymd = datetime.datetime.strftime(
-        datetime.datetime.strptime(ymd, "%Y%m%d") - datetime.timedelta(days=1),
-        "%Y%m%d"
-    )
-    prev_key = mrt_stats.gen_daily_key(prev_ymd)
-    prev_sats = rdb.get_stats(prev_key)
-
-    diff = prev_sats.get_diff(day_stats)
-    if diff.is_empty():
-
-
-    day_key = cfg.RV_LINX_UPD_KEY + ":" + yesterday
-    day_stats = rdb.get_stats(day_key)
-
-    if day_stats.longest_as_path:
+    if diff.longest_as_path:
         msg = twitter_msg()
         msg.hdr = (
             f"New longest AS path: on {diff.timestamp.split('--')[0]} "
@@ -242,6 +232,7 @@ def gen_tweet(ymd):
         print(msg.body)
         print("")
 
+    """
     if diff.most_origin_asns:
         msg = twitter_msg()
         msg.hdr = (
@@ -264,7 +255,6 @@ def gen_tweet(ymd):
         print(msg.hdr)
         print(msg.body)
         print("")
-    """
 
     """
     for msg in msg_q:
@@ -273,10 +263,12 @@ def gen_tweet(ymd):
         print("")
     """
 
+    """
     t = twitter()
     for msg in msg_q:
         if not msg.hidden:
             t.tweet_paged(msg)
+    """
 
     """
     for diff_key in diff_keys:
@@ -289,7 +281,6 @@ def parse_args():
     """
     Parse the CLI args to this script.
     """
-
     parser = argparse.ArgumentParser(
         description="Generate and publish Tweets based on stats in redis.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -329,7 +320,7 @@ def main():
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(message)s', level=level
     )
-    logging.info(f"Starting global stats compiler with logging level {level}")
+    logging.info(f"Starting Tweet generation and posting with logging level {level}")
 
 if __name__ == '__main__':
     main()
