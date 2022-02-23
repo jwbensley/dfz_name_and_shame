@@ -142,7 +142,7 @@ class mrt_parser:
             if len(origin_asns) == len(rib_data.most_origin_asns[0].origin_asns):
                 rib_data.most_origin_asns.append(
                     mrt_entry(
-                        filename=orig_filename,
+                        filename = orig_filename,
                         origin_asns = origin_asns,
                         prefix = prefix,
                     )
@@ -151,7 +151,7 @@ class mrt_parser:
                 rib_data.most_origin_asns = [
                     mrt_entry(
                         origin_asns = origin_asns,
-                        filename=orig_filename,
+                        filename = orig_filename,
                         prefix = prefix,
                     )
                 ]
