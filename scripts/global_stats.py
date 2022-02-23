@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import logging
 import os
 import sys
@@ -81,6 +82,64 @@ def gen_day_stats(args):
 
     rdb.close()
 
+def gen_diff(ymd):
+    """
+    Generate and store the diff of a daily stats object, with the daily stats
+    from the day before.
+    """
+    if not ymd:
+        raise ValueError(
+            f"Missing required arguments: ymd={ymd}, use --ymd"
+        )
+
+    rdb = redis_db()
+
+    day_key = mrt_stats.gen_daily_key(ymd)
+    day_stats = rdb.get_stats(day_key)
+    if not day_stats:
+        logging.info(
+            f"No existing global stats obj for day {ymd}, "
+            "nothing to diff"
+        )
+        return
+
+    prev_ymd = datetime.datetime.strftime(
+        datetime.datetime.strptime(ymd, "%Y%m%d") - datetime.timedelta(days=1),
+        "%Y%m%d"
+    )
+    prev_key = mrt_stats.gen_daily_key(prev_ymd)
+    prev_sats = rdb.get_stats(prev_key)
+    if not prev_sats:
+        logging.info(
+            f"No existing global stats obj for day {prev_ymd}, "
+            "nothing to diff"
+        )
+        return
+
+    diff_key = mrt_stats.gen_diff_key(ymd)
+    existing_diff = rdb.get_stats(diff_key)
+    new_diff = prev_sats.get_diff_larger(day_stats)
+
+    if not existing_diff:
+        logging.info(f"No exisiting diff stored under {diff_key}")
+
+        if new_diff.is_empty():
+            logging.info(
+                f"Storing empty diff stats for {ymd} under {diff_key}"
+            )
+        else:
+            logging.info(f"Storing new diff stats for {ymd} under {diff_key}")
+        rdb.set_stats(diff_key, new_diff)
+
+    else:
+        logging.info(
+            f"New diff updates existing for {ymd} under {diff_key}"
+        )
+        rdb.set_stats(diff_key, new_diff)
+
+    rdb.close()
+    return
+
 def parse_args():
     """
     Parse the CLI args to this script.
@@ -92,7 +151,8 @@ def parse_args():
     )
     parser.add_argument(
         "--daily",
-        help="Generate the daily stats for the day specified with --ymd.",
+        help="Generate and store in redis the daily stats for the day "
+        "specified with --ymd.",
         default=False,
         action="store_true",
         required=False,
@@ -105,9 +165,17 @@ def parse_args():
         required=False,
     )
     parser.add_argument(
+        "--diff",
+        help="Generate and store in redis the diff between the daily stats "
+        "for the day specified with --ymd, to those from the day before.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "--global",
-        help="Update the global stats with the stats from the day specified "
-        "using --ymd.",
+        help="Update the running global stats stored in redis with the stats "
+        "from the day specified using --ymd.",
         default=False,
         action="store_true",
         required=False,
@@ -213,6 +281,9 @@ def main():
             )
             exit(1)
         gen_day_stats(args)
+
+    if args["diff"]:
+        gen_diff(args["ymd"])
 
     if args["global"]:
         upd_global_with_day(args)
