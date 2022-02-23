@@ -599,6 +599,21 @@ class mrt_stats:
         return "DAILY:" + ymd
 
     @staticmethod
+    def gen_diff_key(ymd):
+        """
+        Generate the redis key used to store the diff stats obj for a
+        specific day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        mrt_archive.valid_ymd(ymd)
+
+        return "DAILY_DIFF:" + ymd
+
+    @staticmethod
     def gen_global_key():
         """
         Generate the key used to store the running global stats obj in redis.
@@ -711,6 +726,83 @@ class mrt_stats:
                     break
             if not found:
                 diff.most_origin_asns.append(mrt_e)
+
+        return diff
+
+    def get_diff_larger(self, mrt_s):
+        """
+        Generate an mrt_stats obj with entries which are unique to mrt_s, and
+        are larger than the equivilent values in this obj. For example, only 
+        prefixes if the AS Path is longer, or only origin ASNs which sent more
+        updates.
+        Don't diff meta data like timestamp or file list.
+        """
+        diff = mrt_stats()
+        diff.longest_as_path = []
+        diff.longest_comm_set = []
+        diff.most_advt_prefixes = []
+        diff.most_upd_prefixes = []
+        diff.most_withd_prefixes = []
+        diff.most_advt_origin_asn = []
+        diff.most_advt_peer_asn = []
+        diff.most_upd_peer_asn = []
+        diff.most_withd_peer_asn = []
+        diff.most_origin_asns = []
+
+        # Longer AS path
+        if len(mrt_s.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
+            diff.longest_as_path = mrt_s.longest_as_path.copy()
+
+        # Longer community set
+        if len(mrt_s.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
+            diff.longest_comm_set = mrt_s.longest_comm_set.copy()
+
+        # More advertisements per prefix
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_advt_prefixes[0].prefix and self.most_advt_prefixes[0].prefix:
+            if mrt_s.most_advt_prefixes[0].advt > self.most_advt_prefixes[0].advt:
+                diff.most_advt_prefixes = mrt_s.most_advt_prefixes.copy()
+
+        # More updates per prefix
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_upd_prefixes[0].prefix and self.most_upd_prefixes[0].prefix:
+            if mrt_s.most_upd_prefixes[0].updates > self.most_upd_prefixes[0].updates:
+                diff.most_upd_prefixes = mrt_s.most_upd_prefixes.copy()
+
+        # More withdraws per prefix
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_withd_prefixes[0].prefix and self.most_withd_prefixes[0].prefix:
+            if mrt_s.most_withd_prefixes[0].withdraws > self.most_withd_prefixes[0].withdraws:
+                diff.most_withd_prefixes = mrt_s.most_withd_prefixes.copy()
+
+        # More advertisement per origin ASN
+        # If stats from a rib dump are being compare this wont be present:
+        if mrt_s.most_advt_origin_asn[0].origin_asns and self.most_advt_origin_asn[0].origin_asns:
+            if mrt_s.most_advt_origin_asn[0].advt > self.most_advt_origin_asn[0].advt:
+                diff.most_advt_origin_asn = mrt_s.most_advt_origin_asn.copy()
+
+        # More advertisement per peer ASN
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_advt_peer_asn[0].peer_asn and self.most_advt_peer_asn[0].peer_asn:
+            if mrt_s.most_advt_peer_asn[0].advt > self.most_advt_peer_asn[0].advt:
+                diff.most_advt_peer_asn = mrt_s.most_advt_peer_asn.copy()
+
+        # More updates per peer ASN
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_upd_peer_asn[0].peer_asn and self.most_upd_peer_asn[0].peer_asn:
+            if mrt_s.most_upd_peer_asn[0].updates > self.most_upd_peer_asn[0].updates:
+                diff.most_upd_peer_asn = mrt_s.most_upd_peer_asn.copy()
+
+        # More withdraws per peer ASN
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_withd_peer_asn[0].peer_asn and self.most_withd_peer_asn[0].peer_asn:
+            if mrt_s.most_withd_peer_asn[0].withdraws > self.most_withd_peer_asn[0].withdraws:
+                diff.most_withd_peer_asn = mrt_s.most_withd_peer_asn.copy()
+
+        # More origin ASNs per prefix
+        if mrt_s.most_origin_asns[0].prefix and self.most_origin_asns[0].prefix:
+            if len(mrt_s.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
+                diff.most_origin_asns = mrt_s.most_origin_asns.copy()
 
         return diff
 
