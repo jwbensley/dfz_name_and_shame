@@ -4,6 +4,7 @@ import mrtparse
 import datetime
 import operator
 
+from dnas.config import config as cfg
 from dnas.mrt_entry import mrt_entry
 from dnas.mrt_stats import mrt_stats
 
@@ -18,12 +19,17 @@ class mrt_parser:
         """
         Return the timestamp from the start of an MRT file.
         """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}."
+            )
+
         _ = mrtparse.Reader(filename)
         d = next(_).data["timestamp"]
         ts = iter(d).__next__()
         # Use the MRT file format timestamp:
         timestamp = datetime.datetime.utcfromtimestamp(ts).strftime(
-            '%Y%m%d.%H%M'
+            cfg.TIME_FORMAT
         )
         try:
             _.close()
@@ -32,18 +38,48 @@ class mrt_parser:
         return timestamp
 
     @staticmethod
+    def posix_to_ts(posix):
+        """
+        Convert the posix timestamp in an MRT dump, to the UTC time in the
+        standard format of MRTs.
+        """
+        if not posix:
+            raise ValueError(
+                f"Missing required arguments: posix={posix}."
+            )
+
+        return datetime.datetime.utcfromtimestamp(posix).strftime(
+            cfg.TIME_FORMAT
+        )
+
+    @staticmethod
     def parse_rib_dump(filename):
         """
         Take filename of RIB dump MRT as input and return an MRT stats obj.
         """
-        rib_data = mrt_stats()
-        orig_filename = '_'.join(filename.split("_")[:-1])
-        mrt_entries = mrtparse.Reader(filename)
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}."
+            )
 
+        orig_filename = '_'.join(filename.split("_")[:-1])
+        if not orig_filename:
+            orig_filename = filename
+        file_ts = mrt_parser.get_timestamp(orig_filename)
+
+        rib_data = mrt_stats()
+        rib_data.timestamp = file_ts
+        if orig_filename not in rib_data.file_list:
+            rib_data.file_list.append(orig_filename)
+
+        mrt_entries = mrtparse.Reader(filename)
         for idx, mrt_e in enumerate(mrt_entries):
             if "prefix" not in mrt_e.data:
                 continue #############################################
 
+            ts = mrt_parser.posix_to_ts(
+                next(iter(mrt_e.data["timestamp"].items()))[0]
+            ) # E.g., 1486801684
             origin_asns = set()
             longest_as_path = [mrt_entry()]
             longest_comm_set = [mrt_entry()]
@@ -90,6 +126,7 @@ class mrt_parser:
                                 filename=orig_filename,
                                 next_hop=next_hop,
                                 origin_asns=set([origin_asn]),
+                                timestamp=ts,
                             )
                         )
                 elif len(as_path) > len(longest_as_path[0].as_path):
@@ -101,6 +138,7 @@ class mrt_parser:
                             filename=orig_filename,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
+                            timestamp=ts,
                         )
                     ]
 
@@ -115,6 +153,7 @@ class mrt_parser:
                                 filename=orig_filename,
                                 next_hop=next_hop,
                                 origin_asns=set([origin_asn]),
+                                timestamp=ts,
                             )
                         )
                 elif len(comm_set) > len(longest_comm_set[0].comm_set):
@@ -126,6 +165,7 @@ class mrt_parser:
                             filename=orig_filename,
                             next_hop=next_hop,
                             origin_asns=set([origin_asn]),
+                            timestamp=ts,
                         )
                     ]
 
@@ -145,6 +185,7 @@ class mrt_parser:
                         filename = orig_filename,
                         origin_asns = origin_asns,
                         prefix = prefix,
+                        timestamp=ts,
                     )
                 )
             elif len(origin_asns) > len(rib_data.most_origin_asns[0].origin_asns):
@@ -153,6 +194,7 @@ class mrt_parser:
                         origin_asns = origin_asns,
                         filename = orig_filename,
                         prefix = prefix,
+                        timestamp=ts,
                     )
                 ]
 
@@ -167,17 +209,37 @@ class mrt_parser:
         """
         Take filename of UPDATE dump MRT as input and return an MRT stats obj.
         """
-        upd_stats = mrt_stats()
-        orig_filename = '_'.join(filename.split("_")[:-1])
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}."
+            )
+
         longest_as_path = [mrt_entry()]
         longest_comm_set = [mrt_entry()]
         origin_asns_prefix = {}
         upd_prefix = {}
         advt_per_origin_asn = {}
         upd_peer_asn = {}
-        mrt_entries = mrtparse.Reader(filename)
+        
+        orig_filename = '_'.join(filename.split("_")[:-1])
+        if not orig_filename:
+            orig_filename = filename
+        file_ts = mrt_parser.get_timestamp(orig_filename)
 
+        upd_stats = mrt_stats()
+        upd_stats.timestamp = file_ts
+        
+        if orig_filename not in upd_stats.file_list:
+            upd_stats.file_list.append(orig_filename)
+
+        mrt_entries = mrtparse.Reader(filename)
         for idx, mrt_e in enumerate(mrt_entries):
+
+            ts = mrt_parser.posix_to_ts(
+                next(iter(mrt_e.data["timestamp"].items()))[0]
+            ) # E.g., 1486801684
+            as_path = []
+            comm_set = []
 
             peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
@@ -185,11 +247,6 @@ class mrt_parser:
                     "advt": 0,
                     "withdraws": 0,
                 }
-
-            timestamp = mrt_parser.get_timestamp(filename)
-
-            as_path = []
-            comm_set = []
 
             if len(mrt_e.data["bgp_message"]["withdrawn_routes"]) > 0:
                 upd_peer_asn[peer_asn]["withdraws"] += 1
@@ -267,7 +324,7 @@ class mrt_parser:
                                 origin_asns=set([origin_asn]),
                                 peer_asn=peer_asn,
                                 prefix=prefix,
-                                timestamp=timestamp,
+                                timestamp=ts,
                             )
                         )
 
@@ -281,7 +338,7 @@ class mrt_parser:
                         origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
                         prefix=prefix,
-                        timestamp=timestamp,
+                        timestamp=ts,
                     ) for prefix in prefixes
                 ]
 
@@ -298,7 +355,7 @@ class mrt_parser:
                                 origin_asns=set([origin_asn]),
                                 peer_asn=peer_asn,
                                 prefix=prefix,
-                                timestamp=timestamp,
+                                timestamp=ts,
                             )
                         )
 
@@ -312,10 +369,9 @@ class mrt_parser:
                         origin_asns=set([origin_asn]),
                         peer_asn=peer_asn,
                         prefix=prefix,
-                        timestamp=timestamp,
+                        timestamp=ts,
                     ) for prefix in prefixes
                 ]
-
 
         ##### upd_stats should always be emtpy so remove this after tests are added !!!!!!!!!!!!
         """
@@ -331,7 +387,6 @@ class mrt_parser:
         if len(longest_as_path[0].as_path) > len(upd_stats.longest_as_path[0].as_path):
             upd_stats.longest_as_path = longest_as_path.copy()
 
-
         """
         if len(longest_comm_set[0].comm_set) == len(upd_stats.longest_comm_set[0].comm_set):
             s_comms = [mrt_e.comm_set for mrt_e in upd_stats.longest_comm_set]
@@ -345,7 +400,6 @@ class mrt_parser:
         if len(longest_comm_set[0].comm_set) > len(upd_stats.longest_comm_set[0].comm_set):
             upd_stats.longest_comm_set = longest_comm_set.copy()
 
-
         for prefix in upd_prefix:
             if (upd_prefix[prefix]["advt"] == upd_stats.most_advt_prefixes[0].advt and
                 upd_stats.most_advt_prefixes[0].advt > 0):
@@ -354,6 +408,8 @@ class mrt_parser:
                         advt=upd_prefix[prefix]["advt"],
                         filename=orig_filename,
                         prefix=prefix,
+                        timestamp=file_ts,
+
                     )
                 )
             elif upd_prefix[prefix]["advt"] > upd_stats.most_advt_prefixes[0].advt:
@@ -362,6 +418,7 @@ class mrt_parser:
                         advt=upd_prefix[prefix]["advt"],
                         filename=orig_filename,
                         prefix=prefix,
+                        timestamp=file_ts,
                     )
                 ]
 
@@ -373,6 +430,7 @@ class mrt_parser:
                     mrt_entry(
                         filename=orig_filename,
                         prefix=prefix,
+                        timestamp=file_ts,
                         withdraws=upd_prefix[prefix]["withdraws"],
                     )
                 )
@@ -381,6 +439,7 @@ class mrt_parser:
                     mrt_entry(
                         filename=orig_filename,
                         prefix=prefix,
+                        timestamp=file_ts,
                         withdraws=upd_prefix[prefix]["withdraws"],
                     )
                 ]
@@ -398,6 +457,7 @@ class mrt_parser:
             mrt_entry(
                 filename=orig_filename,
                 prefix=prefix,
+                timestamp=file_ts,
                 updates=most_updates,
             ) for prefix in most_upd_prefixes
         ]
@@ -411,6 +471,7 @@ class mrt_parser:
                         advt=upd_peer_asn[asn]["advt"],
                         filename=orig_filename,
                         peer_asn=asn,
+                        timestamp=file_ts,
                     )
                 )
             elif upd_peer_asn[asn]["advt"] > upd_stats.most_advt_peer_asn[0].advt:
@@ -419,6 +480,7 @@ class mrt_parser:
                         advt=upd_peer_asn[asn]["advt"],
                         filename=orig_filename,
                         peer_asn=asn,
+                        timestamp=file_ts,
                     )
                 ]
 
@@ -429,6 +491,7 @@ class mrt_parser:
                     mrt_entry(
                         filename=orig_filename,
                         peer_asn=asn,
+                        timestamp=file_ts,
                         withdraws=upd_peer_asn[asn]["withdraws"],
                     )
                 )
@@ -437,6 +500,7 @@ class mrt_parser:
                     mrt_entry(
                         filename=orig_filename,
                         peer_asn=asn,
+                        timestamp=file_ts,
                         withdraws=upd_peer_asn[asn]["withdraws"],
                     )
                 ]
@@ -454,6 +518,7 @@ class mrt_parser:
             mrt_entry(
                 filename=orig_filename,
                 peer_asn=asn,
+                timestamp=file_ts,
                 updates=most_updates,
             ) for asn in most_upd_asns
         ]
@@ -470,17 +535,19 @@ class mrt_parser:
         upd_stats.most_origin_asns = [
             mrt_entry(
                 filename=orig_filename,
-                prefix=prefix,
                 origin_asns=origin_asns_prefix[prefix],
+                prefix=prefix,
+                timestamp=file_ts,
             ) for prefix in most_origin_prefixes
         ]
 
         advt_per_origin_asn = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
         upd_stats.most_advt_origin_asn = [
             mrt_entry(
+                advt=x[1],
                 filename=orig_filename,
                 origin_asns=set([x[0]]),
-                advt=x[1],
+                timestamp=file_ts,
             ) for x in advt_per_origin_asn if x[1] == advt_per_origin_asn[-1][1]
         ]
 
@@ -548,7 +615,9 @@ class mrt_parser:
 
     @staticmethod
     def mrt_count(filename):
-
+        """
+        Return the total number of MRT records in an MRT file.
+        """
         if not filename:
             raise ValueError("MRT filename missing")
 

@@ -1,6 +1,8 @@
 import datetime
 import json
 
+from dnas.config import config as cfg
+
 class mrt_entry:
 
     def __init__(
@@ -88,9 +90,8 @@ class mrt_entry:
     def gen_timestamp():
         """
         Generate the timestamp to insert into a newly created MRT entry obj.
-        This returns the same format as used by the MRT archives.
         """
-        return datetime.datetime.now().strftime("%Y%m%d.%H%m")
+        return datetime.datetime.now().strftime(cfg.TIME_FORMAT)
 
     def to_json(self):
         """

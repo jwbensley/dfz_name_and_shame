@@ -5,14 +5,34 @@ class config:
     Class to store global config options.
     """
 
+    #################
+    # BASE SETTINGS #
+    #################
+
     # Application root for everything (logging, downloads, tmp files, etc.)
     BASE_DIR = "/media/usb0/"
 
-    # Base dir to save MRT files to
-    DL_DIR = os.path.join(BASE_DIR, "downloads/")
+    """
+    The time format used for generating new timestamps and parsing existing
+    timestamps. The format below is the same format used by the MRT archives.
+    """
+    TIME_FORMAT = "%Y%m%d.%H%M"
+
+
+    ####################
+    # TWITTER SETTINGS #
+    ####################
 
     # Twitter username
     twitter_user = "bgp_shamer"
+
+
+    ########################
+    # MRT ARCHIVE SETTINGS #
+    ########################
+
+    # Base dir to save MRT files to
+    DL_DIR = os.path.join(BASE_DIR, "downloads/")
 
     """
     If the machine running this code is in a different timezone to the
