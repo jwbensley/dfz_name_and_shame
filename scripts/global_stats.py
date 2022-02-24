@@ -37,7 +37,7 @@ def gen_day_stats(args):
     rdb = redis_db()
     mrt_a = mrt_archives()
     day_stats = mrt_stats()
-    day_stats.timestamp = mrt_entry.gen_timestamp()
+    day_stats.timestamp = mrt_stats.gen_ts_from_ymd(args["ymd"])
 
     for arch in mrt_a.archives:
         if (args["enabled"] and not arch.ENABLED):
@@ -46,21 +46,35 @@ def gen_day_stats(args):
 
         if args["rib"]:
             day_key = arch.gen_rib_key(args["ymd"])
+            arch_stats = rdb.get_stats(day_key)
+
+            if arch_stats:
+                if day_stats.merge(arch_stats):
+                    logging.info(
+                        f"Compiling {day_key} RIB stats into daily stats for "
+                        f"{args['ymd']}"
+                    )
+                else:
+                    logging.info(
+                        f"No contribution from {day_key} RIB to daily stats "
+                        f"for {args['ymd']}"
+                    )
+
         if args["update"]:
             day_key = arch.gen_upd_key(args["ymd"])
+            arch_stats = rdb.get_stats(day_key)
 
-        arch_stats = rdb.get_stats(day_key)
-        if arch_stats:
-            if day_stats.merge(arch_stats):
-                logging.info(
-                    f"Compiling {day_key} stats into daily stats for "
-                    f"{args['ymd']}"
-                )
-            else:
-                logging.info(
-                    f"No contribution from {day_key} to daily stats for "
-                    f"args['ymd']"
-                )
+            if arch_stats:
+                if day_stats.merge(arch_stats):
+                    logging.info(
+                        f"Compiling {day_key} UPDATE stats into daily stats "
+                        f"for {args['ymd']}"
+                    )
+                else:
+                    logging.info(
+                        f"No contribution from {day_key} UPDATE to daily stats "
+                        f"for {args['ymd']}"
+                    )
 
     day_key = mrt_stats.gen_daily_key(args["ymd"])
     db_day_stats = rdb.get_stats(day_key)
@@ -73,8 +87,10 @@ def gen_day_stats(args):
     else:
         logging.debug(f"Retrieved existing day stats from {day_key}")
         if db_day_stats.merge(day_stats):
-            logging.info(f"Merged {args['ymd']} stats with existing day stats in redis")
             rdb.set_stats(day_key, db_day_stats)
+            logging.info(
+                f"Merged {args['ymd']} stats with existing day stats in redis"
+            )
         else:
             logging.info(
                 f"No update to exsiting {args['ymd']} stats in redis"
@@ -98,20 +114,16 @@ def gen_diff(ymd):
     day_stats = rdb.get_stats(day_key)
     if not day_stats:
         logging.info(
-            f"No existing global stats obj for day {ymd}, "
+            f"No existing global stats obj for day {day_key}, "
             "nothing to diff"
         )
         return
 
-    prev_ymd = datetime.datetime.strftime(
-        datetime.datetime.strptime(ymd, "%Y%m%d") - datetime.timedelta(days=1),
-        "%Y%m%d"
-    )
-    prev_key = mrt_stats.gen_daily_key(prev_ymd)
+    prev_key = mrt_stats.gen_prev_daily_key(ymd)
     prev_sats = rdb.get_stats(prev_key)
     if not prev_sats:
         logging.info(
-            f"No existing global stats obj for day {prev_ymd}, "
+            f"No existing global stats obj for day {prev_key}, "
             "nothing to diff"
         )
         return

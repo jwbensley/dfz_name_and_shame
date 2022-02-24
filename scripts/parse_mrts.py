@@ -30,9 +30,9 @@ def parse_args():
     """
     Parse the CLI args to this script.
     """
-
     parser = argparse.ArgumentParser(
-        description="Parse downloaded MRT files and store the stats in Redis.",
+        description="Parse all downloaded MRT files (unless specified "
+        "otherwise) and store the stats in Redis.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -90,13 +90,18 @@ def parse_args():
 
 def process_day(args):
     """
-    Build the list of file to be parsed and pass them to the parser function.
+    Build the list of files to be parsed and pass them to the parser function.
     This function builds a list MRT files from a specific day, from eligble MRT
     archives.
     """
     if (not args):
         raise ValueError(
             f"Missing required arguments: args={args}"
+        )
+
+    if (not args["ymd"]):
+        raise ValueError(
+            f"Missing required arguments: ymd={args['ymd']}"
         )
 
     if (not args["rib"] and not args["update"]):
@@ -197,8 +202,6 @@ def process_files(filelist, remove):
                 continue
 
             mrt_s = process_file(file)
-            day_stats.file_list.append(file)
-
             if day_stats.add(mrt_s):
                 logging.info(f"Added {file} to {day_key}")
             else:
@@ -207,7 +210,6 @@ def process_files(filelist, remove):
 
         if not day_stats:
             mrt_s = process_file(file)
-            mrt_s.file_list.append(file)
             rdb.set_stats(day_key, mrt_s)
             logging.info(f"Created new entry {day_key} from {file}")
 
@@ -223,7 +225,6 @@ def process_file(filename=None, keep_chunks=False):
     """
     Split and parse an individual MRT file, return the mrt_stats.
     """
-
     if not filename:
         raise ValueError(
             f"Missing required arguments: filename={filename}."
@@ -256,7 +257,6 @@ def process_file(filename=None, keep_chunks=False):
     for chunk in mrt_chunks:
         mrt_s.add(chunk)
 
-    mrt_s.timestamp = mrt_parser.get_timestamp(filename)
     return mrt_s
 
 def main():
