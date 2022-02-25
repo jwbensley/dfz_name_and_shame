@@ -2,8 +2,8 @@ import datetime
 import json
 
 from dnas.config import config as cfg
-from dnas.mrt_entry import mrt_entry
 from dnas.mrt_archive import mrt_archive
+from dnas.mrt_entry import mrt_entry
 
 class mrt_stats:
 
@@ -779,8 +779,6 @@ class mrt_stats:
         are larger than the equivilent values in this obj. For example, only 
         prefixes if the AS Path is longer, or only origin ASNs which sent more
         updates.
-
-        Don't diff meta data like timestamp or file list.
         """
         diff = mrt_stats()
         diff.longest_as_path = []
@@ -794,60 +792,78 @@ class mrt_stats:
         diff.most_withd_peer_asn = []
         diff.most_origin_asns = []
 
+        updated = False
+
         # Longer AS path
         if len(mrt_s.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
             diff.longest_as_path = mrt_s.longest_as_path.copy()
+            updated = True
 
         # Longer community set
         if len(mrt_s.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
             diff.longest_comm_set = mrt_s.longest_comm_set.copy()
+            updated = True
 
         # More advertisements per prefix
         # If stats from a rib dump are being compared this wont be present:
         if mrt_s.most_advt_prefixes[0].prefix and self.most_advt_prefixes[0].prefix:
             if mrt_s.most_advt_prefixes[0].advt > self.most_advt_prefixes[0].advt:
                 diff.most_advt_prefixes = mrt_s.most_advt_prefixes.copy()
+                updated = True
 
         # More updates per prefix
         # If stats from a rib dump are being compared this wont be present:
         if mrt_s.most_upd_prefixes[0].prefix and self.most_upd_prefixes[0].prefix:
             if mrt_s.most_upd_prefixes[0].updates > self.most_upd_prefixes[0].updates:
                 diff.most_upd_prefixes = mrt_s.most_upd_prefixes.copy()
+                updated = True
 
         # More withdraws per prefix
         # If stats from a rib dump are being compared this wont be present:
         if mrt_s.most_withd_prefixes[0].prefix and self.most_withd_prefixes[0].prefix:
             if mrt_s.most_withd_prefixes[0].withdraws > self.most_withd_prefixes[0].withdraws:
                 diff.most_withd_prefixes = mrt_s.most_withd_prefixes.copy()
+                updated = True
 
         # More advertisement per origin ASN
         # If stats from a rib dump are being compare this wont be present:
         if mrt_s.most_advt_origin_asn[0].origin_asns and self.most_advt_origin_asn[0].origin_asns:
             if mrt_s.most_advt_origin_asn[0].advt > self.most_advt_origin_asn[0].advt:
                 diff.most_advt_origin_asn = mrt_s.most_advt_origin_asn.copy()
+                updated = True
 
         # More advertisement per peer ASN
         # If stats from a rib dump are being compared this wont be present:
         if mrt_s.most_advt_peer_asn[0].peer_asn and self.most_advt_peer_asn[0].peer_asn:
             if mrt_s.most_advt_peer_asn[0].advt > self.most_advt_peer_asn[0].advt:
                 diff.most_advt_peer_asn = mrt_s.most_advt_peer_asn.copy()
+                updated = True
 
         # More updates per peer ASN
         # If stats from a rib dump are being compared this wont be present:
         if mrt_s.most_upd_peer_asn[0].peer_asn and self.most_upd_peer_asn[0].peer_asn:
             if mrt_s.most_upd_peer_asn[0].updates > self.most_upd_peer_asn[0].updates:
                 diff.most_upd_peer_asn = mrt_s.most_upd_peer_asn.copy()
+                updated = True
 
         # More withdraws per peer ASN
         # If stats from a rib dump are being compared this wont be present:
         if mrt_s.most_withd_peer_asn[0].peer_asn and self.most_withd_peer_asn[0].peer_asn:
             if mrt_s.most_withd_peer_asn[0].withdraws > self.most_withd_peer_asn[0].withdraws:
                 diff.most_withd_peer_asn = mrt_s.most_withd_peer_asn.copy()
+                updated = True
 
         # More origin ASNs per prefix
         if mrt_s.most_origin_asns[0].prefix and self.most_origin_asns[0].prefix:
             if len(mrt_s.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
                 diff.most_origin_asns = mrt_s.most_origin_asns.copy()
+                updated = True
+
+        if updated:
+            ### FIXME - this least to an accumulating file list
+            ###diff.file_list.extend(self.file_list)
+            ###diff.file_list.extend(mrt_s.file_list)
+            diff.timestamp = mrt_s.timestamp
 
         return diff
 
@@ -1261,3 +1277,29 @@ class mrt_stats:
             "timestamp": self.timestamp,
         }
         return json.dumps(json_data)
+
+    def ts_ymd(self):
+        """
+        Return only the YMD from this obj's timestamp raw e.g. YYYYMMDD
+        """
+        if not self.timestamp:
+            raise ValueError(
+                f"{self} has no timestamp: {self.timestamp}"
+            )
+
+        return self.timestamp.split(".")[0]
+
+    def ts_ymd_format(self):
+        """
+        Return only the YMD from this obj's timestamp formatted e.g. YYYY/MM/DD
+        """
+        if not self.timestamp:
+            raise ValueError(
+                f"{self} has no timestamp: {self.timestamp}"
+            )
+
+        return (
+            self.timestamp[0:4] + "/"
+            + self.timestamp[4:6] + "/"
+            + self.timestamp[6:8]
+        )

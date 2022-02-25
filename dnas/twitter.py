@@ -9,8 +9,6 @@ class twitter:
     Class for interacting with Twitter API using Tweepy.
     """
 
-    max_len = 280
-
     def __init__(self):
 
         self.client = tweepy.Client(
@@ -22,40 +20,113 @@ class twitter:
 
 
     def tweet(self, msg):
-        if msg.hidden:
-            return
-        
-        r = self.client.create_tweet(text=msg.hdr)
-        print(f"Single Tweet: https://twitter.com/{cfg.twitter_user}/status/{r.data['id']}")
+        """
+        Tweet the header of a twitter message obj.
+        Then tweet the body as a series of paged replies.
+        """
+        if not msg:
+            raise ValueError(
+                f"Missing required arguments: msg={msg}"
+            )
 
-    def tweet_paged(self, msg):
+        if type(msg) != twitter_msg:
+            raise TypeError(
+                f"msg is not a twitter_msg: {type(msg)}"
+            )
+
+        self.tweet_hdr(msg)
+        self.tweet_body(msg)
+
+    def tweet_hdr(self, msg):
+        """
+        Tweet a message header.
+        """
+        if not msg:
+            raise ValueError(
+                f"Missing required arguments: msg={msg}"
+            )
+
+        if type(msg) != twitter_msg:
+            raise TypeError(
+                f"msg is not a twitter_msg: {type(msg)}"
+            )
+
         if msg.hidden:
+            logging.debug(f"Skipping hidden Tweet: {msg.hdr}")
             return
-        
+
+        if len(msg.hdr) > cfg.TWITTER_LEN:
+            logging.debug(
+                f"Skipping Tweet which is too long ({len(msg.hdr)}): {msg.hdr}"
+            )
+            return
+
         r = self.client.create_tweet(text=msg.hdr)
-        print(f"Single Tweet: https://twitter.com/{cfg.twitter_user}/status/{r.data['id']}")
-        for chunk in self.split_tweet(msg.body):
-            r = self.client.create_tweet(text=chunk, in_reply_to_tweet_id=r.data["id"])
-            print(f"Paged Tweet: https://twitter.com/{cfg.twitter_user}/status/{r.data['id']}")
+        logging.info(
+            f"Tweeted: twitter.com/{cfg.TWITTER_USER}/status/{r.data['id']}"
+        )
+        msg.hdr_id = int(r.data['id'])
+
+    def tweet_body(self, msg):
+        """
+        Tweet a message body as a series of pages replies to the header.
+        """
+        if not msg:
+            raise ValueError(
+                f"Missing required arguments: msg={msg}"
+            )
+
+        if type(msg) != twitter_msg:
+            raise TypeError(
+                f"msg is not a twitter_msg: {type(msg)}"
+            )
+
+        if not msg.hdr_id:
+            raise ValueError(
+                f"Missing required arguments: hdr_id={hdr_id}"
+            )
+
+        if type(msg.hdr_id) != int:
+            raise TypeError(
+                f"hdr_id is not an int: {type(msg.hdr_id)}"
+            )
+
+        if msg.hidden:
+            logging.debug(f"Skipping hidden tweet: {msg.body}")
+            return
+
+        for chunk in self.split_tweet(msg):
+            r = self.client.create_tweet(
+                text=chunk,
+                in_reply_to_tweet_id=msg.hdr_id
+            )
+            logging.info(
+                f"Replied: twitter.com/{cfg.TWITTER_USER}/status/{r.data['id']}"
+            )
+            msg.body_ids.append(r.data['id'])
 
     def split_tweet(self, msg):
         """
-        Return a tweet message split into a list of 280 character strings
+        Return a Tweet body split into a list of 280 character strings
         """
-        if len(msg) <= self.max_len:
-            return [msg]
+        if len(msg.body) <= cfg.TWITTER_LEN:
+            return [msg.body]
         else:
-            msgs = []
-            while(len(msg) > self.max_len):
-                end = self.max_len - 1
-                while msg[end] <= " ":
-                    end -= 1
-                msgs.append(msg[0:end])
-                msg = msg[end + 1:]
-            msgs.append(msg)
-            return msgs
+            chunks = []
+            tmp_str = msg.body
 
-class twitter_msg:
-    hdr = ""
-    body = ""
-    hidden = True
+            while(len(tmp_str) > cfg.TWITTER_LEN):
+                end = cfg.TWITTER_LEN - 1
+
+                while tmp_str[end] != " ":
+                    end -= 1
+                    if end == 0:
+                        raise ValueError(
+                            "Reached start of Tweet"
+                        )
+
+                chunks.append(tmp_str[0:end])
+                tmp_str = tmp_str[end + 1:]
+
+            chunks.append(tmp_str)
+            return chunks
