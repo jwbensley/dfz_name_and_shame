@@ -24,7 +24,8 @@ class config:
     ####################
 
     # Twitter username
-    twitter_user = "bgp_shamer"
+    TWITTER_USER = "bgp_shamer"
+    TWITTER_LEN = 280
 
 
     ########################

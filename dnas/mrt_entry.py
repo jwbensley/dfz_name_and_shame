@@ -73,6 +73,16 @@ class mrt_entry:
         """
         Parse a JSON str into this MRT stats entry obj.
         """
+        if not json_str:
+            raise ValueError(
+                f"Missing required arguments: json_str={json_str}"
+            )
+
+        if type(json_str) != str:
+            raise TypeError(
+                f"json_str is not a string: {type(json_str)}"
+            )
+
         json_data = json.loads(json_str)
         self.advt = json_data["advt"]
         self.as_path = json_data["as_path"]
@@ -116,7 +126,6 @@ class mrt_entry:
         """
         Ugly print this MRT stats entry.
         """
-
         print(f"advt: {self.advt}")
         print(f"as_path: {self.as_path}")
         print(f"comm_set: {self.comm_set}")

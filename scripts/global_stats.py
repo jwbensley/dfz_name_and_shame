@@ -144,10 +144,15 @@ def gen_diff(ymd):
         rdb.set_stats(diff_key, new_diff)
 
     else:
-        logging.info(
-            f"New diff updates existing for {ymd} under {diff_key}"
-        )
-        rdb.set_stats(diff_key, new_diff)
+        if new_diff.is_empty():
+            logging.info(
+                f"No difference between existing diff and new diff for {ymd}"
+            )
+        else:
+            logging.info(
+                f"Overwitten existing diff for {ymd} under {diff_key}"
+            )
+            rdb.set_stats(diff_key, new_diff)
 
     rdb.close()
     return
