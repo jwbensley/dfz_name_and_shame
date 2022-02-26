@@ -1,6 +1,8 @@
 import datetime
 import json
 
+from dnas.config import config as cfg
+
 class mrt_entry:
 
     def __init__(
@@ -71,6 +73,16 @@ class mrt_entry:
         """
         Parse a JSON str into this MRT stats entry obj.
         """
+        if not json_str:
+            raise ValueError(
+                f"Missing required arguments: json_str={json_str}"
+            )
+
+        if type(json_str) != str:
+            raise TypeError(
+                f"json_str is not a string: {type(json_str)}"
+            )
+
         json_data = json.loads(json_str)
         self.advt = json_data["advt"]
         self.as_path = json_data["as_path"]
@@ -88,9 +100,8 @@ class mrt_entry:
     def gen_timestamp():
         """
         Generate the timestamp to insert into a newly created MRT entry obj.
-        This returns the same format as used by the MRT archives.
         """
-        return datetime.datetime.now().strftime("%Y%m%d.%H%m")
+        return datetime.datetime.now().strftime(cfg.TIME_FORMAT)
 
     def to_json(self):
         """
@@ -115,7 +126,6 @@ class mrt_entry:
         """
         Ugly print this MRT stats entry.
         """
-
         print(f"advt: {self.advt}")
         print(f"as_path: {self.as_path}")
         print(f"comm_set: {self.comm_set}")

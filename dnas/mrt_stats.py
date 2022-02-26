@@ -1,6 +1,9 @@
+import datetime
 import json
-from dnas.mrt_entry import mrt_entry
+
+from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
+from dnas.mrt_entry import mrt_entry
 
 class mrt_stats:
 
@@ -23,15 +26,14 @@ class mrt_stats:
         This function adds another MRT stats object into this one.
         This means that values which are equal in both objects are added and
         the result is stored in this obj. If merge_data has a different value
-        which is higher, the smaller value in this object is replaced.
+        which is higher, the smaller value in this object is replaced with the
+        higher value.
 
         E.g, if both objects have the same "max updates per prefix" prefix,
         192.168.0.0/24, with both objects recording 1000 updates for this
         prefix, this obj will now record 192.168.0.0/24 as having 2000
         updates. But, if merge_data has a prefix, 192.168.1.0/24, with 10000
         updates, 192.168.1.0/24 will replace 192.168.0.0/24 in this object.
-
-        Only stats data is added, not meta data like timestamp or file list.
         """
 
         changed = False
@@ -79,8 +81,10 @@ class mrt_stats:
                     if (res_e.prefix == u_e.prefix):
                         tmp.append(
                             mrt_entry(
-                                prefix=res_e.prefix,
                                 advt=(res_e.advt + u_e.advt),
+                                filename=u_e.filename,
+                                prefix=res_e.prefix,
+                                timestamp=u_e.timestamp,
                             )
                         )
                         merge_data.most_advt_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
@@ -117,7 +121,9 @@ class mrt_stats:
                     if res_e.prefix == u_e.prefix:
                         tmp.append(
                             mrt_entry(
+                                filename=u_e.filename,
                                 prefix=res_e.prefix,
+                                timestamp=u_e.timestamp,
                                 updates=(res_e.updates + u_e.updates),
                             )
                         )
@@ -155,7 +161,9 @@ class mrt_stats:
                     if res_e.prefix == u_e.prefix:
                         tmp.append(
                             mrt_entry(
+                                filename=u_e.filename,
                                 prefix=res_e.prefix,
+                                timestamp=u_e.timestamp,
                                 withdraws=(res_e.withdraws + u_e.withdraws),
                             )
                         )
@@ -193,8 +201,10 @@ class mrt_stats:
                     if res_e.origin_asns == u_e.origin_asns:
                         tmp.append(
                             mrt_entry(
-                                origin_asns=res_e.origin_asns,
                                 advt=(res_e.advt + u_e.advt),
+                                filename=u_e.filename,
+                                origin_asns=res_e.origin_asns,
+                                timestamp=u_e.timestamp,
                             )
                         )
                         merge_data.most_advt_origin_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
@@ -231,8 +241,10 @@ class mrt_stats:
                     if res_e.peer_asn == u_e.peer_asn:
                         tmp.append(
                             mrt_entry(
-                                peer_asn=res_e.peer_asn,
                                 advt=(res_e.advt + u_e.advt),
+                                filename=u_e.filename,
+                                peer_asn=res_e.peer_asn,
+                                timestamp=u_e.timestamp,
                             )
                         )
                         merge_data.most_advt_peer_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
@@ -269,7 +281,9 @@ class mrt_stats:
                     if res_e.peer_asn == u_e.peer_asn:
                         tmp.append(
                             mrt_entry(
+                                filename=u_e.filename,
                                 peer_asn=res_e.peer_asn,
+                                timestamp=u_e.timestamp,
                                 updates=(res_e.updates + u_e.updates),
                             )
                         )
@@ -307,7 +321,9 @@ class mrt_stats:
                     if res_e.peer_asn == u_e.peer_asn:
                         tmp.append(
                             mrt_entry(
+                                filename=u_e.filename,
                                 peer_asn=res_e.peer_asn,
+                                timestamp=u_e.timestamp,
                                 withdraws=(res_e.withdraws + u_e.withdraws),
                             )
                         )
@@ -345,8 +361,10 @@ class mrt_stats:
                     res_e.origin_asns != u_e.origin_asns):
                     tmp.append(
                         mrt_entry(
-                            prefix=res_e.prefix,
+                            filename=u_e.filename,
                             origin_asns=res_e.origin_asns.union(u_e.origin_asns),
+                            prefix=res_e.prefix,
+                            timestamp=u_e.timestamp,
                         )
                     )
                     ###print(f"update prefix: {u_e.prefix}")
@@ -386,6 +404,13 @@ class mrt_stats:
                 elif len(merge_data.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
                     self.most_origin_asns = merge_data.most_origin_asns.copy()
                     changed = True
+
+
+        if changed:
+            for filename in merge_data.file_list:
+                if filename not in self.file_list:
+                    self.file_list.append(filename)
+            self.timestamp = merge_data.timestamp
 
         return changed
 
@@ -584,6 +609,25 @@ class mrt_stats:
         self.timestamp = json_dict["timestamp"]
 
     @staticmethod
+    def gen_ts_from_ymd(ymd):
+        """
+        Generate and return the timestamp for a specific day, for use when
+        creating an mrt_stats objects which contains the summary data for a
+        whole day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        mrt_archive.valid_ymd(ymd)
+
+        return datetime.datetime.strftime(
+            datetime.datetime.strptime(ymd, "%Y%m%d"),
+            cfg.TIME_FORMAT
+        )
+
+    @staticmethod
     def gen_daily_key(ymd):
         """
         Generate the redis key used to store the global stats obj for a
@@ -597,6 +641,21 @@ class mrt_stats:
         mrt_archive.valid_ymd(ymd)
 
         return "DAILY:" + ymd
+
+    @staticmethod
+    def gen_diff_key(ymd):
+        """
+        Generate the redis key used to store the diff stats obj for a
+        specific day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        mrt_archive.valid_ymd(ymd)
+
+        return "DAILY_DIFF:" + ymd
 
     @staticmethod
     def gen_global_key():
@@ -714,6 +773,118 @@ class mrt_stats:
 
         return diff
 
+    def get_diff_larger(self, mrt_s):
+        """
+        Generate an mrt_stats obj with entries which are unique to mrt_s, and
+        are larger than the equivilent values in this obj. For example, only 
+        prefixes if the AS Path is longer, or only origin ASNs which sent more
+        updates.
+        """
+        diff = mrt_stats()
+        diff.longest_as_path = []
+        diff.longest_comm_set = []
+        diff.most_advt_prefixes = []
+        diff.most_upd_prefixes = []
+        diff.most_withd_prefixes = []
+        diff.most_advt_origin_asn = []
+        diff.most_advt_peer_asn = []
+        diff.most_upd_peer_asn = []
+        diff.most_withd_peer_asn = []
+        diff.most_origin_asns = []
+
+        updated = False
+
+        # Longer AS path
+        if len(mrt_s.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
+            diff.longest_as_path = mrt_s.longest_as_path.copy()
+            updated = True
+
+        # Longer community set
+        if len(mrt_s.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
+            diff.longest_comm_set = mrt_s.longest_comm_set.copy()
+            updated = True
+
+        # More advertisements per prefix
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_advt_prefixes[0].prefix and self.most_advt_prefixes[0].prefix:
+            if mrt_s.most_advt_prefixes[0].advt > self.most_advt_prefixes[0].advt:
+                diff.most_advt_prefixes = mrt_s.most_advt_prefixes.copy()
+                updated = True
+
+        # More updates per prefix
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_upd_prefixes[0].prefix and self.most_upd_prefixes[0].prefix:
+            if mrt_s.most_upd_prefixes[0].updates > self.most_upd_prefixes[0].updates:
+                diff.most_upd_prefixes = mrt_s.most_upd_prefixes.copy()
+                updated = True
+
+        # More withdraws per prefix
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_withd_prefixes[0].prefix and self.most_withd_prefixes[0].prefix:
+            if mrt_s.most_withd_prefixes[0].withdraws > self.most_withd_prefixes[0].withdraws:
+                diff.most_withd_prefixes = mrt_s.most_withd_prefixes.copy()
+                updated = True
+
+        # More advertisement per origin ASN
+        # If stats from a rib dump are being compare this wont be present:
+        if mrt_s.most_advt_origin_asn[0].origin_asns and self.most_advt_origin_asn[0].origin_asns:
+            if mrt_s.most_advt_origin_asn[0].advt > self.most_advt_origin_asn[0].advt:
+                diff.most_advt_origin_asn = mrt_s.most_advt_origin_asn.copy()
+                updated = True
+
+        # More advertisement per peer ASN
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_advt_peer_asn[0].peer_asn and self.most_advt_peer_asn[0].peer_asn:
+            if mrt_s.most_advt_peer_asn[0].advt > self.most_advt_peer_asn[0].advt:
+                diff.most_advt_peer_asn = mrt_s.most_advt_peer_asn.copy()
+                updated = True
+
+        # More updates per peer ASN
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_upd_peer_asn[0].peer_asn and self.most_upd_peer_asn[0].peer_asn:
+            if mrt_s.most_upd_peer_asn[0].updates > self.most_upd_peer_asn[0].updates:
+                diff.most_upd_peer_asn = mrt_s.most_upd_peer_asn.copy()
+                updated = True
+
+        # More withdraws per peer ASN
+        # If stats from a rib dump are being compared this wont be present:
+        if mrt_s.most_withd_peer_asn[0].peer_asn and self.most_withd_peer_asn[0].peer_asn:
+            if mrt_s.most_withd_peer_asn[0].withdraws > self.most_withd_peer_asn[0].withdraws:
+                diff.most_withd_peer_asn = mrt_s.most_withd_peer_asn.copy()
+                updated = True
+
+        # More origin ASNs per prefix
+        if mrt_s.most_origin_asns[0].prefix and self.most_origin_asns[0].prefix:
+            if len(mrt_s.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
+                diff.most_origin_asns = mrt_s.most_origin_asns.copy()
+                updated = True
+
+        if updated:
+            ### FIXME - this least to an accumulating file list
+            ###diff.file_list.extend(self.file_list)
+            ###diff.file_list.extend(mrt_s.file_list)
+            diff.timestamp = mrt_s.timestamp
+
+        return diff
+
+    @staticmethod
+    def gen_prev_daily_key(ymd):
+        """
+        Generate the redis key used to store the global stats obj for the
+        day before a specific day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        mrt_archive.valid_ymd(ymd)
+
+        return "DAILY:" + datetime.datetime.strftime(
+            datetime.datetime.strptime(ymd, "%Y%m%d") - datetime.timedelta(days=1),
+            "%Y%m%d"
+        )
+
     def is_empty(self):
         """
         Check if an mrt_stats object is empty. Don't check meta data like
@@ -753,8 +924,6 @@ class mrt_stats:
         updates. If merge_data has a prefix with 10000 updates, 192.168.2.0/24,
         all prefixes in this object will be dropped, and this object will now
         contain 192.168.2.0/24 only.
-
-        Only stats data is merged, not meta data like timestamp or file list.
         """
 
         changed = False
@@ -915,6 +1084,12 @@ class mrt_stats:
             elif len(merge_data.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
                 self.most_origin_asns = merge_data.most_origin_asns.copy()
                 changed = True
+
+        if changed:
+            for filename in merge_data.file_list:
+                if filename not in self.file_list:
+                    self.file_list.append(filename)
+            self.timestamp = merge_data.timestamp
 
         return changed
 
@@ -1102,3 +1277,29 @@ class mrt_stats:
             "timestamp": self.timestamp,
         }
         return json.dumps(json_data)
+
+    def ts_ymd(self):
+        """
+        Return only the YMD from this obj's timestamp raw e.g. YYYYMMDD
+        """
+        if not self.timestamp:
+            raise ValueError(
+                f"{self} has no timestamp: {self.timestamp}"
+            )
+
+        return self.timestamp.split(".")[0]
+
+    def ts_ymd_format(self):
+        """
+        Return only the YMD from this obj's timestamp formatted e.g. YYYY/MM/DD
+        """
+        if not self.timestamp:
+            raise ValueError(
+                f"{self} has no timestamp: {self.timestamp}"
+            )
+
+        return (
+            self.timestamp[0:4] + "/"
+            + self.timestamp[4:6] + "/"
+            + self.timestamp[6:8]
+        )

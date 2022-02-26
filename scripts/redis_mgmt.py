@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import pprint
 import os
 import sys
 
@@ -151,7 +152,8 @@ def print_key(key):
             f"Missing required arguments: key={key}"
         )
 
-    print(rdb.get(key))
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(rdb.get(key))
 
 def print_keys():
     """
