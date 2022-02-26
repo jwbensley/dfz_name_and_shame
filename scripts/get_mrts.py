@@ -128,6 +128,44 @@ def continuous(args):
 
         time.sleep(60)
 
+def get_range(args):
+    """
+    Download a specific range of MRT files from all of the MRT archives which
+    are enabled in the config.
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    if (not args["start"] or not args["end"]):
+        raise ValueError(
+            "Both a '--start' and '--end' date are required for '--range'"
+        )
+
+    mrt_a = mrt_archives()
+
+    for arch in mrt_a.archives:
+        if (args["enabled"] and not arch.ENABLED):
+            continue
+        logging.debug(f"Archive {arch.NAME} is enabled")
+            
+        if args["rib"]:
+            arch.get_range_rib(
+                arch=arch,
+                end_date=args["end"],
+                replace=args["replace"],
+                start_date=args["start"],
+            )
+
+        if args["update"]:
+            arch.get_range_upd(
+                arch=arch,
+                end_date=args["end"],
+                replace=args["replace"],
+                start_date=args["start"],
+            )
+
 def parse_args():
     """
     Parse the CLI args to this script.
@@ -220,47 +258,6 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def range(args):
-    """
-    Download a specific range of MRT files from all of the MRT archives which
-    are enabled in the config.
-    """
-    if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
-
-    if (not args["start"] or not args["end"]):
-        raise ValueError(
-            "Both a '--start' and '--end' date are required for '--range'"
-        )
-
-    mrt_a = mrt_archives()
-
-    for arch in mrt_a.archives:
-        if (args["enabled"] and not arch.ENABLED):
-            continue
-        logging.debug(f"Archive {arch.NAME} is enabled")
-            
-        if arch.ENABLED:
-            logging.debug(f"Archive {arch.NAME} is enabled")
-
-            if args["rib"]:
-                arch.get_range_rib(
-                    arch=arch,
-                    end_date=args["end"],
-                    replace=args["replace"],
-                    start_date=args["start"],
-                )
-
-            if args["update"]:
-                arch.get_range_upd(
-                    arch=arch,
-                    end_date=args["end"],
-                    replace=args["replace"],
-                    start_date=args["start"],
-                )
-
 def main():
 
     args = parse_args()
@@ -274,14 +271,16 @@ def main():
     logging.info(f"Starting MRT downloader with logging level {level}")
 
     if not args["rib"] and not args["update"]:
-        print("At least one of --rib and/or --update must be specified!")
+        logging.error(
+            "At least one of --rib and/or --update must be specified!"
+        )
         exit(1)
 
     if args["backfill"]:
         backfill(args)
 
     if args["range"]:
-        range(args)
+        get_range(args)
 
     if args["continuous"]:
         continuous(args)

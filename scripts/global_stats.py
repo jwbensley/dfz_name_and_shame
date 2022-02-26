@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import logging
 import os
 import sys
@@ -28,15 +29,22 @@ def gen_day_stats(args):
         raise ValueError(
             f"Missing required arguments: args={args}"
         )
+
     if not args["ymd"]:
         raise ValueError(
             f"Missing required arguments: ymd={args['ymd']}, use --ymd"
         )
 
+    if (not args["rib"] and not args["update"]):
+        raise ValueError(
+            "At least one of --rib and/or --update must be used with "
+            "--daily"
+        )
+
     rdb = redis_db()
     mrt_a = mrt_archives()
     day_stats = mrt_stats()
-    day_stats.timestamp = mrt_entry.gen_timestamp()
+    day_stats.timestamp = mrt_stats.gen_ts_from_ymd(args["ymd"])
 
     for arch in mrt_a.archives:
         if (args["enabled"] and not arch.ENABLED):
@@ -45,21 +53,35 @@ def gen_day_stats(args):
 
         if args["rib"]:
             day_key = arch.gen_rib_key(args["ymd"])
+            arch_stats = rdb.get_stats(day_key)
+
+            if arch_stats:
+                if day_stats.merge(arch_stats):
+                    logging.info(
+                        f"Compiling {day_key} RIB stats into daily stats for "
+                        f"{args['ymd']}"
+                    )
+                else:
+                    logging.info(
+                        f"No contribution from {day_key} RIB to daily stats "
+                        f"for {args['ymd']}"
+                    )
+
         if args["update"]:
             day_key = arch.gen_upd_key(args["ymd"])
+            arch_stats = rdb.get_stats(day_key)
 
-        arch_stats = rdb.get_stats(day_key)
-        if arch_stats:
-            if day_stats.merge(arch_stats):
-                logging.info(
-                    f"Compiling {day_key} stats into daily stats for "
-                    f"{args['ymd']}"
-                )
-            else:
-                logging.info(
-                    f"No contribution from {day_key} to daily stats for "
-                    f"args['ymd']"
-                )
+            if arch_stats:
+                if day_stats.merge(arch_stats):
+                    logging.info(
+                        f"Compiling {day_key} UPDATE stats into daily stats "
+                        f"for {args['ymd']}"
+                    )
+                else:
+                    logging.info(
+                        f"No contribution from {day_key} UPDATE to daily stats "
+                        f"for {args['ymd']}"
+                    )
 
     day_key = mrt_stats.gen_daily_key(args["ymd"])
     db_day_stats = rdb.get_stats(day_key)
@@ -72,14 +94,75 @@ def gen_day_stats(args):
     else:
         logging.debug(f"Retrieved existing day stats from {day_key}")
         if db_day_stats.merge(day_stats):
-            logging.info(f"Merged {args['ymd']} stats with existing day stats in redis")
             rdb.set_stats(day_key, db_day_stats)
+            logging.info(
+                f"Merged {args['ymd']} stats with existing day stats in redis"
+            )
         else:
             logging.info(
                 f"No update to exsiting {args['ymd']} stats in redis"
             )
 
     rdb.close()
+
+def gen_diff(ymd):
+    """
+    Generate and store the diff of a daily stats object, with the daily stats
+    from the day before.
+    """
+    if not ymd:
+        raise ValueError(
+            f"Missing required arguments: ymd={ymd}, use --ymd"
+        )
+
+    rdb = redis_db()
+
+    day_key = mrt_stats.gen_daily_key(ymd)
+    day_stats = rdb.get_stats(day_key)
+    if not day_stats:
+        logging.info(
+            f"No existing global stats obj for day {day_key}, "
+            "nothing to diff"
+        )
+        return
+
+    prev_key = mrt_stats.gen_prev_daily_key(ymd)
+    prev_sats = rdb.get_stats(prev_key)
+    if not prev_sats:
+        logging.info(
+            f"No existing global stats obj for day {prev_key}, "
+            "nothing to diff"
+        )
+        return
+
+    diff_key = mrt_stats.gen_diff_key(ymd)
+    existing_diff = rdb.get_stats(diff_key)
+    new_diff = prev_sats.get_diff_larger(day_stats)
+
+    if not existing_diff:
+        logging.info(f"No exisiting diff stored under {diff_key}")
+
+        if new_diff.is_empty():
+            logging.info(
+                f"Storing empty diff stats for {ymd} under {diff_key}"
+            )
+        else:
+            logging.info(f"Storing new diff stats for {ymd} under {diff_key}")
+        rdb.set_stats(diff_key, new_diff)
+
+    else:
+        if new_diff.is_empty():
+            logging.info(
+                f"No difference between existing diff and new diff for {ymd}"
+            )
+        else:
+            logging.info(
+                f"Overwitten existing diff for {ymd} under {diff_key}"
+            )
+            rdb.set_stats(diff_key, new_diff)
+
+    rdb.close()
+    return
 
 def parse_args():
     """
@@ -92,7 +175,8 @@ def parse_args():
     )
     parser.add_argument(
         "--daily",
-        help="Generate the daily stats for the day specified with --ymd.",
+        help="Generate and store in redis the daily stats for the day "
+        "specified with --ymd.",
         default=False,
         action="store_true",
         required=False,
@@ -105,9 +189,17 @@ def parse_args():
         required=False,
     )
     parser.add_argument(
+        "--diff",
+        help="Generate and store in redis the diff between the daily stats "
+        "for the day specified with --ymd, to those from the day before.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "--global",
-        help="Update the global stats with the stats from the day specified "
-        "using --ymd.",
+        help="Update the running global stats stored in redis with the stats "
+        "from the day specified using --ymd.",
         default=False,
         action="store_true",
         required=False,
@@ -206,13 +298,10 @@ def main():
     logging.info(f"Starting global stats compiler with logging level {level}")
 
     if args["daily"]:
-        if (not args["rib"] and not args["update"]):
-            logging.error(
-                "At least one of --rib and/or --update must be used with "
-                "--daily"
-            )
-            exit(1)
         gen_day_stats(args)
+
+    if args["diff"]:
+        gen_diff(args["ymd"])
 
     if args["global"]:
         upd_global_with_day(args)

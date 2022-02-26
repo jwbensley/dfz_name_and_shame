@@ -216,7 +216,7 @@ class mrt_archive:
         else:
             raise ValueError(f"Unknown MRT archive type {self.TYPE}")
 
-    def get_upd_ripe_url(self, filename):
+    def gen_upd_ripe_url(self, filename):
         """
         Generate the URL for a specifc UPDATE MRT file from a RIPE MRT archive.
         """
