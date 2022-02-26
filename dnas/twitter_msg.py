@@ -1,3 +1,5 @@
+import json
+
 class twitter_msg:
     """
     This object contains a twitter message, to be tweeted.
@@ -8,7 +10,7 @@ class twitter_msg:
     It must be is <= cfg.TWITTER_LEN
     This field is required.
     """
-    hdr = None
+    hdr = ""
 
     """
     The Tweet ID of the header message.
@@ -19,7 +21,7 @@ class twitter_msg:
     The body is an optional field, which contains any subsequent info to be
     tweeted. This will be split across multiple replies to the header tweet.
     """
-    body = None
+    body = ""
 
     """
     List of Tweet IDs which are the pages replies to the header Tweet.
@@ -51,6 +53,23 @@ class twitter_msg:
         self.hidden = json_data["hidden"]
 
     @staticmethod
+    def gen_tweeted_q_key(ymd):
+        """
+        Return the redis key for the tweeted queue, for a specific day.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        if type(ymd) != str:
+            raise TypeError(
+                f"ymd is not an str: {type(ymd)}"
+            )
+
+        return "TWEETED:" + ymd
+
+    @staticmethod
     def gen_tweet_q_key(ymd):
         """
         Return the redis key for the tweet queue, for a days tweets.
@@ -60,9 +79,9 @@ class twitter_msg:
                 f"Missing required arguments: ymd={ymd}"
             )
 
-        if type(ymd) != int:
+        if type(ymd) != str:
             raise TypeError(
-                f"ymd is not an int: {type(ymd)}"
+                f"ymd is not an str: {type(ymd)}"
             )
 
         return "TWEET_Q:" + ymd

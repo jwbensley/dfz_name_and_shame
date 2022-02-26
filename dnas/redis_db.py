@@ -18,32 +18,54 @@ class redis_db():
             password=redis_auth.password,
         )
 
-    def add_to_tweet_q(self, key, json_tweet):
+    def add_to_queue(self, key, json_str):
         """
-        Store the list of tweets serialised as JSON strings.
+        Push to a list a strings.
+        For example, a Tweet serialised to a JSON string.
         """
         if not key:
             raise ValueError(
                 f"Missing required arguments: key={key}"
             )
 
-        if not json_tweet_q:
+        if not json_str:
             raise ValueError(
-                f"Missing required arguments: json_tweet_q={json_tweet_q}"
+                f"Missing required arguments: json_str={json_str}"
             )
 
-        if type(json_tweet_q) != str:
+        if type(json_str) != str:
             raise TypeError(
-                f"json_tweet_q is not a string: {type(json_tweet_q)}"
+                f"json_str is not a string: {type(json_str)}"
             )
 
-        self.r.lpush(key, json_tweet_q)
+        self.r.lpush(key, json_str)
 
     def close(self):
         """
         Close the redis connection.
         """
         self.r.close()
+
+    def del_from_queue(self, key, elem):
+        """
+        Delete an entry from a list of strings.
+        """
+        if not key:
+            raise ValueError(
+                f"Missing required arguments: key={key}"
+            )
+
+        if not elem:
+            raise ValueError(
+                f"Missing required arguments: elem={elem}"
+            )
+
+        if type(elem) != str:
+            raise TypeError(
+                f"elem is not a string: {type(elem)}"
+            )
+
+        self.r.lrem(key, 0, elem)
 
     def delete(self, key):
         """
@@ -88,7 +110,15 @@ class redis_db():
                 f"Missing required arguments: key={key}"
             )
 
-        return self.r.get(key).decode("utf-8")
+        t = self.r.type(key).decode("utf-8")
+        if t == "string":
+            return self.r.get(key).decode("utf-8")
+        elif t == "list":
+            return [x.decode("utf-8") for x in self.r.lrange(key, 0, -1)]
+        else:
+            raise TypeError(
+                f"Unknown redis data type stored under {key}: {t}"
+            )
 
     def get_keys(self, pattern):
         """
@@ -100,6 +130,26 @@ class redis_db():
             )
 
         return [x.decode("utf-8") for x in self.r.keys(pattern)]
+
+    def get_queue_msgs(self, key):
+        """
+        Return the list of Tweets stored under key as Twitter messages objects.
+        """
+        if not key:
+            raise ValueError(
+                f"Missing required arguments: key={key}"
+            )
+
+        db_q = [x for x in self.r.lrange(key, 0, -1)]
+        msgs = []
+
+        for msg in db_q:
+            if msg:
+                t_m = twitter_msg()
+                t_m.from_json(msg.decode("utf-8"))
+                msgs.append(t_m)
+
+        return msgs
 
     def get_stats(self, key):
         """
@@ -128,27 +178,6 @@ class redis_db():
             )
 
         return self.r.get(key).decode("utf-8")
-
-    def get_tweet_q(self, key):
-        """
-        Return the list of tweets stored under key as Twitter messages objects.
-        """
-        if not key:
-            raise ValueError(
-                f"Missing required arguments: key={key}"
-            )
-
-        db_q = [x for x in self.r.lrange(key, 0, -1)]
-        db_q.reverse()
-
-        msgs = []
-        for msg in db_q:
-            if msg:
-                t_m = twitter_msg()
-                t_m.from_json(msg.decode("utf-8"))
-                msgs.append(t_m)
-
-        return msgs
 
     def set_stats(self, key, mrt_s):
         """
