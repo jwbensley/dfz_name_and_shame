@@ -148,8 +148,7 @@ def get_range(args):
     for arch in mrt_a.archives:
         if (args["enabled"] and not arch.ENABLED):
             continue
-        logging.debug(f"Archive {arch.NAME} is enabled")
-            
+
         if args["rib"]:
             arch.get_range_rib(
                 arch=arch,

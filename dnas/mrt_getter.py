@@ -135,8 +135,9 @@ class mrt_getter:
             )
 
         diff = end - start
-        count = diff.seconds // (arch.RIB_INTERVAL * 60)
+        count = int(diff.total_seconds()) // (arch.RIB_INTERVAL * 60)
         downloaded = []
+        print(f"Done 0/{count}")
 
         for i in range(0, count + 1):
             m_delta = datetime.timedelta(minutes=(i*arch.RIB_INTERVAL))
@@ -150,6 +151,7 @@ class mrt_getter:
                 filename=filename, replace=replace, url=url
             ):
                 downloaded.append((filename, url))
+                print(f"Done {i+1}/{count}")
 
         return downloaded
 
@@ -184,8 +186,9 @@ class mrt_getter:
             )
 
         diff = end - start
-        count = diff.seconds // (arch.UPD_INTERVAL * 60)
+        count = int(diff.total_seconds()) // (arch.UPD_INTERVAL * 60)
         downloaded = []
+        print(f"Done 0/{count}")
 
         for i in range(0, count + 1):
             m_delta = datetime.timedelta(minutes=(i*arch.UPD_INTERVAL))
@@ -195,10 +198,15 @@ class mrt_getter:
             url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
+            """
             if mrt_getter.download_mrt(
                 filename=filename, replace=replace, url=url
             ):
                 downloaded.append((filename, url))
+                print(f"Done {i+1}/{count}")
+            """
+            print(filename)
+            print(f"Done {i+1}/{count}")
 
         return downloaded
 
@@ -327,8 +335,9 @@ class mrt_getter:
             )
 
         diff = end - start
-        count = diff.seconds // (arch.RIB_INTERVAL * 60)
+        count = int(diff.total_seconds()) // (arch.RIB_INTERVAL * 60)
         downloaded = []
+        print(f"Done 0/{count}")
 
         for i in range(0, count + 1):
             m_delta = datetime.timedelta(minutes=(i*arch.RIB_INTERVAL))
@@ -342,6 +351,7 @@ class mrt_getter:
                 filename=filename, replace=replace, url=url
             ):
                 downloaded.append((filename, url))
+                print(f"Done {i+1}/{count}")
 
         return downloaded
 
@@ -376,8 +386,9 @@ class mrt_getter:
             )
 
         diff = end - start
-        count = diff.seconds // (arch.UPD_INTERVAL * 60)
+        count = int(diff.total_seconds()) // (arch.UPD_INTERVAL * 60)
         downloaded = []
+        print(f"Done 0/{count}")
 
         for i in range(0, count + 1):
             m_delta = datetime.timedelta(minutes=(i*arch.UPD_INTERVAL))
@@ -391,6 +402,7 @@ class mrt_getter:
                 filename=filename, replace=replace, url=url
             ):
                 downloaded.append((filename, url))
+                print(f"Done {i+1}/{count}")
 
         return downloaded
 
