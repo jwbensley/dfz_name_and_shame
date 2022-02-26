@@ -29,9 +29,16 @@ def gen_day_stats(args):
         raise ValueError(
             f"Missing required arguments: args={args}"
         )
+
     if not args["ymd"]:
         raise ValueError(
             f"Missing required arguments: ymd={args['ymd']}, use --ymd"
+        )
+
+    if (not args["rib"] and not args["update"]):
+        raise ValueError(
+            "At least one of --rib and/or --update must be used with "
+            "--daily"
         )
 
     rdb = redis_db()
@@ -291,12 +298,6 @@ def main():
     logging.info(f"Starting global stats compiler with logging level {level}")
 
     if args["daily"]:
-        if (not args["rib"] and not args["update"]):
-            logging.error(
-                "At least one of --rib and/or --update must be used with "
-                "--daily"
-            )
-            exit(1)
         gen_day_stats(args)
 
     if args["diff"]:

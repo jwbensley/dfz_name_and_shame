@@ -14,12 +14,21 @@ sys.path.append(
     )
 )
 
-from dnas.config import config as cfg
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_db import redis_db
 from dnas.twitter import twitter
 from dnas.twitter_msg import twitter_msg
-from dnas.whois import whois
+
+def delete(tweet_id):
+    """
+    Delete a Tweet from twitter.com
+    """
+    if not tweet_id:
+        raise ValueError(
+            f"Missing required arguments: tweet_id={tweet_id}"
+        )
+    t = twitter()
+    t.delete(tweet_id)
 
 def gen_tweets_yest():
     """
@@ -38,9 +47,9 @@ def gen_tweets(ymd):
             f"Missing required arguments: ymd={ymd}, use --ymd"
         )
 
-    if type(ymd) != int:
+    if type(ymd) != str:
         raise TypeError(
-            f"ymd is not an int: {type(ymd)}"
+            f"ymd is not an str: {type(ymd)}"
         )
 
     rdb = redis_db()
@@ -50,226 +59,56 @@ def gen_tweets(ymd):
         logging.info(f"No daily diff stored for {ymd}")
         return
 
-    msg_q = []
-    if diff.longest_as_path:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New longest AS path: on the day {diff.ts_ymd_format()} "
-            f"{len(diff.longest_as_path)} prefix(es) had an AS path length "
-            f"of {len(diff.longest_as_path[0].as_path)} ASNs"
+    msg_q = twitter.gen_tweets(diff)
+    if not msg_q:
+        logging.info(f"No tweets generated for day {ymd}")
+
+    else:
+        logging.info(
+            f"Storing {len(msg_q)} tweets under "
+            f"{twitter_msg.gen_tweet_q_key(ymd)}"
         )
-
-        for mrt_e in diff.longest_as_path:
-            msg.body += f"{mrt_e.prefix} from origin ASN(s)"
-            for asn in mrt_e.origin_asns:
-                as_name = whois.as_lookup(int(asn))
-                if as_name:
-                    msg.body += f" AS{asn} ({as_name})"
-                else:
-                    msg.body += f" AS{asn}"
-            msg.body += ", "
-        msg.body = msg.body[0:-1]
-
-        msg.hidden = False
-        msg_q.append(msg)
-
-    if diff.longest_comm_set:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New longest community set: on the day {diff.ts_ymd_format()} "
-            f"{len(diff.longest_comm_set)} prefix(es) had a comm set length"
-            f" of {len(diff.longest_comm_set[0].comm_set)} communities"
-        )
-
-        for mrt_e in diff.longest_comm_set:
-            msg.body += f"{mrt_e.prefix} from origin ASN(s)"
-            for asn in mrt_e.origin_asns:
-                as_name = whois.as_lookup(int(asn))
-                if as_name:
-                    msg.body += f" AS{asn} ({as_name})"
-                else:
-                    msg.body += f" AS{asn}"
-            msg.body += ", "
-        msg.body = msg.body[0:-2]
-
-        msg.hidden = False
-        msg_q.append(msg)
-
-    if diff.most_advt_prefixes:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most BGP advertisements per prefix: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_advt_prefixes)} prefix(es) had "
-            f"{diff.most_advt_prefixes[0].advt} advertisements"
-        )
-
-        msg.body = "Prefix(es):"
-        for mrt_e in diff.most_advt_prefixes:
-            msg.body += f" {mrt_e.prefix}"
-        msg.hidden = False
-        msg_q.append(msg)
-
-    if diff.most_upd_prefixes:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most BGP updates per prefix: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_upd_prefixes)} prefix(es) had "
-            f"{diff.most_upd_prefixes[0].updates} updates"
-        )
-        msg.body = "Prefix(es):"
-        for mrt_e in diff.most_upd_prefixes:
-            msg.body += f" {mrt_e.prefix}"
-        msg.hidden = False
-        msg_q.append(msg)
-
-    if diff.most_withd_prefixes:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most BGP withdraws per prefix: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_withd_prefixes)} prefix(es) had "
-            f"{diff.most_withd_prefixes[0].withdraws} withdraws"
-        )
-        msg.body = "Prefix(es):"
-        for mrt_e in diff.most_withd_prefixes:
-            msg.body += f" {mrt_e.prefix}"
-        msg.hidden = False
-        msg_q.append(msg)
-
-    if diff.most_advt_origin_asn:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most BGP advertisements per origin ASN: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_advt_origin_asn)} origin ASN(s) sent "
-            f"{diff.most_advt_origin_asn[0].advt} advertisements"
-        )
-        msg.body = "Origin ASN(s):"
-        for mrt_e in diff.most_advt_origin_asn:
-            for asn in mrt_e.origin_asns:
-                as_name = whois.as_lookup(int(asn))
-                if as_name:
-                    msg.body += f" AS{asn} ({as_name})"
-                else:
-                    msg.body += f" AS{asn}"
-            msg.body += ", "
-        msg.body = msg.body[0:-2]
-        msg.hidden = False
-        msg_q.append(msg)
-
-    if diff.most_advt_peer_asn:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most BGP advertisements per peer ASN: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_advt_peer_asn)} peer ASN(s) sent "
-            f"{diff.most_advt_peer_asn[0].advt} advertisements"
-        )
-        msg.body = "Peer ASN(s):"
-        for mrt_e in diff.most_advt_peer_asn:
-            for asn in mrt_e.peer_asn:
-                as_name = whois.as_lookup(int(asn))
-                if as_name:
-                    msg.body += f" AS{asn} ({as_name})"
-                else:
-                    msg.body += f" AS{asn}"
-            msg.body += ", "
-        msg.body = msg.body[0:-2]
-        msg_q.append(msg)
-
-    if diff.most_upd_peer_asn:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most BGP updates per peer ASN: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_upd_peer_asn)} peer ASN(s) sent "
-            f"{diff.most_upd_peer_asn[0].updates} updates"
-        )
-        msg.body = "Peer ASN(s):"
-        for mrt_e in diff.most_upd_peer_asn:
-            for asn in mrt_e.peer_asn:
-                as_name = whois.as_lookup(int(asn))
-                if as_name:
-                    msg.body += f" AS{asn} ({as_name})"
-                else:
-                    msg.body += f" AS{asn}"
-            msg.body += ", "
-        msg.body = msg.body[0:-2]
-        msg_q.append(msg)
-
-    if diff.most_withd_peer_asn:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most BGP withdraws per peer ASN: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_withd_peer_asn)} peer ASN(s) sent "
-            f"{diff.most_withd_peer_asn[0].withdraws} withdraws"
-        )
-        msg.body = "Peer ASN(s):"
-        for mrt_e in diff.most_withd_peer_asn:
-            for asn in mrt_e.peer_asn:
-                as_name = whois.as_lookup(int(asn))
-                if as_name:
-                    msg.body += f" AS{asn} ({as_name})"
-                else:
-                    msg.body += f" AS{asn}"
-            msg.body += ", "
-        msg.body = msg.body[0:-2]
-        msg_q.append(msg)
-
-    if diff.most_origin_asns:
-        msg = twitter_msg()
-        msg.hdr = (
-            f"New most origin ASNs per prefix: "
-            f"on the day {diff.ts_ymd_format()} "
-            f"{len(diff.most_origin_asns)} prefix(es) had "
-            f"{len(diff.most_origin_asns[0].origin_asns)} origin ASNs"
-        )
-        msg.body = "Prefix(es):"
-        for mrt_e in diff.most_origin_asns:
-            msg.body += f" {mrt_e.prefix}"
-            for asn in mrt_e.origin_asns:
-                as_name = whois.as_lookup(int(asn))
-                if as_name:
-                    msg.body += f" AS{asn} ({as_name})"
-                else:
-                    msg.body += f" AS{asn}"
-            msg.body += ", "
-        msg.body = msg.body[0:-2]
-        msg.hidden = False
-        msg_q.append(msg)
-
-    logging.info(f"Storing {len(msg_q)} tweets under {msg.gen_tweet_q_key()}")
-    for msg in msg_q:
-        rdb.add_to_tweet_q(
-            msg.gen_tweet_q_key(ymd),
-            msg.to_json()
-        )
+        for msg in msg_q:
+            rdb.add_to_queue(
+                twitter_msg.gen_tweet_q_key(ymd),
+                msg.to_json()
+            )
 
     rdb.close()
 
-def tweet(tmd):
+def tweet(ymd, print_only):
     """
-    Sent all the tweets in the redis queue for a specific day.
+    Tweet all the Tweets in the redis queue for a specific day.
     """
     if not ymd:
         raise ValueError(
             f"Missing required arguments: ymd={ymd}, use --ymd"
         )
 
-    if type(ymd) != int:
+    if type(ymd) != str:
         raise TypeError(
-            f"ymd is not an int: {type(ymd)}"
+            f"ymd is not an str: {type(ymd)}"
         )
 
     rdb = redis_db()
     t = twitter()
-    msg_q = rdb.get_tweet_q(twitter_msg.gen_tweet_q_key(ymd))
+    msg_q = rdb.get_queue_msgs(twitter_msg.gen_tweet_q_key(ymd))
+
     for msg in msg_q:
         if not msg.hidden:
-            t.tweet_both(msg)
+
+            t.tweet(msg, print_only)
+            if print_only:
+                continue
+
+            rdb.add_to_queue(
+                twitter_msg.gen_tweeted_q_key(ymd),
+                msg.to_json()
+            )
+            rdb.del_from_queue(
+                twitter_msg.gen_tweet_q_key(ymd),
+                msg.to_json()
+            )
 
     rdb.close()
 
@@ -283,14 +122,38 @@ def parse_args():
     )
     parser.add_argument(
         "--debug",
-        help="Enable debug logging for this script",
+        help="Enable debug logging for this script.",
         default=False,
         action="store_true",
         required=False,
     )
     parser.add_argument(
-        "--tweet-all",
-        help="Tweet all tweets in the tweet queue",
+        "--delete",
+        help="Delete a Tweet by providing the Tweet ID e.g., 1234567890",
+        type=str,
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
+        "--generate",
+        help="Generate Tweets for stat changes of a specific day, "
+        "and add to tweet queue. Use --ymd option.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--print",
+        help="Use with --tweet and --ymd to print the Tweets from that day, "
+        "instead of tweeting them.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--tweet",
+        help="Tweet tweets in the tweet queue for a specific day. "
+        "Use with the --ymd option.",
         default=False,
         action="store_true",
         required=False,
@@ -298,15 +161,14 @@ def parse_args():
     parser.add_argument(
         "--yesterday",
         help="Generate Tweets for yesterdays stat changes, "
-        "and add to tweet queue",
+        "and add to tweet queue.",
         default=False,
         action="store_true",
         required=False,
     )
     parser.add_argument(
         "--ymd",
-        help="Generate Tweets for for a specific day's stat changes, "
-        "and add to tweet queue",
+        help="Day in format 'yyyymmdd' e.g., '20220101'.",
         type=str,
         default=None,
         required=False,
@@ -327,11 +189,17 @@ def main():
     )
     logging.info(f"Starting Tweet generation and posting with logging level {level}")
 
+    if args["delete"]:
+        delete(args["delete"])
+
+    if args["generate"]:
+        gen_tweets(args["ymd"])
+
+    if args["tweet"]:
+        tweet(args["ymd"], args["print"])
+
     if args["yesterday"]:
         gen_tweets_yest()
-
-    if args["ymd"]:
-        gen_tweets(args["ymd"])
 
 if __name__ == '__main__':
     main()
