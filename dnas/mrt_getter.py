@@ -198,15 +198,11 @@ class mrt_getter:
             url = arch.BASE_URL + ym + arch.UPD_URL + "/" + arch.UPD_PREFIX + ymd_hm + "." + arch.MRT_EXT
             filename = arch.MRT_DIR + os.path.basename(url)
 
-            """
             if mrt_getter.download_mrt(
                 filename=filename, replace=replace, url=url
             ):
                 downloaded.append((filename, url))
                 print(f"Done {i+1}/{count}")
-            """
-            print(filename)
-            print(f"Done {i+1}/{count}")
 
         return downloaded
 
