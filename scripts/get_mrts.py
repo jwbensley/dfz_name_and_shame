@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import logging
 import os
 import requests
 import sys
-import time
 
 # Accomodate the use of the script, even when the dnas library isn't installed
 sys.path.append(
@@ -19,69 +19,6 @@ from dnas.mrt_archives import mrt_archives
 from dnas.config import config as cfg
 from dnas.redis_db import redis_db
 from dnas.mrt_getter import mrt_getter
-
-def backfill(args):
-    """
-    Download any MRT which are missing from the stored stats, for a specific
-    day.
-    """
-    if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
-
-    ymd = args["backfill"]
-    rdb = redis_db()
-    mrt_a = mrt_archives()
-
-    for arch in mrt_a.archives:
-        if (args["enabled"] and not arch.ENABLED):
-            continue
-        logging.debug(f"Archive {arch.NAME} is enabled")
-        
-        if args["rib"]:
-            day_key = arch.gen_rib_key(ymd)
-            day_stats = rdb.get_stats(day_key)
-
-            all_filenames = arch.gen_rib_filenames(ymd)
-            if day_stats:
-                for filename_w_path in day_stats.file_list:
-                    filename = os.path.basename(filename_w_path)
-                    if filename in all_filenames:
-                        all_filenames.remove(filename)
-
-            if all_filenames:
-                print(f"Need to backfill: {all_filenames}")
-                for idx, filename in enumerate(all_filenames):
-                    mrt_getter.download_mrt(
-                        filename=arch.MRT_DIR + "/" + filename,
-                        replace=args["replace"],
-                        url=arch.gen_rib_url(filename=filename),
-                    )
-                    logging.info(f"Done {idx+1}/{len(all_filenames)}")
-
-        if args["update"]:
-            day_key = arch.gen_upd_key(ymd)
-            day_stats = rdb.get_stats(day_key)
-
-            all_filenames = arch.gen_upd_filenames(ymd)
-            if day_stats:
-                for filename_w_path in day_stats.file_list:
-                    filename = os.path.basename(filename_w_path)
-                    if filename in all_filenames:
-                        all_filenames.remove(filename)
-
-            if all_filenames:
-                print(f"Need to backfill: {all_filenames}")
-                for idx, filename in enumerate(all_filenames):
-                    mrt_getter.download_mrt(
-                        filename=arch.MRT_DIR + "/" + filename,
-                        replace=args["replace"],
-                        url=arch.gen_upd_url(filename=filename),
-                    )
-                    logging.info(f"Done {idx+1}/{len(all_filenames)}")
-
-    rdb.close()
 
 def continuous(args):
     """
@@ -105,33 +42,86 @@ def continuous(args):
                 """
                 In continuous mode we ignore HTTP erros like 404s.
                 From time to time the MRT archives are unavailable, so any
-                missed files will have to be backfiled later :(
+                missed files will have to be manually backfilled later.
                 """
                 try:
-                    arch.get_latest_rib(
+                    mrt_getter.get_latest_rib(
                         arch=arch,
                         replace=args["replace"],
                     )
                 except requests.exceptions.HTTPError as e:
-                    print(e)
+                    logging.error(e)
                     pass
 
             if args["update"]:
                 try:
-                    arch.get_latest_upd(
+                    mrt_getter.get_latest_upd(
                         arch=arch,
                         replace=args["replace"],
                     )
                 except requests.exceptions.HTTPError as e:
-                    print(e)
+                    logging.error(e)
                     pass
 
         time.sleep(60)
 
+def get_mrts(replace=False, url_list=None):
+    """
+    Download the list of MRTs from the passed URL list.
+    """
+    if not url_list:
+        raise ValueError(
+            f"Missing required arguments: url_list={url_list}"
+        )
+
+    mrt_a = mrt_archives()
+    logging.info(f"Downloading {len(url_list)} MRT files")
+    i = 0
+    for url in url_list:
+        arch = mrt_a.arch_from_url(url)
+        outfile = os.path.normpath(arch.MRT_DIR + "/" + os.path.basename(url))
+        """
+        When downloading a large range of updates, say an entire month for
+        example, some may be missing because the BGP collector had an
+        outage. For this reason, ignore HTTP erros like 404s.
+        """
+        try:
+            mrt_getter.download_mrt(
+                filename=outfile,
+                replace=replace,
+                url=url
+            )
+            i += 1
+            logging.info(f"Downloaded {i}/{len(url_list)}")
+        except requests.exceptions.HTTPError as e:
+            logging.error(e)
+            pass
+    
+    logging.info(f"Finished, downloaded {i}/{len(url_list)}")
+
+def get_day(args):
+    """
+    Download all the MRTs for a specific day.
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    if not args["ymd"]:
+        raise ValueError(
+            f"Missing required arguments: ymd={args['ymd']}"
+        )
+
+    url_list = gen_urls_day(args)
+    if not url_list:
+        logging.info("Nothing to download")
+    else:
+        get_mrts(replace=args["replace"], url_list=url_list)
+
 def get_range(args):
     """
-    Download a specific range of MRT files from all of the MRT archives which
-    are enabled in the config.
+    Download all the MRTs for between a specific start and end date inclusive.
     """
     if not args:
         raise ValueError(
@@ -140,52 +130,203 @@ def get_range(args):
 
     if (not args["start"] or not args["end"]):
         raise ValueError(
-            "Both a '--start' and '--end' date are required for '--range'"
+            f"Missing required options: start={args['start']}, "
+            f"end={args['end']}"
         )
 
+    url_list = gen_urls_range(args)
+    if not url_list:
+        logging.info("Nothing to download")
+    else:
+        get_mrts(replace=args["replace"], url_list=url_list)
+
+def gen_urls_day(args):
+    """
+    Return a list of URLs for all the MRTs for a specific day.
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    if not args["ymd"]:
+        raise ValueError(
+            f"Missing required arguments: ymd={args['ymd']}"
+        )
+
+    args["start"] = args["ymd"] + ".0000"
+    args["end"] = args["ymd"] + ".2359"
+    return gen_urls_range(args)
+
+def gen_urls_range(args):
+    """
+    Generate and return a list of URLs for all MRTs betwen a start and end date
+    inclusive.
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    if (not args["start"] or not args["end"]):
+        raise ValueError(
+            f"Missing required options: start={args['start']}, "
+            f"end={args['end']}"
+        )
+
+    start = datetime.datetime.strptime(args["start"], cfg.TIME_FORMAT)
+    end = datetime.datetime.strptime(args["end"], cfg.TIME_FORMAT)
+
+    if end < start:
+        raise ValueError(
+            f"End date {end} is before start date {start}"
+        )
+
+    diff = end - start
+    no_days = int(diff.total_seconds() // 86400)
+    rdb = redis_db()
     mrt_a = mrt_archives()
+    url_list = []
 
-    for arch in mrt_a.archives:
-        if (args["enabled"] and not arch.ENABLED):
-            continue
+    for i in range(0, no_days + 1):
 
-        if args["rib"]:
-            arch.get_range_rib(
-                arch=arch,
-                end_date=args["end"],
-                replace=args["replace"],
-                start_date=args["start"],
-            )
+        delta = datetime.timedelta(days=i)
+        ymd = datetime.datetime.strftime(start + delta, "%Y%m%d")
 
-        if args["update"]:
-            arch.get_range_upd(
-                arch=arch,
-                end_date=args["end"],
-                replace=args["replace"],
-                start_date=args["start"],
-            )
+        for arch in mrt_a.archives:
+            if (args["enabled"] and not arch.ENABLED):
+                continue
+            logging.debug(f"Checking archive {arch.NAME}...")
+
+            if args["rib"]:
+
+                all_rib_filenames = arch.gen_rib_fns_day(ymd)
+
+                for filename in all_rib_filenames[:]:
+                    raw_ts = '.'.join(filename.split(".")[1:3])
+                    timestamp = datetime.datetime.strptime(
+                        raw_ts, cfg.TIME_FORMAT
+                    )
+                    if (timestamp < start or timestamp > end):
+                        all_rib_filenames.remove(filename)
+
+                if not all_rib_filenames:
+                    continue
+
+                """
+                if we are only downloading what is not already in the DB, pull
+                the stats for this day and check what files are missing.
+                """
+                if args["backfill"]:
+                    day_key = arch.gen_rib_key(ymd)
+                    day_stats = rdb.get_stats(day_key)
+
+                    if day_stats:
+                        for filename_w_path in day_stats.file_list:
+                            filename = os.path.basename(filename_w_path)
+                            if filename in all_rib_filenames:
+                                all_rib_filenames.remove(filename)
+
+                    if all_rib_filenames:
+                        logging.info(
+                            f"Need to backfill {len(all_rib_filenames)} RIB "
+                            f"dumps for archive {arch.NAME} on {ymd}"
+                        )
+                        urls = [arch.gen_rib_url(filename) for filename in all_rib_filenames]
+                        logging.debug(f"Adding {urls}")
+                        url_list.extend(urls)
+                    else:
+                        logging.info(
+                            f"No files needed to backfill RIB dumps for "
+                            f"archive {arch.NAME} on {ymd}"
+                        )
+
+                else:
+                    """
+                    Else, download files regardless of whether their stats are
+                    already in the DB.
+                    """
+                    logging.info(
+                        f"Adding {len(all_rib_filenames)} RIB dumps for "
+                        f"archive {arch.NAME} on {ymd}"
+                    )
+                    urls = [arch.gen_rib_url(filename) for filename in all_rib_filenames]
+                    logging.debug(f"Adding {urls}")
+                    url_list.extend(urls)
+
+            if args["update"]:
+
+                all_upd_filenames = arch.gen_upd_fns_day(ymd)
+
+                for filename in all_upd_filenames[:]:
+                    raw_ts = '.'.join(filename.split(".")[1:3])
+                    timestamp = datetime.datetime.strptime(
+                        raw_ts, cfg.TIME_FORMAT
+                    )
+                    if (timestamp < start or timestamp > end):
+                        all_upd_filenames.remove(filename)
+
+                if not all_upd_filenames:
+                    continue
+
+                if args["backfill"]:
+                    day_key = arch.gen_upd_key(ymd)
+                    day_stats = rdb.get_stats(day_key)
+                    
+                    if day_stats:
+                        for filename_w_path in day_stats.file_list:
+                            filename = os.path.basename(filename_w_path)
+                            if filename in all_upd_filenames:
+                                all_upd_filenames.remove(filename)
+
+                    if all_upd_filenames:
+                        logging.info(
+                            f"Need to backfill {len(all_upd_filenames)} UPDATE "
+                            f"dumps for archive {arch.NAME} on {ymd}"
+                        )
+                        urls = [arch.gen_upd_url(filename) for filename in all_upd_filenames]
+                        logging.debug(f"Adding {urls}")
+                        url_list.extend(urls)
+                    else:
+                        logging.info(
+                            f"No files needed to backfill UPDATE dumps for "
+                            f"archive {arch.NAME} on {ymd}"
+                        )
+
+                else:
+                    logging.info(
+                        f"Adding {len(all_upd_filenames)} UPDATE dumps for "
+                        f"archive {arch.NAME} on {ymd}"
+                    )
+                    urls = [arch.gen_upd_url(filename) for filename in all_upd_filenames]
+                    logging.debug(f"Adding {urls}")
+                    url_list.extend(urls)
+
+    rdb.close()
+    return url_list
 
 def parse_args():
     """
     Parse the CLI args to this script.
     """
-
     parser = argparse.ArgumentParser(
-        description="Download MRT files from predefined source archives.",
+        description="Download MRT files from public MRT archives. "
+        "One of three modes must be chosen: --continuous, --range, or --ymd. "
+        "One or both of --rib and --update must be chosen.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "--backfill",
-        help="Download any MRT files which are missing for a specific day. "
-        "Specify the day in the MRT format yyyymmdd.",
-        type=str,
+        help="Only download files if they are missing from stats entries stored"
+        "in redis.",
+        default=False,
+        action="store_true",
         required=False,
-        default=None,
     )
     parser.add_argument(
         "--continuous",
-        help="Run in continuous mode - checking for new MRT files every "
-        "minute and downloading them.",
+        help="Run in continuous mode - download the latest MRT file from each "
+        "archive as it becomes available. Use with --rib and/or --update.",
         default=False,
         action="store_true",
         required=False,
@@ -213,7 +354,8 @@ def parse_args():
     )
     parser.add_argument(
         "--latest",
-        help="Download the latest MRT file. Use with --rib and/or --update.",
+        help="Download the single latest MRT file. Use with --rib and/or "
+        "--update.",
         default=False,
         action="store_true",
         required=False,
@@ -254,6 +396,14 @@ def parse_args():
         action="store_true",
         required=False,
     )
+    parser.add_argument(
+        "--ymd",
+        help="Specify a day to download all MRT files from, for that specific "
+        "day. Must use yyyymmdd format e.g., 20220101.",
+        type=str,
+        default=None,
+        required=False,
+    )
 
     return vars(parser.parse_args())
 
@@ -269,20 +419,25 @@ def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=level)
     logging.info(f"Starting MRT downloader with logging level {level}")
 
+    if not args["continuous"] and not args["range"] and not args["ymd"]:
+        logging.error(
+            "Exactly one of the three modes must be chosen: --continuous, "
+            "--range, or --ymd!"
+        )
+        exit(1)
+
     if not args["rib"] and not args["update"]:
         logging.error(
             "At least one of --rib and/or --update must be specified!"
         )
         exit(1)
 
-    if args["backfill"]:
-        backfill(args)
-
-    if args["range"]:
-        get_range(args)
-
     if args["continuous"]:
         continuous(args)
+    elif args["range"]:
+        get_range(args)
+    elif args["ymd"]:
+        get_day(args)
 
 if __name__ == '__main__':
     main()
