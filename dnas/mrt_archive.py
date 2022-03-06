@@ -89,8 +89,10 @@ class mrt_archive:
         else:
             h_delta = datetime.timedelta(hours=((self.RIB_INTERVAL // 60) + mod))
 
-        ########################################################ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
-        ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
+        ymd_hm = datetime.datetime.strftime(
+            datetime.datetime.now() - h_delta,
+            "%Y%m%d.%H00"
+        )
 
         return self.RIB_PREFIX + ymd_hm + "." + self.MRT_EXT
 
@@ -116,10 +118,13 @@ class mrt_archive:
             hours = ((self.RIB_INTERVAL // 60) + 1) + cfg.RV_RIB_OFFSET
         else:
             hours = (self.RIB_INTERVAL // 60) + cfg.RV_RIB_OFFSET
-        h_delta = datetime.timedelta(hours=hours)
 
-        ####################################################ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
-        ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y%m%d.%H00")
+        h_delta = datetime.timedelta(hours=hours)
+        ymd_hm = datetime.datetime.strftime(
+            datetime.datetime.now() - h_delta,
+            "%Y%m%d.%H00"
+        )
+
         return self.RIB_PREFIX + ymd_hm + "." + self.MRT_EXT
 
     def gen_latest_upd_fn(self, filename):
@@ -167,14 +172,16 @@ class mrt_archive:
         minutes = int(datetime.datetime.strftime(datetime.datetime.now(), "%M"))
         mod = minutes % self.UPD_INTERVAL
         if mod == 0:
-            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL*2))
+            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL* 2))
         else:
             m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL + mod))
 
         h_delta = datetime.timedelta(hours=cfg.RCC_UPD_OFFSET)
 
-        #####################################################ym = datetime.datetime.strftime(datetime.datetime.now()-h_delta,"%Y.%m")
-        ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta,"%Y%m%d.%H%M")
+        ymd_hm = datetime.datetime.strftime(
+            datetime.datetime.now() - h_delta - m_delta,
+            cfg.TIME_FORMAT
+        )
 
         return self.UPD_PREFIX + ymd_hm + "." + self.MRT_EXT
 
@@ -219,7 +226,7 @@ class mrt_archive:
     def gen_rib_fn_date(self, ymd_hm):
         """
         Generate the filename of a RIB MRT file, for the given date and time.
-        This is MRT archive type agnostic.
+        This function is MRT archive type agnostic.
         """
         if not ymd_hm:
             raise ValueError(
@@ -231,7 +238,7 @@ class mrt_archive:
     def gen_rib_fns_day(self, ymd):
         """
         Generate a list of all the RIB MRT filenames for a this MRT archive,
-        for a specific day. This is MRT archive type agnostic.
+        for a specific day. This function is MRT archive type agnostic.
         """
         if not ymd:
             raise ValueError(
@@ -247,8 +254,37 @@ class mrt_archive:
             mm = f"{minutes%60:02}"
             ymd_hm = f"{ymd}.{hh}{mm}"
             filenames.append(self.gen_rib_fn_date(ymd_hm))
-            #################filenames.append(f"{self.RIB_PREFIX}{ymd}.{hh}{mm}.{self.MRT_EXT}")
             minutes += self.RIB_INTERVAL
+        return filenames
+
+    def gen_rib_fns_range(self, end_date, start_date):
+        """
+        Generate and return a list of filenames for a range of RIB MRT dumps,
+        between the given start and end times inclusive, for the local MRT
+        archive type. This function is agnostics of MRT archive type.
+        """
+        if (not start_date or not end_date):
+            raise ValueError(
+                f"Missing required options: start_date={start_date}, "
+                f"end_date={end_date}"
+            )
+
+        start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
+        end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
+
+        if end < start:
+            raise ValueError(
+                f"End date {end_date} is before start date {start_date}"
+            )
+
+        diff = end - start
+        count = int(diff.total_seconds()) // (self.RIB_INTERVAL * 60)
+        filenames = []
+        for i in range(0, count + 1):
+            delta = datetime.timedelta(minutes=(i * self.RIB_INTERVAL))
+            ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
+            filenames.append(self.gen_rib_fn_date(ymd_hm))
+
         return filenames
 
     def gen_rib_key(self, ymd):
@@ -284,34 +320,9 @@ class mrt_archive:
 
     def gen_rib_url_range(self, end_date, start_date):
         """
-        Generate a list of URLs for a range of RIB MRT dumps, between the given
-        start and end times inclusive, for the local MRT archive type.
-        """
-        if (not start_date or not end_date):
-            raise ValueError(
-                f"Missing required options: start_date={start_date}, "
-                f"end_date={end_date}"
-            )
-
-        start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
-        end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
-
-        if end < start:
-            raise ValueError(
-                f"End date {end_date} is before start date {start_date}"
-            )
-
-        if self.TYPE == "RIPE":
-            return self.gen_rib_url_range_ripe(end_date, start_date)
-        elif self.TYPE == "RV":
-            return self.gen_rib_url_range_rv(end_date, start_date)
-        else:
-            raise ValueError(f"Unknown MRT archive type {self.TYPE}")
-
-    def gen_rib_url_range_ripe(end_date, start_date):
-        """
         Generate and return a list of URLs for a range of RIB MRT dumps,
-        between the given start and end times inclusive, for a RIPE MRT archive.
+        between the given start and end times inclusive, for the local MRT
+        archive type. This function is agnostic of MRT archive type.
         """
         if (not start_date or not end_date):
             raise ValueError(
@@ -329,45 +340,15 @@ class mrt_archive:
 
         diff = end - start
         count = int(diff.total_seconds()) // (self.RIB_INTERVAL * 60)
-        filenames = []
+        url_list = []
         for i in range(0, count + 1):
             m_delta = datetime.timedelta(minutes=(i * self.RIB_INTERVAL))
-            ###################################################ym = datetime.datetime.strftime(start+m_delta, "%Y.%m")
             ymd_hm = datetime.datetime.strftime(start+m_delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_rib_fn_date(ymd_hm))
-
-        return filenames
-
-    def gen_rib_url_range_rv(end_date, start_date):
-        """
-        Generate and return a list of URLs for a range of RIB MRT dumps,
-        between the given start and end times inclusive, for a route-views MRT
-        archive.
-        """
-        if (not start_date or not end_date):
-            raise ValueError(
-                f"Missing required options: start_date={start_date}, "
-                f"end_date={end_date}"
+            url_list.append(
+                self.gen_rib_url(self.gen_rib_fn_date(ymd_hm))
             )
 
-        start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
-        end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
-
-        if end < start:
-            raise ValueError(
-                f"End date {end_date} is before start date {start_date}"
-            )
-
-        diff = end - start
-        count = int(diff.total_seconds()) // (self.RIB_INTERVAL * 60)
-        filenames = []
-        for i in range(0, count + 1):
-            m_delta = datetime.timedelta(minutes=(i * self.RIB_INTERVAL))
-            ######################################################ym = datetime.datetime.strftime(start+m_delta, "%Y.%m")
-            ymd_hm = datetime.datetime.strftime(start+m_delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_rib_fn_date(ymd_hm))
-
-        return filenames
+        return url_list
 
     def gen_rib_url_ripe(self, filename):
         """
@@ -396,7 +377,9 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        url = os.path.normpath(self.BASE_URL + ym + self.RIB_URL + "/" + filename)
+        return os.path.normpath(
+            self.BASE_URL + ym + self.RIB_URL + "/" + filename
+        )
 
     def gen_rib_url_rv(self, filename):
         """
@@ -467,6 +450,36 @@ class mrt_archive:
             minutes += self.UPD_INTERVAL
         return filenames
 
+    def gen_upd_fns_range(self, end_date, start_date):
+        """
+        Generate and return a list of filenames for a range of UPDATE MRT dumps,
+        between the given start and end times inclusive, for the local MRT
+        archive type. This function is agnostics of MRT archive type.
+        """
+        if (not start_date or not end_date):
+            raise ValueError(
+                f"Missing required options: start_date={start_date}, "
+                f"end_date={end_date}"
+            )
+
+        start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
+        end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
+
+        if end < start:
+            raise ValueError(
+                f"End date {end_date} is before start date {start_date}"
+            )
+
+        diff = end - start
+        count = int(diff.total_seconds()) // (self.UPD_INTERVAL * 60)
+        filenames = []
+        for i in range(0, count + 1):
+            delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
+            ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
+            filenames.append(self.gen_upd_fn_date(ymd_hm))
+
+        return filenames
+
     def gen_upd_key(self, ymd):
         """
         Generate the redis DB key used to store update stats for this
@@ -500,34 +513,9 @@ class mrt_archive:
 
     def gen_upd_url_range(self, end_date, start_date):
         """
-        Generate a list of URLs for a range of UPDATE MRT dumps, between the
-        given start and end times inclusive, for the local MRT archive type.
-        """
-        if (not start_date or not end_date):
-            raise ValueError(
-                f"Missing required options: start_date={start_date}, "
-                f"end_date={end_date}"
-            )
-
-        start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
-        end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
-
-        if end < start:
-            raise ValueError(
-                f"End date {end_date} is before start date {start_date}"
-            )
-
-        if self.TYPE == "RIPE":
-            return self.gen_upd_url_range_ripe(end_date, start_date)
-        elif self.TYPE == "RV":
-            return self.gen_upd_url_range_rv(end_date, start_date)
-        else:
-            raise ValueError(f"Unknown MRT archive type {self.TYPE}")
-
-    def gen_upd_url_range_ripe(end_date, start_date):
-        """
-        Generate and return a list of URLs for a range of UPDATE MRT dumps,
-        between the given start and end times inclusive, for a RIPE MRT archive.
+        Generate a and return a list of URLs for a range of UPDATE MRT dumps,
+        between the given start and end times inclusive, for the local MRT
+        archive type. This function is archive type agnostic.
         """
         if (not start_date or not end_date):
             raise ValueError(
@@ -545,45 +533,23 @@ class mrt_archive:
 
         diff = end - start
         count = int(diff.total_seconds()) // (self.UPD_INTERVAL * 60)
-        filenames = []
+        url_list = []
         for i in range(0, count + 1):
-            m_delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
-            ##################################################################ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
-            ymd_hm = datetime.datetime.strftime(start+m_delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_upd_fn_date(ymd_hm))
+            delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
+            ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
 
-        return filenames
+            if self.TYPE == "RIPE":
+                url_list.append(
+                    self.gen_upd_url_ripe(self.gen_upd_fn_date(ymd_hm))
+                )
+            elif self.TYPE == "RV":
+                url_list.append(
+                    self.gen_upd_url_rv(self.gen_upd_fn_date(ymd_hm))
+                )
+            else:
+                raise ValueError(f"Unknown MRT archive type {self.TYPE}")
 
-    def gen_upd_url_range_rv(end_date, start_date):
-        """
-        Generate and return a list of URLs for a range of UPDATE MRT dumps,
-        between the given start and end times inclusive, for a route-views MRT
-        archive.
-        """
-        if (not start_date or not end_date):
-            raise ValueError(
-                f"Missing required options: start_date={start_date}, "
-                f"end_date={end_date}"
-            )
-
-        start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
-        end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
-
-        if end < start:
-            raise ValueError(
-                f"End date {end_date} is before start date {start_date}"
-            )
-
-        diff = end - start
-        count = int(diff.total_seconds()) // (self.UPD_INTERVAL * 60)
-        filenames = []
-        for i in range(0, count + 1):
-            m_delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
-            ##################################################################ym = datetime.datetime.strftime(start+m_delta,"%Y.%m")
-            ymd_hm = datetime.datetime.strftime(start+m_delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_upd_fn_date(ymd_hm))
-
-        return filenames
+        return url_list
 
     def gen_upd_url_ripe(self, filename):
         """
@@ -613,7 +579,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        url = self.BASE_URL + ym + self.UPD_URL + filename
+        return os.path.normpath(self.BASE_URL + ym + self.UPD_URL + filename)
 
     def gen_upd_url_rv(self, filename):
         """
@@ -645,7 +611,10 @@ class mrt_archive:
 
         y = ym[0:4]
         m = ym[4:]
-        return self.BASE_URL + y + "." + m + self.UPD_URL + filename
+
+        return os.path.normpath(
+            self.BASE_URL + y + "." + m + self.UPD_URL + filename
+        )
 
     @staticmethod
     def valid_ym(ym):

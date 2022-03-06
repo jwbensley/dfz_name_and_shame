@@ -96,7 +96,7 @@ def get_mrts(replace=False, url_list=None):
         except requests.exceptions.HTTPError as e:
             logging.error(e)
             pass
-    
+
     logging.info(f"Finished, downloaded {i}/{len(url_list)}")
 
 def get_day(args):
@@ -215,7 +215,7 @@ def gen_urls_range(args):
 
                 """
                 if we are only downloading what is not already in the DB, pull
-                the stats for this day and check what files are missing.
+                the stats for this day and check which files are missing.
                 """
                 if args["backfill"]:
                     day_key = arch.gen_rib_key(ymd)
@@ -272,7 +272,7 @@ def gen_urls_range(args):
                 if args["backfill"]:
                     day_key = arch.gen_upd_key(ymd)
                     day_stats = rdb.get_stats(day_key)
-                    
+
                     if day_stats:
                         for filename_w_path in day_stats.file_list:
                             filename = os.path.basename(filename_w_path)
@@ -318,7 +318,7 @@ def parse_args():
     parser.add_argument(
         "--backfill",
         help="Only download files if they are missing from stats entries stored"
-        "in redis.",
+        "in Redis.",
         default=False,
         action="store_true",
         required=False,
