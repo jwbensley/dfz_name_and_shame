@@ -61,7 +61,10 @@ def main():
             level=logging.INFO
         )
 
-    logging.info(f"Starting MRT splitter with logging level {level}")
+    logging.info(
+        f"Starting MRT splitter with logging level "
+        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
+    )
 
     splitter = mrt_splitter(args["filename"])
     total, chunk_names = splitter.split(args["chunks"])

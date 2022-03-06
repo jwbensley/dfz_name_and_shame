@@ -261,7 +261,10 @@ def main():
             level=logging.INFO
         )
 
-    logging.info(f"Starting Redis management with logging level {level}")
+    logging.info(
+        f"Starting Redis management with logging level "
+        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
+    )
 
 
     if args["dump"]:
