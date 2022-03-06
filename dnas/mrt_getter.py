@@ -79,7 +79,7 @@ class mrt_getter:
 
         filenames = arch.gen_rib_url_range(end_date, start_date)
         downloaded = []
-        print(f"Downloaded 0/{len(filenames)}")
+        logging.info(f"Downloaded 0/{len(filenames)}")
 
         for filename in filenames:
             url = arch.gen_rib_url(filename)
@@ -89,7 +89,7 @@ class mrt_getter:
                 filename=outfile, replace=replace, url=url
             ):
                 downloaded.append((outfile, url))
-                print(f"Downloaded {len(downloaded)}/{len(filenames)}")
+                logging.info(f"Downloaded {len(downloaded)}/{len(filenames)}")
 
         return downloaded
 
@@ -125,7 +125,7 @@ class mrt_getter:
 
         filenames = arch.gen_rib_url_range(end_date, start_date)
         downloaded = []
-        print(f"Downloaded 0/{len(filenames)}")
+        logging.info(f"Downloaded 0/{len(filenames)}")
 
         for filename in filenames:
             url = arch.gen_upd_url(filename)
@@ -135,7 +135,7 @@ class mrt_getter:
                 filename=outfile, replace=replace, url=url
             ):
                 downloaded.append((outfile, url))
-                print(f"Downloaded {len(downloaded)}/{len(filenames)}")
+                logging.info(f"Downloaded {len(downloaded)}/{len(filenames)}")
 
         return downloaded
 
@@ -154,8 +154,8 @@ class mrt_getter:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         if (not replace and os.path.exists(filename)):
-                logging.info(f"Not overwriting existing file {filename}")
-                return False
+            logging.info(f"Not overwriting existing file {filename}")
+            return False
 
         """
         Need to open the HTTP connection before the local file, otherwise we
@@ -174,15 +174,15 @@ class mrt_getter:
 
         if req.status_code != 200:
             logging.info(f"HTTP error: {req.status_code}")
-            logging.debug(req.url)
-            logging.debug(req.text)
-            logging.debug(req.content)
+            logging.error(req.url)
+            logging.error(req.text)
+            logging.error(req.content)
             req.raise_for_status()
 
         if file_len is None or file_len == 0:
-            logging.debug(req.url)
-            logging.debug(req.text)
-            logging.debug(req.content)
+            logging.error(req.url)
+            logging.error(req.text)
+            logging.error(req.content)
             raise ValueError("Missing file length!")
 
         file_len = int(file_len)
@@ -194,9 +194,9 @@ class mrt_getter:
             for chunk in req.iter_content(chunk_size=1024):
                 if req.status_code != 200:
                     logging.info(f"HTTP error: {req.status_code}")
-                    logging.debug(req.url)
-                    logging.debug(req.text)
-                    logging.debug(req.content)
+                    logging.error(req.url)
+                    logging.error(req.text)
+                    logging.error(req.content)
                     f.close()
                     req.raise_for_status()
 
@@ -205,9 +205,9 @@ class mrt_getter:
                 f.flush()
 
                 if rcvd == file_len:
-                    print(f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)")
+                    logging.debug(f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)")
                 elif ((rcvd/file_len)*100)//10 > progress:
-                    print(f"\rDownloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)", end="\r")
+                    logging.debug(f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)")
                     progress = ((rcvd/file_len)*100)//10
 
         return filename

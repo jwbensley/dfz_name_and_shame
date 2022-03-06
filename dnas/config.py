@@ -12,6 +12,21 @@ class config:
     # Application root for everything (logging, downloads, tmp files, etc.)
     BASE_DIR = "/media/usb0/"
 
+    # Log mode, 'a'ppend or over'w'rite
+    LOG_MODE = "a"
+    # Log directory for all logs
+    LOG_DIR = os.path.join(BASE_DIR, "logs/")
+    # Logging from script: get_mrts.py
+    LOG_GETTER = os.path.join(LOG_DIR, "get_mrts.log")
+    # Logging from script: global_stats.py
+    LOG_STATS = os.path.join(LOG_DIR, "global_stats.log")
+    # Logging from script: parse_mrts.py
+    LOG_PARSER = os.path.join(LOG_DIR, "parse_mrts.log")
+    # Logging from script: gen_tweets.py
+    LOG_TWITTER = os.path.join(LOG_DIR, "gen_tweets.log")
+
+
+
     """
     The time format used for generating new timestamps and parsing existing
     timestamps. The format below is the same format used by the MRT archives.
