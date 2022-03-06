@@ -3,6 +3,8 @@ import errno
 import gzip
 import os
 
+from dnas.mrt_archives import mrt_archives
+
 class MrtFormatError(Exception):
     """
     Exception for invalid MRT formatted data.
@@ -18,19 +20,15 @@ class mrt_splitter():
     Copy-pasta of the original mrtparer lib to split an MRT file into N files.
     """
 
-    def __init__(self, filename=None, debug=False):
+    def __init__(self, filename=None):
 
         # Magic Number
         GZIP_MAGIC = b'\x1f\x8b'
         BZ2_MAGIC = b'\x42\x5a\x68'
 
-        self.debug = debug
         self.data = None
         self.f = None
         self.filename = filename
-
-        if not isinstance(self.debug, bool):
-            raise TypeError("Debug must be bool")
 
         if not self.filename:
             raise ValueError("MRT filename missing")
@@ -46,16 +44,13 @@ class mrt_splitter():
 
         if hdr.startswith(BZ2_MAGIC):
             self.f = bz2.BZ2File(filename, 'rb')
-            if self.debug:
-                print("Is BZ2 file")
+            logging.debug("Assuming BZ2 file")
         elif hdr.startswith(GZIP_MAGIC):
             self.f = gzip.GzipFile(filename, 'rb')
-            if self.debug:
-                print("Is GZIP file")
+            logging.debug("Assuming GZIP file")
         else:
             self.f = open(filename, 'rb')
-            if self.debug:
-                print("Is binary file")
+            logging.debug("Assuming binary file")
 
     def close(self):
         """
@@ -85,8 +80,7 @@ class mrt_splitter():
         for i in mrt_entry[-4:]:
             length = (length << 8) + i
 
-        if self.debug:
-            print(f"MRT entry length is {length}")
+        ###logging.debug(f"MRT entry length is {length}")
         mrt_entry += bytes(self.f.read(length))
         self.data = mrt_entry
 
@@ -104,19 +98,22 @@ class mrt_splitter():
         if (not no_of_chunks or
             not isinstance(no_of_chunks, int) or
             no_of_chunks < 1):
-            raise ValueError("Number of chunks to split MRT file into must be a positive integer")
+            raise ValueError(
+                f"Number of chunks to split MRT file into must be a positive "
+                f"integer, not {no_of_chunks}"
+            )
 
-        basename = os.path.basename(self.filename)
-        if basename[0:3].lower() == "rib":
-            next(self) # Skip the peer table which is the first entry in the RIB dump
+        # Skip the peer table which is the first entry in the RIB dump
+        mrt_a = mrt_archives()
+        if mrt_a.is_rib_from_filename(self.filename):
+            next(self)
 
         chunk_names = []
         chunk_files = []
         for i in range(0, no_of_chunks):
             chunk_name = self.filename + "_" + str(i)
             chunk_names.append(chunk_name)
-            if self.debug:
-                print(f"Opening {chunk_name} for output")
+            logging.debug(f"Opening {chunk_name} for output")
             f = open(chunk_name, "wb")
             chunk_files.append(f)
 
@@ -127,7 +124,6 @@ class mrt_splitter():
             chunk_files[i].close()
 
         total = idx + 1
-        if self.debug:
-            print(f"Split {total} mrt_entries into {no_of_chunks} files.")
+        logging.debug(f"Split {total} mrt_entries into {no_of_chunks} files.")
 
         return total, chunk_names
