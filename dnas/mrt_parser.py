@@ -198,10 +198,6 @@ class mrt_parser:
                     )
                 ]
 
-            # Is there a noticable performance hit to wrap in a "try" ?
-            #else:
-            #    print(f"Unknown type/subtype: {entry['type']}/{entry['subtype']}")
-
         return rib_data
 
     @staticmethod
@@ -551,11 +547,6 @@ class mrt_parser:
             ) for x in advt_per_origin_asn if x[1] == advt_per_origin_asn[-1][1]
         ]
 
-
-            # Is there a noticable performance hit to wrap in a "try" ?
-            #else:
-            #    print(f"Unknown type/subtype: {mrt_e['type']}/{mrt_e['subtype']}")
-
         return upd_stats
 
     @staticmethod
@@ -572,16 +563,21 @@ class mrt_parser:
         mrt_entries = mrtparse.Reader(filename)
         for idx, mrt_e in enumerate(mrt_entries):
             if (mrt_e.data["type"][0] != mrtparse.MRT_T['TABLE_DUMP_V2']):
-                print(f"Entry {idx} in {filename} is not type TABLE_DUMP_V2")
-                print(mrt_e.data)
+                logging.error(
+                    f"Entry {idx} in {filename} is not type TABLE_DUMP_V2"
+                )
+                logging.error(mrt_e.data)
                 return idx
 
             # RIB dumps can contain both AFIs (v4 and v6)
             if (mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['PEER_INDEX_TABLE'] and
                 mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV4_UNICAST'] and
                 mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV6_UNICAST']):
-                print(f"Entry {idx} in {filename} is not PEER_INDEX_TABLE or RIB_IPV4_UNICAST or RIB_IPV6_UNICAST")
-                print(mrt_e.data)
+                logging.error(
+                    f"Entry {idx} in {filename} is not PEER_INDEX_TABLE or "
+                    f"RIB_IPV4_UNICAST or RIB_IPV6_UNICAST"
+                )
+                logging.error(mrt_e.data)
                 return idx
 
         return idx
@@ -600,15 +596,20 @@ class mrt_parser:
         mrt_entries = mrtparse.Reader(filename)
         for idx, mrt_e in enumerate(mrt_entries):
             if (mrt_e.data["type"][0] != mrtparse.MRT_T['BGP4MP_ET']):
-                print(f"Entry {idx} in {filename} is not type BGP4MP_ET")
-                print(mrt_e.data)
+                logging.error(
+                    f"Entry {idx} in {filename} is not type BGP4MP_ET"
+                )
+                logging.error(mrt_e.data)
                 return idx
             
             # UPDATE dumps can contain both AFIs (v4 and v6)
             if (mrt_e.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4'] and
                 mrt_e.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE']):
-                print(f"Entry {idx} in {filename} is not BGP4MP_MESSAGE or BGP4MP_MESSAGE_AS4")
-                print(mrt_e.data)
+                logging.error(
+                    f"Entry {idx} in {filename} is not BGP4MP_MESSAGE or "
+                    f"BGP4MP_MESSAGE_AS4"
+                )
+                logging.error(mrt_e.data)
                 return idx
 
         return idx

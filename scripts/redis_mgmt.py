@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import pprint
 import os
 import sys
@@ -67,6 +68,13 @@ def parse_args():
         metavar=("yyyymmdd"),
         required=False,
         default=None,
+    )
+    parser.add_argument(
+        "--debug",
+        help="Run with debug level logging.",
+        default=False,
+        action="store_true",
+        required=False,
     )
     parser.add_argument(
         "--delete",
@@ -241,6 +249,20 @@ def wipe():
 def main():
 
     args = parse_args()
+
+    if args["debug"]:
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
+            level=logging.DEBUG
+        )
+    else:
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(message)s',
+            level=logging.INFO
+        )
+
+    logging.info(f"Starting Redis management with logging level {level}")
+
 
     if args["dump"]:
         dump_json(args["dump"])
