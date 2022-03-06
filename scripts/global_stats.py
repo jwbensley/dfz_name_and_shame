@@ -287,15 +287,30 @@ def main():
 
     args = parse_args()
 
+    os.makedirs(os.path.dirname(cfg.LOG_DIR), exist_ok=True)
     if args["debug"]:
-        level = logging.DEBUG
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
+            level=logging.DEBUG,
+            handlers=[
+                logging.FileHandler(cfg.LOG_STATS, mode=cfg.LOG_MODE),
+                logging.StreamHandler()
+            ]
+        )
     else:
-        level = logging.INFO
-    
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(message)s', level=level
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(message)s',
+            level=logging.INFO,
+            handlers=[
+                logging.FileHandler(cfg.LOG_STATS, mode=cfg.LOG_MODE),
+                logging.StreamHandler()
+            ]
+        )
+
+    logging.info(
+        f"Starting global stats compiler with logging level "
+        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
     )
-    logging.info(f"Starting global stats compiler with logging level {level}")
 
     if args["daily"]:
         gen_day_stats(args)

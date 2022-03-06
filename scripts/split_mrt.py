@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 import sys
 
@@ -13,20 +14,59 @@ sys.path.append(
 
 from dnas.mrt_splitter import mrt_splitter
 
+def parse_args():
+    """
+    Parse the CLI args to this script.
+    """
+    parser = argparse.ArgumentParser(
+        description="Split an MRT file into N equal sized chunks. "
+        "The chunks will be written to the same directory as the input file.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--chunks",
+        help="Number fo chunks to split the file into.",
+        type=int,
+        default=None,
+        required=True,
+    )
+    parser.add_argument(
+        "--debug",
+        help="Run with debug level logging.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
+        "--filename",
+        help="Full path to MRT file to split.",
+        type=str,
+        default=None,
+        required=True,
+    )
+    return vars(parser.parse_args())
+
 def main():
 
-    if len(sys.argv) != 3:
-        print(f"Wrong number or arguments supplied ({len(sys.argv)}), should be 3")
-        print(f"{sys.argv[0]} /path/to/mrt/file <no_of_pieces_to_split_into>")
-        exit(1)
+    args = parse_args()
 
-    filename = sys.argv[1]
-    no_of_chunks = int(sys.argv[2])
+    if args["debug"]:
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
+            level=logging.DEBUG
+        )
+    else:
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(message)s',
+            level=logging.INFO
+        )
 
-    splitter = mrt_splitter(filename)
-    total, chunk_names = splitter.split(no_of_chunks)
-    print(f"Split {total} mrt_entries into {no_of_chunks} files:")
-    print(chunk_names)
+    logging.info(f"Starting MRT splitter with logging level {level}")
+
+    splitter = mrt_splitter(args["filename"])
+    total, chunk_names = splitter.split(args["chunks"])
+    logging.info(f"Split {total} MRT entries into {len(chunk_names)} files:")
+    logging.info(chunk_names)
 
 if __name__ == '__main__':
     main()

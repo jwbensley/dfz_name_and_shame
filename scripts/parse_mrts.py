@@ -322,11 +322,9 @@ def process_range(args):
         )
 
     diff = end_day - start_day
-    ###no_days = int(diff.total_seconds() // 86400)
     mrt_a = mrt_archives()
     filelist = []
 
-    print(f"diff.days: {diff.days}")
     for i in range(0, diff.days + 1):
 
         delta = datetime.timedelta(days=i)
@@ -393,15 +391,30 @@ def main():
 
     args = parse_args()
 
+    os.makedirs(os.path.dirname(cfg.LOG_DIR), exist_ok=True)
     if args["debug"]:
-        level = logging.DEBUG
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
+            level=logging.DEBUG,
+            handlers=[
+                logging.FileHandler(cfg.LOG_PARSER, mode=cfg.LOG_MODE),
+                logging.StreamHandler()
+            ]
+        )
     else:
-        level = logging.INFO
+        logging.basicConfig(
+            format='%(asctime)s %(levelname)s %(message)s',
+            level=logging.INFO,
+            handlers=[
+                logging.FileHandler(cfg.LOG_PARSER, mode=cfg.LOG_MODE),
+                logging.StreamHandler()
+            ]
+        )
 
-    logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(message)s', level=level
+    logging.info(
+        f"Starting MRT parser with logging level "
+        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
     )
-    logging.info(f"Starting MRT parser with logging level {level}")
 
     if (not args["rib"] and not args["update"]):
         raise ValueError(
