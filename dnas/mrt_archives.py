@@ -29,16 +29,12 @@ class mrt_archives:
                     UPD_KEY = arch["UPD_KEY"],
                     UPD_PREFIX = arch["UPD_PREFIX"],
                     UPD_URL = arch["UPD_URL"],
-                    get_latest_rib = mrt_getter.get_rv_latest_rib if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_latest_rib,
-                    get_latest_upd = mrt_getter.get_rv_latest_upd if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_latest_upd,
-                    get_range_rib = mrt_getter.get_rv_range_rib if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_range_rib,
-                    get_range_upd = mrt_getter.get_rv_range_upd if (arch["TYPE"] == "RV") else mrt_getter.get_ripe_range_upd,
                 )
             )
 
     def arch_from_file_path(self, file_path):
         """
-        Return the MRT archive the file came from, based on the file path
+        Return the MRT archive the file came from, based on the file path.
         """
         if not file_path:
             raise ValueError(
@@ -53,6 +49,27 @@ class mrt_archives:
         logging.error(f"Couldn't match {file_path} to any MRT archive")
         return False
 
+    def arch_from_url(self, url):
+        """
+        Return the MRT archive the URL belongs to, based on the url.
+        """
+        if not url:
+            raise ValueError(
+                f"Missing required arguments: url={url}."
+            )
+
+        for arch in self.archives:
+            if self.is_rib_from_filename(os.path.basename(url)):
+                if arch.gen_rib_url(os.path.basename(url)) == url:
+                    logging.debug(f"Assuming URL is from {arch.NAME} archive")
+                    return arch
+            else:
+                if arch.gen_upd_url(os.path.basename(url)) == url:
+                    logging.debug(f"Assuming URL is from {arch.NAME} archive")
+                    return arch
+        logging.error(f"Couldn't match {url} to any MRT archive")
+        return False
+
     def get_day_key(self, file_path):
         """
         Return the redis DB key for the specific MRT archive and specific day
@@ -65,7 +82,13 @@ class mrt_archives:
 
         # Example: /path/to/route-views/LINX/updates.20220101.0600.bz2
         arch = self.arch_from_file_path(file_path)
+        if not arch:
+            raise ValueError(
+                f"Unable to determine MRT archive from file path {file_path}"
+            )
+
         ymd = file_path.split(".")[1]
+
         if self.is_rib_from_filename(file_path):
             return arch.gen_rib_key(ymd)
         else:
@@ -81,9 +104,7 @@ class mrt_archives:
             )
 
         filename = os.path.basename(file_path)
-        is_rib = False
         for arch in self.archives:
             if arch.RIB_PREFIX in filename:
-                is_rib = True
-                break
-        return is_rib
+                return True
+        return False
