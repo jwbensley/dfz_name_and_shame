@@ -1,6 +1,7 @@
 import bz2
 import errno
 import gzip
+import logging
 import os
 
 from dnas.mrt_archives import mrt_archives
