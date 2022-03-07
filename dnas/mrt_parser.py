@@ -62,20 +62,28 @@ class mrt_parser:
                 f"Missing required arguments: filename={filename}."
             )
 
-        orig_filename = '_'.join(filename.split("_")[:-1])
-        if not orig_filename:
+        # If parsing a chunk of an MRT file, try to work out the orig filename
+        if cfg.SPLIT_DIR:
+            orig_filename = '_'.join(filename.split("_")[:-1])
+        else:
+            # Else, assume parsing a full MRT file
             orig_filename = filename
         file_ts = mrt_parser.get_timestamp(orig_filename)
 
         rib_data = mrt_stats()
         rib_data.timestamp = file_ts
-        if orig_filename not in rib_data.file_list:
-            rib_data.file_list.append(orig_filename)
+        rib_data.file_list.append(orig_filename)
 
-        mrt_entries = mrtparse.Reader(filename)
+        if cfg.SPLIT_DIR:
+            mrt_entries = mrtparse.Reader(
+                os.path.join(cfg.SPLIT_DIR, os.path.basename(filename))
+            )
+        else:
+            mrt_entries = mrtparse.Reader(filename)
+
         for idx, mrt_e in enumerate(mrt_entries):
             if "prefix" not in mrt_e.data:
-                continue #############################################
+                continue #### FIX ME - Skip the peer table record at the start?
 
             ts = mrt_parser.posix_to_ts(
                 next(iter(mrt_e.data["timestamp"].items()))[0]
@@ -216,19 +224,26 @@ class mrt_parser:
         upd_prefix = {}
         advt_per_origin_asn = {}
         upd_peer_asn = {}
-        
-        orig_filename = '_'.join(filename.split("_")[:-1])
-        if not orig_filename:
+
+        # If parsing a chunk of an MRT file, try to work out the orig filename
+        if cfg.SPLIT_DIR:
+            orig_filename = '_'.join(filename.split("_")[:-1])
+        else:
+            # Else, assume parsing a full MRT file
             orig_filename = filename
+
         file_ts = mrt_parser.get_timestamp(orig_filename)
 
         upd_stats = mrt_stats()
         upd_stats.timestamp = file_ts
-        
-        if orig_filename not in upd_stats.file_list:
-            upd_stats.file_list.append(orig_filename)
+        upd_stats.file_list.append(os.path.basename(orig_filename))
 
-        mrt_entries = mrtparse.Reader(filename)
+        if cfg.SPLIT_DIR:
+            mrt_entries = mrtparse.Reader(
+                os.path.join(cfg.SPLIT_DIR, os.path.basename(filename))
+            )
+        else:
+            mrt_entries = mrtparse.Reader(filename)
         for idx, mrt_e in enumerate(mrt_entries):
 
             ts = mrt_parser.posix_to_ts(
@@ -369,30 +384,12 @@ class mrt_parser:
                     ) for prefix in prefixes
                 ]
 
-        ##### upd_stats should always be emtpy so remove this after tests are added !!!!!!!!!!!!
-        """
-        if len(longest_as_path[0].as_path) == len(upd_stats.longest_as_path[0].as_path):
-            s_paths = [mrt_e.as_path for mrt_e in upd_stats.longest_as_path]
-            u_paths = [mrt_e.as_path for mrt_e in longest_as_path]
-            for u_path in u_paths:
-                if u_path not in s_paths:
-                    upd_stats.longest_as_path.extend(u_path)
-        elif len(longest_as_path[0].as_path) > len(upd_stats.longest_as_path[0].as_path):
-            upd_stats.longest_as_path = longest_as_path.copy()
-        """
+
+        ################## FIX ME - REMOVE "if" upd_states is empty
         if len(longest_as_path[0].as_path) > len(upd_stats.longest_as_path[0].as_path):
             upd_stats.longest_as_path = longest_as_path.copy()
 
-        """
-        if len(longest_comm_set[0].comm_set) == len(upd_stats.longest_comm_set[0].comm_set):
-            s_comms = [mrt_e.comm_set for mrt_e in upd_stats.longest_comm_set]
-            u_comms = [mrt_e.comm_set for mrt_e in longest_comm_set]
-            for u_comm in u_comms:
-                if u_comm not in s_comms:
-                    upd_stats.longest_comm_set.extend(u_comm)
-        elif len(longest_comm_set[0].comm_set) > len(upd_stats.longest_comm_set[0].comm_set):
-            upd_stats.longest_comm_set = longest_comm_set.copy()
-        """
+        ################## FIX ME - REMOVE "if" upd_states is empty
         if len(longest_comm_set[0].comm_set) > len(upd_stats.longest_comm_set[0].comm_set):
             upd_stats.longest_comm_set = longest_comm_set.copy()
 
