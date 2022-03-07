@@ -26,7 +26,6 @@ class config:
     LOG_TWITTER = os.path.join(LOG_DIR, "gen_tweets.log")
 
 
-
     """
     The time format used for generating new timestamps and parsing existing
     timestamps. The format below is the same format used by the MRT archives.
@@ -49,6 +48,9 @@ class config:
 
     # Base dir to save MRT files to
     DL_DIR = os.path.join(BASE_DIR, "downloads/")
+
+    # Temporary directory to split MRT files into
+    SPLIT_DIR = "/tmp/" # Set to None to disable
 
     """
     If the machine running this code is in a different timezone to the
