@@ -401,7 +401,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return mrt_archive.concat_url([self.BASE_URL, ym + "/", self.RIB_URL, "/", filename])
+        return mrt_archive.concat_url([self.BASE_URL, ym[0:4] + "." + ym[4:] + "/", self.RIB_URL, "/", filename])
 
     def gen_rib_url_rv(self, filename):
         """
@@ -601,7 +601,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return mrt_archive.concat_url([self.BASE_URL, ym + "/", self.UPD_URL, filename])
+        return mrt_archive.concat_url([self.BASE_URL, ym[0:4] + "." + ym[4:] + "/", self.UPD_URL, filename])
 
     def gen_upd_url_rv(self, filename):
         """
