@@ -1,3 +1,4 @@
+from functools import reduce
 import datetime
 import os
 import re
@@ -44,6 +45,27 @@ class mrt_archive:
         self.UPD_KEY = UPD_KEY
         self.UPD_PREFIX = UPD_PREFIX
         self.UPD_URL = UPD_URL
+
+    @staticmethod
+    def concat_url(url_chunks):
+        """
+        Concatenate a list of strings into a single URL, and return as a
+        single string.
+        """
+        if not url_chunks:
+            raise ValueError(
+                f"Missing required arguments: url_chunks={url_chunks}"
+            )
+
+        if type(url_chunks) != list:
+            raise TypeError(
+                f"List of URL chunks is not of type list: {type(url_chunks)}"
+            )
+
+        return reduce(
+            urllib.parse.urljoin,
+            map(lambda x : x.lstrip("/"), url_chunks)
+        )
 
     def gen_latest_rib_fn(self, filename):
         """
@@ -379,9 +401,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return urllib.parse.urljoin(
-            self.BASE_URL + ym + self.RIB_URL + "/" + filename
-        )
+        return concat_url([self.BASE_URL, ym, self.RIB_URL, "/", filename])
 
     def gen_rib_url_rv(self, filename):
         """
@@ -414,8 +434,8 @@ class mrt_archive:
         y = ym[0:4]
         m = ym[4:]
 
-        return urllib.parse.urljoin(
-            self.BASE_URL + y + "." + m + self.RIB_URL + "/" + filename
+        return concat_url(
+            [self.BASE_URL, y, ".", m, self.RIB_URL, "/", filename]
         )
 
     def gen_upd_fn_date(self, ymd_hm):
@@ -581,7 +601,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return urllib.parse.urljoin(self.BASE_URL + ym + self.UPD_URL + filename)
+        return concat_url([self.BASE_URL, ym, self.UPD_URL, filename])
 
     def gen_upd_url_rv(self, filename):
         """
@@ -614,9 +634,7 @@ class mrt_archive:
         y = ym[0:4]
         m = ym[4:]
 
-        return urllib.parse.urljoin(
-            self.BASE_URL + y + "." + m + self.UPD_URL + filename
-        )
+        return concat_url([self.BASE_URL, y, ".", m, self.UPD_URL, filename])
 
     @staticmethod
     def valid_ym(ym):
