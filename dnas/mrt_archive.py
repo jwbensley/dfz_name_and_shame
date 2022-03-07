@@ -1,6 +1,7 @@
 import datetime
 import os
 import re
+import urllib.parse
 
 class mrt_archive:
 
@@ -378,7 +379,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return os.path.normpath(
+        return urllib.parse.urljoin(
             self.BASE_URL + ym + self.RIB_URL + "/" + filename
         )
 
@@ -413,7 +414,7 @@ class mrt_archive:
         y = ym[0:4]
         m = ym[4:]
 
-        return os.path.normpath(
+        return urllib.parse.urljoin(
             self.BASE_URL + y + "." + m + self.RIB_URL + "/" + filename
         )
 
@@ -580,7 +581,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return os.path.normpath(self.BASE_URL + ym + self.UPD_URL + filename)
+        return urllib.parse.urljoin(self.BASE_URL + ym + self.UPD_URL + filename)
 
     def gen_upd_url_rv(self, filename):
         """
@@ -613,7 +614,7 @@ class mrt_archive:
         y = ym[0:4]
         m = ym[4:]
 
-        return os.path.normpath(
+        return urllib.parse.urljoin(
             self.BASE_URL + y + "." + m + self.UPD_URL + filename
         )
 
