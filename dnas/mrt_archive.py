@@ -401,7 +401,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return mrt_archive.concat_url([self.BASE_URL, ym, self.RIB_URL, "/", filename])
+        return mrt_archive.concat_url([self.BASE_URL, ym + "/", self.RIB_URL, "/", filename])
 
     def gen_rib_url_rv(self, filename):
         """
@@ -435,7 +435,7 @@ class mrt_archive:
         m = ym[4:]
 
         return mrt_archive.concat_url(
-            [self.BASE_URL, y, ".", m, self.RIB_URL, "/", filename]
+            [self.BASE_URL, y + "." + m + "/", self.RIB_URL, "/", filename]
         )
 
     def gen_upd_fn_date(self, ymd_hm):
@@ -601,7 +601,7 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return mrt_archive.concat_url([self.BASE_URL, ym, self.UPD_URL, filename])
+        return mrt_archive.concat_url([self.BASE_URL, ym + "/", self.UPD_URL, filename])
 
     def gen_upd_url_rv(self, filename):
         """
@@ -634,7 +634,7 @@ class mrt_archive:
         y = ym[0:4]
         m = ym[4:]
 
-        return mrt_archive.concat_url([self.BASE_URL, y, ".", m, self.UPD_URL, filename])
+        return mrt_archive.concat_url([self.BASE_URL, y + "." + m + "/", self.UPD_URL, filename])
 
     @staticmethod
     def valid_ym(ym):
