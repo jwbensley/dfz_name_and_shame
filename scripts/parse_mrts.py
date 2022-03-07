@@ -138,7 +138,10 @@ def parse_file(filename=None, keep_chunks=False):
     logging.info(f"Processing {filename}...")
 
     splitter = mrt_splitter(filename)
-    num_entries, file_chunks = splitter.split(no_cpu)
+    num_entries, file_chunks = splitter.split(
+        no_chunks=no_cpu,
+        outdir=cfg.SPLIT_DIR
+    )
     try:
         splitter.close()
     except StopIteration:
@@ -150,9 +153,16 @@ def parse_file(filename=None, keep_chunks=False):
         mrt_chunks = Pool.map(mrt_parser.parse_upd_dump, file_chunks)
     Pool.close()
 
-    for i in range(0, len(file_chunks)):
-        if not keep_chunks:
-            os.remove(file_chunks[i])
+    if not keep_chunks:
+        for i in range(0, len(file_chunks)):
+            if cfg.SPLIT_DIR:
+                os.remove(
+                    os.path.join(
+                        cfg.SPLIT_DIR, os.path.basename(file_chunks[i])
+                    )
+                )
+            else:
+                os.remove(file_chunks[i])
 
     mrt_s = mrt_stats()
     for chunk in mrt_chunks:
@@ -416,7 +426,7 @@ def main():
         f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
     )
 
-    if (not args["rib"] and not args["update"]):
+    if (not args["rib"] and not args["update"] and not args["single"]):
         raise ValueError(
             "At least one of --rib and/or --update must be specified!"
         )

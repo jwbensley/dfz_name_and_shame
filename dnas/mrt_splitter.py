@@ -65,7 +65,7 @@ class mrt_splitter():
 
     def __next__(self):
         """
-        Move to the next entri in the MRT file.
+        Move to the next entry in the MRT file.
         """
         mrt_entry = bytearray(self.f.read(12))
 
@@ -81,50 +81,57 @@ class mrt_splitter():
         for i in mrt_entry[-4:]:
             length = (length << 8) + i
 
-        ###logging.debug(f"MRT entry length is {length}")
         mrt_entry += bytes(self.f.read(length))
         self.data = mrt_entry
 
         return self
 
-    def split(self, no_of_chunks):
+    def split(self, no_chunks=None, outdir=None):
         """
         Split the MRT data into N equal chunks written to disk.
-        Return the total number of MRT entries and a list of file names.
+        Return the total number of MRT entries and the list of chunk filenames.
         """
 
         if not self.f:
             raise AttributeError("No MRT file is currently open")
 
-        if (not no_of_chunks or
-            not isinstance(no_of_chunks, int) or
-            no_of_chunks < 1):
+        if (not no_chunks or
+            not isinstance(no_chunks, int) or
+            no_chunks < 1):
             raise ValueError(
                 f"Number of chunks to split MRT file into must be a positive "
-                f"integer, not {no_of_chunks}"
+                f"integer, not {no_chunks}"
             )
+
+        # If no output dir is specified, write to the input directory:
+        if not outdir:
+            outdir = os.path.dirname(self.filename)
 
         # Skip the peer table which is the first entry in the RIB dump
         mrt_a = mrt_archives()
         if mrt_a.is_rib_from_filename(self.filename):
             next(self)
 
-        chunk_names = []
-        chunk_files = []
-        for i in range(0, no_of_chunks):
+        chunk_filenames = []
+        chunk_fds = []
+        for i in range(0, no_chunks):
             chunk_name = self.filename + "_" + str(i)
-            chunk_names.append(chunk_name)
-            logging.debug(f"Opening {chunk_name} for output")
-            f = open(chunk_name, "wb")
-            chunk_files.append(f)
+            chunk_filenames.append(chunk_name)
+            chunk_outpath = os.path.join(
+                outdir,
+                os.path.basename(self.filename) + "_" + str(i)
+            )
+            logging.debug(f"Opening {chunk_outpath} for output")
+            f = open(chunk_outpath, "wb")
+            chunk_fds.append(f)
 
         for idx, entry in enumerate(self):
-            chunk_files[idx % no_of_chunks].write(entry.data)
+            chunk_fds[idx % no_chunks].write(entry.data)
 
-        for i in range(0, len(chunk_files)):
-            chunk_files[i].close()
+        for i in range(0, len(chunk_fds)):
+            chunk_fds[i].close()
 
         total = idx + 1
-        logging.debug(f"Split {total} mrt_entries into {no_of_chunks} files.")
+        logging.debug(f"Split {total} mrt_entries into {no_chunks} files.")
 
-        return total, chunk_names
+        return total, chunk_filenames
