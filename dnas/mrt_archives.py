@@ -60,13 +60,23 @@ class mrt_archives:
 
         for arch in self.archives:
             if self.is_rib_from_filename(os.path.basename(url)):
-                if arch.gen_rib_url(os.path.basename(url)) == url:
-                    logging.debug(f"Assuming URL is from {arch.NAME} archive")
-                    return arch
+                try:
+                    if arch.gen_rib_url(os.path.basename(url)) == url:
+                        logging.debug(f"Assuming URL is from {arch.NAME} archive")
+                        return arch
+                except ValueError:
+                    """
+                    If this is a route-views file for example,
+                    trying to generate a RIPE URL will raise ValueError
+                    """
+                    pass
             else:
-                if arch.gen_upd_url(os.path.basename(url)) == url:
-                    logging.debug(f"Assuming URL is from {arch.NAME} archive")
-                    return arch
+                try:
+                    if arch.gen_upd_url(os.path.basename(url)) == url:
+                        logging.debug(f"Assuming URL is from {arch.NAME} archive")
+                        return arch
+                except ValueError:
+                    pass
         logging.error(f"Couldn't match {url} to any MRT archive")
         return False
 
