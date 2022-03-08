@@ -200,6 +200,7 @@ def parse_files(filelist, args):
                 logging.info(f"Added {file} to {day_key}")
             else:
                 logging.info(f"Added {file} to {day_key} file list")
+                day_stats.file_list.append(file)
             rdb.set_stats(day_key, day_stats)
 
         if not day_stats:
