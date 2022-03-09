@@ -26,7 +26,7 @@ class mrt_parser:
 
         _ = mrtparse.Reader(filename)
         d = next(_).data["timestamp"]
-        ts = iter(d).__next__()
+        ts = next(iter(d))
         # Use the MRT file format timestamp:
         timestamp = datetime.datetime.utcfromtimestamp(ts).strftime(
             cfg.TIME_FORMAT
@@ -102,7 +102,7 @@ class mrt_parser:
 
                 for attr in rib_entry["path_attributes"]:
                     #attr_t = path_attr["type"][0]   ##### FIX ME
-                    attr_t = iter(path_attr["type"]).__next__()
+                    attr_t = next(iter(path_attr["type"]))
 
                     # mrtparse.BGP_ATTR_T['AS_PATH']
                     if attr_t == 2:
@@ -244,7 +244,24 @@ class mrt_parser:
             )
         else:
             mrt_entries = mrtparse.Reader(filename)
+
         for idx, mrt_e in enumerate(mrt_entries):
+
+            """
+            Some RIPE UPDATE MRTs contain the BGP state change events, whereas
+            Route-Views don't. Yay!
+            """
+            s_type = next(iter(mrt_e.data["subtype"]))
+            if (s_type != 1 and # 1 BGP4MP_MESSAGE
+                s_type != 4): # 4 BGP4MP_MESSAGE_AS4
+                continue
+
+            """
+            Some RIPE UPDATE MRTs contain all the BGP messages types
+            (OPEN, KEEPALIVE, etc), whereas Route-Views don't. Yay!
+            """
+            if next(iter(mrt_e.data["bgp_message"]["type"])) != 2: # UPDATE
+                continue
 
             ts = mrt_parser.posix_to_ts(
                 next(iter(mrt_e.data["timestamp"].items()))[0]
@@ -259,19 +276,24 @@ class mrt_parser:
                     "withdraws": 0,
                 }
 
-            if len(mrt_e.data["bgp_message"]["withdrawn_routes"]) > 0:
-                upd_peer_asn[peer_asn]["withdraws"] += 1
+            """
+            Some RIPE MRTs don't always contain "withdraw_routes" key, whereas
+            all Route-Views MRTs do. Yay!
+            """
+            if "withdrawn_routes" in ["bgp_message"]:
+                if len(mrt_e.data["bgp_message"]) > 0:
+                    upd_peer_asn[peer_asn]["withdraws"] += 1
 
-                for withdrawn_route in mrt_e.data["bgp_message"]["withdrawn_routes"]:
-                    prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
-                    if prefix not in upd_prefix:
-                        upd_prefix[prefix] = {
-                            "advt": 0,
-                            "withdraws": 1,
-                        }
-                        origin_asns_prefix[prefix] = set()
-                    else:
-                        upd_prefix[prefix]["withdraws"] += 1
+                    for withdrawn_route in mrt_e.data["bgp_message"]["withdrawn_routes"]:
+                        prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
+                        if prefix not in upd_prefix:
+                            upd_prefix[prefix] = {
+                                "advt": 0,
+                                "withdraws": 1,
+                            }
+                            origin_asns_prefix[prefix] = set()
+                        else:
+                            upd_prefix[prefix]["withdraws"] += 1
 
             if len(mrt_e.data["bgp_message"]["path_attributes"]) > 1:
                 upd_peer_asn[peer_asn]["advt"] += 1
@@ -279,7 +301,7 @@ class mrt_parser:
 
                 for path_attr in mrt_e.data["bgp_message"]["path_attributes"]:
                     #attr_t = path_attr["type"][0]   ##### FIX ME
-                    attr_t = iter(path_attr["type"]).__next__()
+                    attr_t = next(iter(path_attr["type"]))
 
                     # AS_PATH
                     if attr_t == 2:
