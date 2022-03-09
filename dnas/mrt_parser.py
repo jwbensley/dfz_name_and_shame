@@ -236,7 +236,7 @@ class mrt_parser:
 
         upd_stats = mrt_stats()
         upd_stats.timestamp = file_ts
-        upd_stats.file_list.append(os.path.basename(orig_filename))
+        upd_stats.file_list.append(orig_filename)
 
         if cfg.SPLIT_DIR:
             mrt_entries = mrtparse.Reader(
