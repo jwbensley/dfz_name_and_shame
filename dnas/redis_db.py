@@ -1,6 +1,7 @@
 import datetime
 import json
 import redis
+from typing import Any, List, Union
 
 from dnas.redis_auth import redis_auth
 from dnas.mrt_stats import mrt_stats
@@ -18,19 +19,14 @@ class redis_db():
             password=redis_auth.password,
         )
 
-    def add_to_queue(self, key, json_str):
+    def add_to_queue(self, key: str = None, json_str: str = None):
         """
         Push to a list a strings.
         For example, a Tweet serialised to a JSON string.
         """
-        if not key:
+        if not key or not json_str:
             raise ValueError(
-                f"Missing required arguments: key={key}"
-            )
-
-        if not json_str:
-            raise ValueError(
-                f"Missing required arguments: json_str={json_str}"
+                f"Missing required arguments: key={key}, json_str={json_str}"
             )
 
         if type(json_str) != str:
@@ -46,18 +42,13 @@ class redis_db():
         """
         self.r.close()
 
-    def del_from_queue(self, key, elem):
+    def del_from_queue(self, key: str = None, elem: str = None):
         """
         Delete an entry from a list of strings.
         """
-        if not key:
+        if not key or not elem:
             raise ValueError(
-                f"Missing required arguments: key={key}"
-            )
-
-        if not elem:
-            raise ValueError(
-                f"Missing required arguments: elem={elem}"
+                f"Missing required arguments: key={key}, elem={elem}"
             )
 
         if type(elem) != str:
@@ -67,7 +58,7 @@ class redis_db():
 
         self.r.lrem(key, 0, elem)
 
-    def delete(self, key):
+    def delete(self, key: str = None):
         """
         Delete key entry in Redis.
         """
@@ -75,9 +66,10 @@ class redis_db():
             raise ValueError(
                 f"Missing required arguments: key={key}"
             )
+
         self.r.delete(key)
 
-    def from_file(self, filename):
+    def from_file(self, filename: str = None):
         """
         Restore redis DB from JSON file.
         """
@@ -85,10 +77,11 @@ class redis_db():
             raise ValueError(
                 f"Missing required arguments: filename={filename}"
             )
+
         with open(filename, "r") as f:
             self.from_json(f.read())
 
-    def from_json(self, json_str):
+    def from_json(self, json_str: str = None):
         """
         Restore redis DB from a JSON string
         """
@@ -101,7 +94,7 @@ class redis_db():
         for k in json_dict.keys():
             self.r.set(k, json_dict[k])
 
-    def get(self, key):
+    def get(self, key: str = None) ->  Union[Any, List[Any]]:
         """
         Return the value stored in "key" from Redis
         """
@@ -120,7 +113,7 @@ class redis_db():
                 f"Unknown redis data type stored under {key}: {t}"
             )
 
-    def get_keys(self, pattern):
+    def get_keys(self, pattern: str = None) -> List[Any]:
         """
         Return list of Redis keys that match search pattern.
         """
@@ -131,7 +124,7 @@ class redis_db():
 
         return [x.decode("utf-8") for x in self.r.keys(pattern)]
 
-    def get_queue_msgs(self, key):
+    def get_queue_msgs(self, key: str = None) -> List[twitter_msg]:
         """
         Return the list of Tweets stored under key as Twitter messages objects.
         """
@@ -151,7 +144,7 @@ class redis_db():
 
         return msgs
 
-    def get_stats(self, key):
+    def get_stats(self, key: str = None) -> Union[None, mrt_stats]:
         """
         Return MRT stats from Redis as JSON, and return as an MRT stats object.
         """
@@ -168,7 +161,7 @@ class redis_db():
             mrt_s.from_json(json_str.decode("utf-8"))
             return mrt_s
 
-    def get_stats_json(self, key):
+    def get_stats_json(self, key: str = None):
         """
         Return MRT stats from Redis as JSON string.
         """
@@ -179,23 +172,18 @@ class redis_db():
 
         return self.r.get(key).decode("utf-8")
 
-    def set_stats(self, key, mrt_s):
+    def set_stats(self, key: str = None, mrt_s: mrt_stats = None):
         """
         Take an MRT stats object, serialise it to JSON, store in Redis.
         """
-        if not key:
+        if not key or not mrt_s:
             raise ValueError(
-                f"Missing required arguments: key={key}"
-            )
-
-        if not mrt_s:
-            raise ValueError(
-                f"Missing required arguments: mrt_s={mrt_s}"
+                f"Missing required arguments: key={key}, mrt_s={mrt_s}"
             )
 
         self.r.set(key, mrt_s.to_json())
 
-    def set_stats_json(self, key, json_str):
+    def set_stats_json(self, key: str = None, json_str: str = None):
         """
         Take JSON serialisation of an MRT stats object, and store in Redis.
         """
@@ -211,7 +199,7 @@ class redis_db():
 
         self.r.set(key, json_str)
 
-    def to_file(self, filename):
+    def to_file(self, filename: str = None):
         """
         Dump the entire redis DB to a JSON file.
         """
@@ -223,7 +211,7 @@ class redis_db():
         with open(filename, "w") as f:
             f.write(self.to_json())
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         Dump the entire redis DB to JSON
         """

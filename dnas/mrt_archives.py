@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Union, Literal
 
 from dnas.config import config as cfg
 from dnas.mrt_getter import mrt_getter
@@ -32,7 +33,7 @@ class mrt_archives:
                 )
             )
 
-    def arch_from_file_path(self, file_path):
+    def arch_from_file_path(self, file_path: str = None) -> Union[mrt_archive, Literal[False]]:
         """
         Return the MRT archive the file came from, based on the file path.
         """
@@ -49,7 +50,7 @@ class mrt_archives:
         logging.error(f"Couldn't match {file_path} to any MRT archive")
         return False
 
-    def arch_from_url(self, url):
+    def arch_from_url(self, url: str = None) -> Union[mrt_archive, Literal[False]]:
         """
         Return the MRT archive the URL belongs to, based on the url.
         """
@@ -80,7 +81,7 @@ class mrt_archives:
         logging.error(f"Couldn't match {url} to any MRT archive")
         return False
 
-    def get_day_key(self, file_path):
+    def get_day_key(self, file_path: str = None) -> str:
         """
         Return the redis DB key for the specific MRT archive and specific day
         the file path relates to.
@@ -104,7 +105,7 @@ class mrt_archives:
         else:
             return arch.gen_upd_key(ymd)
 
-    def is_rib_from_filename(self, file_path):
+    def is_rib_from_filename(self, file_path: str = None) -> bool:
         """
         Return True if this is a RIB dump, else False to indicate UPDATE dump.
         """

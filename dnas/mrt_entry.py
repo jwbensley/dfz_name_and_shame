@@ -1,5 +1,6 @@
 import datetime
 import json
+import typing
 
 from dnas.config import config as cfg
 
@@ -32,11 +33,21 @@ class mrt_entry:
         self.updates = updates
         self.withdraws = withdraws
 
-    def equal_to(self, mrt_e):
+    def equal_to(self, mrt_e: mrt_entry = None) -> bool:
         """
         Return True if this MRT stat entry obj is the same as mrt_e, else False.
         Doesn't compare meta data like filename.
         """
+        if not mrt_e:
+            raise ValueError(
+                f"Missing required arguments: mrt_e={mrt_e}"
+            )
+
+        if type(mrt_e) != mrt_entry:
+            raise TypeError(
+                f"mrt_e is not a stats entry: {type(mrt_e)}"
+            )
+
         if self.advt != mrt_e.advt:
             return False
 
@@ -69,7 +80,7 @@ class mrt_entry:
 
         return True
 
-    def from_json(self, json_str):
+    def from_json(self, json_str: str = None):
         """
         Parse a JSON str into this MRT stats entry obj.
         """
@@ -97,13 +108,13 @@ class mrt_entry:
         self.withdraws = json_data["withdraws"]
 
     @staticmethod
-    def gen_timestamp():
+    def gen_timestamp() -> str:
         """
         Generate the timestamp to insert into a newly created MRT entry obj.
         """
         return datetime.datetime.now().strftime(cfg.TIME_FORMAT)
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         Return this MRT entry obj serialised to a JSON str.
         """

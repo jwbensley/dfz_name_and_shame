@@ -1,5 +1,6 @@
 import logging
-import tweepy
+import tweepy # type: ignore
+from typing import List
 
 from dnas.config import config as cfg
 from dnas.mrt_stats import mrt_stats
@@ -21,7 +22,7 @@ class twitter:
             access_token_secret=twitter_auth.access_token_secret
         )
 
-    def delete(self, tweet_id):
+    def delete(self, tweet_id: int = None):
         """
         Delete a Tweet from twitter.com
         """
@@ -41,7 +42,8 @@ class twitter:
         else:
             raise RuntimeError(f"Error deleting Tweet {tweet_id}: {r}")
 
-    def gen_tweets(mrt_s):
+    @staticmethod
+    def gen_tweets(mrt_s: mrt_stats = None) -> List[twitter_msg]:
         """
         Generate Tweets using the data in an mrt stats object.
         """
@@ -249,7 +251,7 @@ class twitter:
 
         return msg_q
 
-    def tweet(self, msg, print_only=False):
+    def tweet(self, msg: twitter_msg = None, print_only: bool = False):
         """
         Tweet the header of a twitter message obj.
         Then tweet the body as a series of paged replies.
@@ -267,7 +269,7 @@ class twitter:
         self.tweet_hdr(msg, print_only)
         self.tweet_body(msg, print_only)
 
-    def tweet_hdr(self, msg, print_only=False):
+    def tweet_hdr(self, msg: twitter_msg = None, print_only: bool = False):
         """
         Tweet a message header.
         """
@@ -299,9 +301,9 @@ class twitter:
                 f"Tweeted: "
                 f"https://twitter.com/{cfg.TWITTER_USER}/status/{r.data['id']}"
             )
-            msg.hdr_id = int(r.data['id'])
+            msg.hdr_id = int(r.data["id"])
 
-    def tweet_body(self, msg, print_only=False):
+    def tweet_body(self, msg: twitter_msg = None, print_only: bool = False):
         """
         Tweet a message body as a series of pages replies to the header.
         """
@@ -318,12 +320,12 @@ class twitter:
         if not print_only:
             if not msg.hdr_id:
                 raise ValueError(
-                    f"Missing required arguments: hdr_id={hdr_id}"
+                    f"Missing required arguments: msg.hdr_id={msg.hdr_id}"
                 )
 
             if type(msg.hdr_id) != int:
                 raise TypeError(
-                    f"hdr_id is not an int: {type(msg.hdr_id)}"
+                    f"msg.hdr_id is not an int: {type(msg.hdr_id)}"
                 )
 
         if msg.hidden:
@@ -342,12 +344,22 @@ class twitter:
                     f"Replied: "
                     f"https://twitter.com/{cfg.TWITTER_USER}/status/{r.data['id']}"
                 )
-                msg.body_ids.append(r.data['id'])
+                msg.body_ids.append(r.data["id"])
 
-    def split_tweet(self, msg):
+    def split_tweet(self, msg: twitter_msg = None) -> List[str]:
         """
         Return a Tweet body split into a list of 280 character strings
         """
+        if not msg:
+            raise ValueError(
+                f"Missing required arguments: msg={msg}"
+            )
+
+        if type(msg) != twitter_msg:
+            raise TypeError(
+                f"msg is not a twitter_msg: {type(msg)}"
+            )
+
         if len(msg.body) <= cfg.TWITTER_LEN:
             return [msg.body]
         else:

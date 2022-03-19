@@ -5,8 +5,9 @@ import logging
 import pprint
 import os
 import sys
+from typing import List
 
-# Accomodate the use of the script, even when the dnas library isn't installed
+# Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__))
@@ -18,7 +19,7 @@ from dnas.mrt_stats import mrt_stats
 
 rdb = redis_db()
 
-def delete(key):
+def delete(key: str = None):
     """
     Delete they key/value pair from redis stored under key.
     """
@@ -29,7 +30,7 @@ def delete(key):
 
     rdb.delete(key)
 
-def dump_json(filename):
+def dump_json(filename: str = None):
     """
     Dump the entire redis DB to a JSON file.
     """
@@ -40,7 +41,7 @@ def dump_json(filename):
 
     rdb.to_file(filename)
 
-def load_json(filename):
+def load_json(filename: str = None):
     """
     Import a JOSN dump into redis.
     """
@@ -151,7 +152,7 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def print_key(key):
+def print_key(key: str = None):
     """
     Print the value stored in redis at the given key.
     """
@@ -169,7 +170,7 @@ def print_keys():
     """
     print(rdb.get_keys("*"))
 
-def print_stats(key):
+def print_stats(key: str = None):
     """
     Print an mrt stats object stored in redis, based on the passed key.
     """
@@ -184,7 +185,7 @@ def print_stats(key):
     else:
         print(f"No stats stored in redis under key {key}")
 
-def print_stats_daily(ymd):
+def print_stats_daily(ymd: str = None):
     """
     Print the mrt stats object from a specific day stored in redis.
     """
@@ -199,7 +200,7 @@ def print_stats_daily(ymd):
     else:
         print(f"No stats stored in redis for day {ymd}")
 
-def print_stats_diff(keys):
+def print_stats_diff(keys: List[str] = None):
     """
     Print the diff of two mrt stats objects stored in redis at the two
     passed keys.

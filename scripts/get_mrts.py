@@ -6,8 +6,10 @@ import logging
 import os
 import requests
 import sys
+import time
+from typing import Any, Dict, List
 
-# Accomodate the use of the script, even when the dnas library isn't installed
+# Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__))
@@ -20,7 +22,7 @@ from dnas.config import config as cfg
 from dnas.redis_db import redis_db
 from dnas.mrt_getter import mrt_getter
 
-def continuous(args):
+def continuous(args: Dict[str, Any] = None):
     """
     Continuous check for new MRT files and download them from the MRT archives
     enabled in the config.
@@ -28,6 +30,11 @@ def continuous(args):
     if not args:
         raise ValueError(
             f"Missing required arguments: args={args}"
+        )
+
+    if type(args) != dict:
+        raise TypeError(
+            f"args is not a dict: {type(args)}"
         )
 
     mrt_a = mrt_archives()
@@ -65,7 +72,7 @@ def continuous(args):
 
         time.sleep(60)
 
-def get_mrts(replace=False, url_list=None):
+def get_mrts(replace: bool = False, url_list: List[str] = None):
     """
     Download the list of MRTs from the passed URL list.
     """
@@ -74,11 +81,18 @@ def get_mrts(replace=False, url_list=None):
             f"Missing required arguments: url_list={url_list}"
         )
 
+    if type(url_list) != list:
+        raise TypeError(
+            f"url_list is not a list: {type(url_list)}"
+        )
+
     mrt_a = mrt_archives()
     logging.info(f"Downloading {len(url_list)} MRT files")
     i = 0
     for url in url_list:
         arch = mrt_a.arch_from_url(url)
+        if not arch:
+            raise ValueError(f"Couldn't match {url} to any MRT archive")
         outfile = os.path.normpath(arch.MRT_DIR + "/" + os.path.basename(url))
         """
         When downloading a large range of updates, say an entire month for
@@ -99,7 +113,7 @@ def get_mrts(replace=False, url_list=None):
 
     logging.info(f"Finished, downloaded {i}/{len(url_list)}")
 
-def get_day(args):
+def get_day(args: Dict[str, Any] = None):
     """
     Download all the MRTs for a specific day.
     """
@@ -119,7 +133,7 @@ def get_day(args):
     else:
         get_mrts(replace=args["replace"], url_list=url_list)
 
-def get_range(args):
+def get_range(args: Dict[str, Any] = None):
     """
     Download all the MRTs for between a specific start and end date inclusive.
     """
@@ -140,7 +154,7 @@ def get_range(args):
     else:
         get_mrts(replace=args["replace"], url_list=url_list)
 
-def gen_urls_day(args):
+def gen_urls_day(args: Dict[str, Any] = None) -> List[str]:
     """
     Return a list of URLs for all the MRTs for a specific day.
     """
@@ -158,7 +172,7 @@ def gen_urls_day(args):
     args["end"] = args["ymd"] + ".2359"
     return gen_urls_range(args)
 
-def gen_urls_range(args):
+def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
     """
     Generate and return a list of URLs for all MRTs betwen a start and end date
     inclusive.
