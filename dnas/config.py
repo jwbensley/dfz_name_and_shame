@@ -81,7 +81,7 @@ class config:
                 "TYPE": "RV",
                 "NAME": "RV_LINX",
                 "ENABLED": True,
-                "BASE_URL": "http://archive.routeviews.org/route-views.linx/bgpdata/",
+                "BASE_URL": "http://archive.routeviews.org/route-views.linx/bgpdata/", # With trailing slash
                 "RIB_URL": "/RIBS/",
                 "UPD_URL": "/UPDATES/",
                 "MRT_EXT": "bz2",
@@ -109,7 +109,7 @@ class config:
                 "TYPE": "RV",
                 "NAME": "RV_SYDNEY",
                 "ENABLED": False,
-                "BASE_URL": "http://archive.routeviews.org/route-views.sydney/bgpdata/",
+                "BASE_URL": "http://archive.routeviews.org/route-views.sydney/bgpdata/", # With trailing slash
                 "RIB_URL": "/RIBS/",
                 "UPD_URL": "/UPDATES/",
                 "MRT_EXT": "bz2",
@@ -137,7 +137,7 @@ class config:
                 "TYPE": "RIPE",
                 "NAME": "RCC_23",
                 "ENABLED": False,
-                "BASE_URL": "https://data.ris.ripe.net/rrc23/",
+                "BASE_URL": "https://data.ris.ripe.net/rrc23/", # With trailing slash
                 "RIB_URL": "/",
                 "UPD_URL": "/",
                 "MRT_EXT": "gz",
@@ -165,7 +165,7 @@ class config:
                 "TYPE": "RIPE",
                 "NAME": "RCC_24",
                 "ENABLED": False,
-                "BASE_URL": "https://data.ris.ripe.net/rrc24/",
+                "BASE_URL": "https://data.ris.ripe.net/rrc24/", # With trailing slash
                 "RIB_URL": "/",
                 "UPD_URL": "/",
                 "MRT_EXT": "gz",
