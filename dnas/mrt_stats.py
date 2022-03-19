@@ -1,5 +1,6 @@
 import datetime
 import json
+import typing
 
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
@@ -21,7 +22,7 @@ class mrt_stats:
         self.file_list = []
         self.timestamp = None
 
-    def add(self, merge_data):
+    def add(self, merge_data: mrt_stats = None) -> bool:
         """
         This function adds another MRT stats object into this one.
         This means that values which are equal in both objects are added and
@@ -35,6 +36,15 @@ class mrt_stats:
         updates. But, if merge_data has a prefix, 192.168.1.0/24, with 10000
         updates, 192.168.1.0/24 will replace 192.168.0.0/24 in this object.
         """
+        if not merge_data:
+            raise ValueError(
+                f"Missing required options: merge_data={merge_data}"
+            )
+
+        if type(merge_data) != mrt_stats:
+            raise TypeError(
+                f"merge_data is not a stats object: {type(merge_data)}"
+            )
 
         changed = False
 
@@ -414,11 +424,20 @@ class mrt_stats:
 
         return changed
 
-    def equal_to(self, mrt_s):
+    def equal_to(self, mrt_s: mrt_stats = None) -> bool:
         """
         Return True if this MRT stats obj is the same as mrt_s, else False.
         Don't compare meta data like file list or timestamp, on the stats.
         """
+        if not mrt_s:
+            raise ValueError(
+                f"Missing required options: mrt_s={mrt_s}"
+            )
+
+        if type(mrt_s) != mrt_stats:
+            raise TypeError(
+                f"mrt_s is not a stats object: {type(mrt_s)}"
+            )
 
         if len(self.longest_as_path) != len(mrt_s.longest_as_path):
             return False
@@ -531,17 +550,37 @@ class mrt_stats:
 
         return True
 
-    def from_file(self, filename):
+    def from_file(self, filename: str = None):
         """
         Load and parse MRT stats obj from a JSON text file.
         """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename={filename}"
+            )
+
+        if type(filename) != str:
+            raise TypeError(
+                f"filename is not a string: {type(filename)}"
+            )
+
         with open(filename, "r") as f:
             self.from_json(f.read())
 
-    def from_json(self, json_str):
+    def from_json(self, json_str: str = None):
         """
         Parse the JSON string as MRT stats data.
         """
+        if not json_str:
+            raise ValueError(
+                f"Missing required options: json_str={json_str}"
+            )
+
+        if type(json_str) != str:
+            raise TypeError(
+                f"json_str is not a string: {type(json_str)}"
+            )
+
         json_dict = json.loads(json_str)
 
         self.longest_as_path = []
@@ -609,7 +648,7 @@ class mrt_stats:
         self.timestamp = json_dict["timestamp"]
 
     @staticmethod
-    def gen_ts_from_ymd(ymd):
+    def gen_ts_from_ymd(ymd: str = None) -> str:
         """
         Generate and return the timestamp for a specific day, for use when
         creating an mrt_stats objects which contains the summary data for a
@@ -628,7 +667,7 @@ class mrt_stats:
         )
 
     @staticmethod
-    def gen_daily_key(ymd):
+    def gen_daily_key(ymd: str = None) -> str:
         """
         Generate the redis key used to store the global stats obj for a
         specific day.
@@ -643,7 +682,7 @@ class mrt_stats:
         return "DAILY:" + ymd
 
     @staticmethod
-    def gen_diff_key(ymd):
+    def gen_diff_key(ymd: str = None) -> str:
         """
         Generate the redis key used to store the diff stats obj for a
         specific day.
@@ -658,17 +697,27 @@ class mrt_stats:
         return "DAILY_DIFF:" + ymd
 
     @staticmethod
-    def gen_global_key():
+    def gen_global_key() -> str:
         """
         Generate the key used to store the running global stats obj in redis.
         """
         return "GLOBAL"
 
-    def get_diff(self, mrt_s):
+    def get_diff(self, mrt_s: mrt_stats = None) -> mrt_stats:
         """
         Generate an mrt_stats obj with entries unique to mrt_s.
         Don't diff meta data like timestamp or file list.
         """
+        if not mrt_s:
+            raise ValueError(
+                f"Missing required options: mrt_s={mrt_s}"
+            )
+
+        if type(mrt_s) != mrt_stats:
+            raise TypeError(
+                f"mrt_s is not a stats object: {type(mrt_s)}"
+            )
+
         diff = mrt_stats()
         diff.longest_as_path = []
         diff.longest_comm_set = []
@@ -773,13 +822,23 @@ class mrt_stats:
 
         return diff
 
-    def get_diff_larger(self, mrt_s):
+    def get_diff_larger(self, mrt_s: mrt_stats = None) -> mrt_stats:
         """
         Generate an mrt_stats obj with entries which are unique to mrt_s, and
         are larger than the equivilent values in this obj. For example, only 
         prefixes if the AS Path is longer, or only origin ASNs which sent more
         updates.
         """
+        if not mrt_s:
+            raise ValueError(
+                f"Missing required options: mrt_s={mrt_s}"
+            )
+
+        if type(mrt_s) != mrt_stats:
+            raise TypeError(
+                f"mrt_s is not a stats object: {type(mrt_s)}"
+            )
+
         diff = mrt_stats()
         diff.longest_as_path = []
         diff.longest_comm_set = []
@@ -868,7 +927,7 @@ class mrt_stats:
         return diff
 
     @staticmethod
-    def gen_prev_daily_key(ymd):
+    def gen_prev_daily_key(ymd: str = None) -> str:
         """
         Generate the redis key used to store the global stats obj for the
         day before a specific day.
@@ -885,7 +944,7 @@ class mrt_stats:
             "%Y%m%d"
         )
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """
         Check if an mrt_stats object is empty. Don't check meta data like
         file list or timestamp.
@@ -905,7 +964,7 @@ class mrt_stats:
         else:
             return False
 
-    def merge(self, merge_data):
+    def merge(self, merge_data: mrt_stats = None) -> bool:
         """
         This functions takes the bigger stat from the local object and
         merge_data object, and stores the bigger of the two back in this object.
@@ -925,6 +984,15 @@ class mrt_stats:
         all prefixes in this object will be dropped, and this object will now
         contain 192.168.2.0/24 only.
         """
+        if not merge_data:
+            raise ValueError(
+                f"Missing required options: merge_data={merge_data}"
+            )
+
+        if type(merge_data) != mrt_stats:
+            raise TypeError(
+                f"merge_data is not a stats object: {type(merge_data)}"
+            )
 
         changed = False
 
@@ -961,10 +1029,10 @@ class mrt_stats:
             self.longest_comm_set = merge_data.longest_comm_set.copy()
             changed = True
 
-
-        # Most advertisements per prefix
-        tmp = []
-        # If stats from a rib dump are being merged this wont be present:
+        """
+        Most advertisements per prefix
+        If stats from a rib dump are being merged this wont be present:
+        """
         if merge_data.most_advt_prefixes[0].prefix:
             if (merge_data.most_advt_prefixes[0].advt == self.most_advt_prefixes[0].advt and
                 self.most_advt_prefixes[0].advt > 0):
@@ -977,10 +1045,10 @@ class mrt_stats:
                 self.most_advt_prefixes = merge_data.most_advt_prefixes.copy()
                 changed = True
 
-
-        # Most updates per prefix
-        tmp = []
-        # If stats from a rib dump are being merged this wont be present:
+        """
+        Most updates per prefix
+        If stats from a rib dump are being merged this wont be present:
+        """
         if merge_data.most_upd_prefixes[0].prefix:
             if (merge_data.most_upd_prefixes[0].updates == self.most_upd_prefixes[0].updates and
                 self.most_upd_prefixes[0].updates > 0):
@@ -993,10 +1061,10 @@ class mrt_stats:
                 self.most_upd_prefixes = merge_data.most_upd_prefixes.copy()
                 changed = True
 
-
-        # Most withdraws per prefix
-        tmp = []
-        # If stats from a rib dump are being merged this wont be present:
+        """
+        Most withdraws per prefix
+        If stats from a rib dump are being merged this wont be present:
+        """
         if merge_data.most_withd_prefixes[0].prefix:
             if (merge_data.most_withd_prefixes[0].withdraws == self.most_withd_prefixes[0].withdraws and
                 self.most_withd_prefixes[0].withdraws > 0):
@@ -1009,9 +1077,10 @@ class mrt_stats:
                 self.most_withd_prefixes = merge_data.most_withd_prefixes.copy()
                 changed = True
 
-
-        # Most advertisement per origin ASN
-        # If stats from a rib dump are being merged this wont be present:
+        """
+        Most advertisement per origin ASN
+        If stats from a rib dump are being merged this wont be present:
+        """
         if merge_data.most_advt_origin_asn[0].origin_asns:
             if (merge_data.most_advt_origin_asn[0].advt == self.most_advt_origin_asn[0].advt and
                 self.most_advt_origin_asn[0].advt > 0):
@@ -1024,9 +1093,10 @@ class mrt_stats:
                 self.most_advt_origin_asn = merge_data.most_advt_origin_asn.copy()
                 changed = True
 
-
-        # Most advertisement per peer ASN
-        # If stats from a rib dump are being merged this wont be present:
+        """
+        Most advertisement per peer ASN
+        If stats from a rib dump are being merged this wont be present:
+        """
         if merge_data.most_advt_peer_asn[0].peer_asn:
             if (merge_data.most_advt_peer_asn[0].advt == self.most_advt_peer_asn[0].advt and
                 self.most_advt_peer_asn[0].advt > 0):
@@ -1039,9 +1109,10 @@ class mrt_stats:
                 self.most_advt_peer_asn = merge_data.most_advt_peer_asn.copy()
                 changed = True
 
-
-        # Most updates per peer ASN
-        # If stats from a rib dump are being merged this wont be present:
+        """
+        Most updates per peer ASN
+        If stats from a rib dump are being merged this wont be present:
+        """
         if merge_data.most_upd_peer_asn[0].peer_asn:
             if (merge_data.most_upd_peer_asn[0].updates == self.most_upd_peer_asn[0].updates and
                 self.most_upd_peer_asn[0].updates > 0):
@@ -1231,14 +1302,19 @@ class mrt_stats:
 
         print(f"timestamp: {self.timestamp}")
 
-    def to_file(self, filename):
+    def to_file(self, filename: str = None):
         """
         Serialise the MRT stats obj to JSON, save JSON as text file.
         """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename={filename}"
+            )
+
         with open(filename, "w") as f:
             f.write(self.to_json())
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         Serialise the MRT stats obj to JSON, and returns the JSON string.
         """
@@ -1278,7 +1354,7 @@ class mrt_stats:
         }
         return json.dumps(json_data)
 
-    def ts_ymd(self):
+    def ts_ymd(self) -> str:
         """
         Return only the YMD from this obj's timestamp raw e.g. YYYYMMDD
         """
@@ -1289,7 +1365,7 @@ class mrt_stats:
 
         return self.timestamp.split(".")[0]
 
-    def ts_ymd_format(self):
+    def ts_ymd_format(self) -> str:
         """
         Return only the YMD from this obj's timestamp formatted e.g. YYYY/MM/DD
         """

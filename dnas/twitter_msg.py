@@ -1,39 +1,41 @@
 import json
+from typing import List
 
 class twitter_msg:
     """
     This object contains a twitter message, to be tweeted.
     """
 
-    """
-    The header contains the main message to be tweeted.
-    It must be is <= cfg.TWITTER_LEN
-    This field is required.
-    """
-    hdr = ""
+    def __init__(self):
+        """
+        The header contains the main message to be tweeted.
+        It must be is <= cfg.TWITTER_LEN
+        This field is required.
+        """
+        self.hdr: str = ""
 
-    """
-    The Tweet ID of the header message.
-    """
-    hdr_id = None
+        """
+        The Tweet ID of the header message.
+        """
+        self.hdr_id: int = None
 
-    """
-    The body is an optional field, which contains any subsequent info to be
-    tweeted. This will be split across multiple replies to the header tweet.
-    """
-    body = ""
+        """
+        The body is an optional field, which contains any subsequent info to be
+        tweeted. This will be split across multiple replies to the header tweet.
+        """
+        self.body: str = ""
 
-    """
-    List of Tweet IDs which are the pages replies to the header Tweet.
-    """
-    body_ids = []
+        """
+        List of Tweet IDs which are the pages replies to the header Tweet.
+        """
+        self.body_ids: List[int] = []
 
-    """
-    Only tweet the message if False.
-    """
-    hidden = True
+        """
+        Only tweet the message if False.
+        """
+        self.hidden: bool = True
 
-    def from_json(self, json_str):
+    def from_json(self, json_str: str = None):
         """
         Populate this object with data from a JSON string.
         """
@@ -49,11 +51,13 @@ class twitter_msg:
 
         json_data = json.loads(json_str)
         self.hdr = json_data["hdr"]
+        self.hdr_id = json_data["hdr_id"]
         self.body = json_data["body"]
+        self.body_ids = json_data["body_ids"]
         self.hidden = json_data["hidden"]
 
     @staticmethod
-    def gen_tweeted_q_key(ymd):
+    def gen_tweeted_q_key(ymd: str = None):
         """
         Return the redis key for the tweeted queue, for a specific day.
         """
@@ -70,7 +74,7 @@ class twitter_msg:
         return "TWEETED:" + ymd
 
     @staticmethod
-    def gen_tweet_q_key(ymd):
+    def gen_tweet_q_key(ymd: str = None):
         """
         Return the redis key for the tweet queue, for a days tweets.
         """
@@ -86,13 +90,15 @@ class twitter_msg:
 
         return "TWEET_Q:" + ymd
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         Return the twitter message serialised as a json string.
         """
         json_data = {
             "hdr": self.hdr,
+            "hdr_id": self.hdr_id,
             "body": self.body,
+            "body_ids": self.body_ids,
             "hidden": self.hidden,
         }
         return json.dumps(json_data)
