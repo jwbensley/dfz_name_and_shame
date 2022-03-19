@@ -2,8 +2,10 @@ import datetime
 import logging
 import os
 import requests
+from typing import List, Literal, Tuple, Union
 
 from dnas.config import config as cfg
+from dnas.mrt_archive import mrt_archive
 
 class mrt_getter:
     """
@@ -12,15 +14,20 @@ class mrt_getter:
 
     @staticmethod
     def get_latest_rib(
-        arch=None,
-        replace=False,
-    ):
+        arch: mrt_archive = None,
+        replace: bool = False,
+    ) -> Tuple[str, str]:
         """
         Download the lastest RIB dump MRT from the given MRT archive.
         """
         if not arch:
             raise ValueError(
                 f"Missing required options: arch={arch}"
+            )
+
+        if type(arch) != mrt_archive:
+            raise TypeError(
+                f"arch is not an MRT archive: {type(arch)}"
             )
 
         filename = arch.gen_latest_rib_fn()
@@ -31,9 +38,9 @@ class mrt_getter:
 
     @staticmethod
     def get_latest_upd(
-        arch=None,
-        replace=False,
-    ):
+        arch: mrt_archive = None,
+        replace: bool = False,
+    ) -> Tuple[str, str]:
         """
         Download the lastest update MRT file from the given MRT archive.
         """
@@ -42,7 +49,12 @@ class mrt_getter:
                 f"Missing required options: arch={arch}"
             )
 
-        filename = self.gen_latest_upd_fn()
+        if type(arch) != mrt_archive:
+            raise TypeError(
+                f"arch is not an MRT archive: {type(arch)}"
+            )
+
+        filename = arch.gen_latest_upd_fn()
         url = arch.gen_upd_url(filename)
         outfile = os.path.normpath(arch.MRT_DIR + "/" + os.path.basename(url))
         mrt_getter.download_mrt(filename=outfile, replace=replace, url=url)
@@ -50,11 +62,11 @@ class mrt_getter:
 
     @staticmethod
     def get_range_rib(
-        arch=None,
-        end_date=None,
-        replace=False,
-        start_date=None,
-    ):
+        arch: mrt_archive = None,
+        end_date: str = None,
+        replace: bool = False,
+        start_date: str = None,
+    ) -> List[Tuple[str, str]]:
         """
         Download a range of RIB MRT dump files from an archive.
         All RIB MRT files from and inclusive of start_date to and inclusive
@@ -67,6 +79,11 @@ class mrt_getter:
             raise ValueError(
                 f"Missing required options: arch={arch}, "
                 f"start_date={start_date}, end_date={end_date}"
+            )
+
+        if type(arch) != mrt_archive:
+            raise TypeError(
+                f"arch is not an MRT archive: {type(arch)}"
             )
 
         start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
@@ -95,11 +112,11 @@ class mrt_getter:
 
     @staticmethod
     def get_range_upd(
-        arch=None,
-        end_date=None,
-        replace=False,
-        start_date=None,
-    ):
+        arch: mrt_archive = None,
+        end_date: str = None,
+        replace: bool = False,
+        start_date: str = None,
+    ) -> List[Tuple[str, str]]:
         """
         Download a range of MRT update dump files from an MRT archive.
         All update MRT files from and inclusive of start_date to and inclusive
@@ -113,6 +130,11 @@ class mrt_getter:
             raise ValueError(
                 f"Missing required options: arch={arch}, "
                 f"start_date={start_date}, end_date={end_date}"
+            )
+
+        if type(arch) != mrt_archive:
+            raise TypeError(
+                f"arch is not an MRT archive: {type(arch)}"
             )
 
         start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
@@ -140,7 +162,7 @@ class mrt_getter:
         return downloaded
 
     @staticmethod
-    def download_mrt(filename=None, replace=False, url=None):
+    def download_mrt(filename: str = None, replace: bool = False, url: str = None) -> Union[str, Literal[False]]:
         """
         Download an MRT file from the given url,
         and save it as the given filename.
@@ -170,7 +192,6 @@ class mrt_getter:
             logging.info(f"Couldn't connect to MRT server: {e}")
             raise requests.exceptions.ConnectionError
         
-        file_len = req.headers['Content-length']
 
         if req.status_code != 200:
             logging.info(f"HTTP error: {req.status_code}")
@@ -179,16 +200,17 @@ class mrt_getter:
             logging.error(req.content)
             req.raise_for_status()
 
+        file_len = int(req.headers['Content-length'])
+
         if file_len is None or file_len == 0:
             logging.error(req.url)
             logging.error(req.text)
             logging.error(req.content)
             raise ValueError("Missing file length!")
 
-        file_len = int(file_len)
         rcvd = 0
         logging.info(f"File size is {file_len/1024/1024:.7}MBs")
-        progress = 0
+        progress = 0.0
 
         with open(filename, "wb") as f:
             for chunk in req.iter_content(chunk_size=1024):

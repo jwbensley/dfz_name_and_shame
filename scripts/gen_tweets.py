@@ -5,8 +5,9 @@ import datetime
 import logging
 import os
 import sys
+import typing
 
-# Accomodate the use of the script, even when the dnas library isn't installed
+# Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__))
@@ -19,7 +20,7 @@ from dnas.redis_db import redis_db
 from dnas.twitter import twitter
 from dnas.twitter_msg import twitter_msg
 
-def delete(tweet_id):
+def delete(tweet_id: int = None):
     """
     Delete a Tweet from twitter.com
     """
@@ -27,6 +28,7 @@ def delete(tweet_id):
         raise ValueError(
             f"Missing required arguments: tweet_id={tweet_id}"
         )
+
     t = twitter()
     t.delete(tweet_id)
 
@@ -38,7 +40,7 @@ def gen_tweets_yest():
     yesterday = datetime.datetime.strftime(datetime.datetime.now() - delta,"%Y%m%d")
     gen_tweets(yesterday)
 
-def gen_tweets(ymd):
+def gen_tweets(ymd: str = None):
     """
     Generate Tweets based on stat changes for a specific day.
     """
@@ -54,12 +56,12 @@ def gen_tweets(ymd):
 
     rdb = redis_db()
     diff_key = mrt_stats.gen_diff_key(ymd)
-    diff = rdb.get_stats(diff_key)
-    if not diff:
+    diff_stats = rdb.get_stats(diff_key)
+    if not diff_stats:
         logging.info(f"No daily diff stored for {ymd}")
         return
 
-    msg_q = twitter.gen_tweets(diff)
+    msg_q = twitter.gen_tweets(diff_stats)
     if not msg_q:
         logging.info(f"No tweets generated for day {ymd}")
 
@@ -76,7 +78,7 @@ def gen_tweets(ymd):
 
     rdb.close()
 
-def tweet(ymd, print_only):
+def tweet(ymd: str = None, print_only: bool = False):
     """
     Tweet all the Tweets in the redis queue for a specific day.
     """
@@ -87,7 +89,7 @@ def tweet(ymd, print_only):
 
     if type(ymd) != str:
         raise TypeError(
-            f"ymd is not an str: {type(ymd)}"
+            f"ymd is not a string: {type(ymd)}"
         )
 
     rdb = redis_db()

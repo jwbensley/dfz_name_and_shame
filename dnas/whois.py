@@ -1,16 +1,22 @@
 import os
+import typing
 
 class whois:
 
     @staticmethod
-    def as_lookup(asn):
-        if not asn:
-            return False
-        if not isinstance(asn, int):
-            return False
+    def as_lookup(as_num: int = None) -> str:
+        if not as_num:
+            raise ValueError(
+                f"Missing required arguments: as_num={as_num}"
+            )
 
-        asn = "AS" + str(asn)
-        cmd = f"whois {asn}"#" | grep -m 1 as-name:"
+        if type(as_num) != int:
+            raise TypeError(
+                f"as_num is not string: {type(as_num)}"
+            )
+
+        asn = "AS" + str(as_num)
+        cmd = f"whois {asn}" #" | grep -m 1 as-name:"
         output = os.popen(cmd).read()
 
         as_name = ""

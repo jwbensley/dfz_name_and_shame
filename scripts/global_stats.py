@@ -5,8 +5,9 @@ import datetime
 import logging
 import os
 import sys
+from typing import Any, Dict
 
-# Accomodate the use of the script, even when the dnas library isn't installed
+# Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__))
@@ -20,7 +21,7 @@ from dnas.mrt_archive import mrt_archive
 from dnas.mrt_stats import mrt_stats
 from dnas.mrt_entry import mrt_entry
 
-def gen_day_stats(args):
+def gen_day_stats(args: Dict[str, Any] = None):
     """
     Generate the global stats for a specific day, by merging the stats obj from
     each MRT archive of that day.
@@ -105,7 +106,7 @@ def gen_day_stats(args):
 
     rdb.close()
 
-def gen_diff(ymd):
+def gen_diff(ymd: str = None):
     """
     Generate and store the diff of a daily stats object, with the daily stats
     from the day before.
@@ -162,7 +163,6 @@ def gen_diff(ymd):
             rdb.set_stats(diff_key, new_diff)
 
     rdb.close()
-    return
 
 def parse_args():
     """
@@ -234,7 +234,7 @@ def parse_args():
     )
     return vars(parser.parse_args())
 
-def upd_global_with_day(args):
+def upd_global_with_day(args: Dict[str, Any] = None):
     """
     Update the running global stats object with the global stats from a
     specific day.

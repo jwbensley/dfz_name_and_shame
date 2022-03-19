@@ -4,13 +4,14 @@ import argparse
 import datetime
 import glob
 import logging
-import mrtparse
+import mrtparse # type: ignore
 import multiprocessing
 from multiprocessing import Pool
 import os
 import sys
+from typing import Any, Dict, List
 
-# Accomodate the use of the script, even when the dnas library isn't installed
+# Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__))
@@ -122,13 +123,18 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def parse_file(filename=None, keep_chunks=False):
+def parse_file(filename: str = None, keep_chunks: bool = False) -> mrt_stats:
     """
     Split and parse an individual MRT file, return the mrt_stats.
     """
     if not filename:
         raise ValueError(
             f"Missing required arguments: filename={filename}."
+        )
+
+    if type(filename) != str:
+        raise TypeError(
+            f"filename is not a string: {type(filename)}"
         )
 
     no_cpu =  multiprocessing.cpu_count()
@@ -170,7 +176,7 @@ def parse_file(filename=None, keep_chunks=False):
 
     return mrt_s
 
-def parse_files(filelist, args):
+def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
     """
     A wrapper around the single file parsing function parse_file(), which
     accepts a list of files to parse.
@@ -178,6 +184,11 @@ def parse_files(filelist, args):
     if not filelist or not args:
         raise ValueError(
             f"Missing required arguments: filelist={filelist}, args={args}"
+        )
+
+    if type(filelist) != list:
+        raise TypeError(
+            f"filelist is not a list: {type(filelist)}"
         )
 
     rdb = redis_db()
@@ -216,7 +227,7 @@ def parse_files(filelist, args):
 
     rdb.close()
 
-def process_day(args):
+def process_day(args: Dict[str, Any] = None):
     """
     Build the list of files to be parsed and pass them to the parser function.
     This function builds a list MRT files from a specific day, from eligble MRT
@@ -254,13 +265,18 @@ def process_day(args):
 
     parse_files(filelist=filelist, args=args)
 
-def process_mrt_file(filename, args):
+def process_mrt_file(filename: str = None, args: Dict[str, Any] = None):
     """
     Pass a single filename to the parser function.
     """
     if not filename or not args:
         raise ValueError(
             f"Missing required arguments: filename={filename}, args={args}"
+        )
+
+    if type(filename) != str:
+        raise TypeError(
+            f"filename is not a string: {type(filename)}"
         )
 
     mrt_a = mrt_archives()
@@ -271,7 +287,7 @@ def process_mrt_file(filename, args):
     else:
         exit(1)
 
-def process_mrt_glob(args):
+def process_mrt_glob(args: Dict[str, Any] = None):
     """
     Build the list of files to be parsed based on a file glob, then pass them
     to the parser function. This function builds a list of all available MRT
@@ -280,6 +296,11 @@ def process_mrt_glob(args):
     if (not args):
         raise ValueError(
             f"Missing required arguments: args={args}"
+        )
+
+    if type(args) != dict:
+        raise TypeError(
+            f"args is not a dict: {type(args)}"
         )
 
     mrt_a = mrt_archives()
@@ -307,7 +328,7 @@ def process_mrt_glob(args):
 
     parse_files(filelist=filelist, args=args)
 
-def process_range(args):
+def process_range(args: Dict[str, Any] = None):
     """
     Build a list of MRT files between the --start and --end dates inclusive
     to pass to the MRT parser function.

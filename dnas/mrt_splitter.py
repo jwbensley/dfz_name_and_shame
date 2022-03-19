@@ -3,6 +3,7 @@ import errno
 import gzip
 import logging
 import os
+from typing import Any, List, NoReturn, Tuple
 
 from dnas.mrt_archives import mrt_archives
 
@@ -11,7 +12,7 @@ class MrtFormatError(Exception):
     Exception for invalid MRT formatted data.
     """
 
-    def __init__(self, msg=''):
+    def __init__(self, msg: str = ""):
         Exception.__init__(self)
         self.msg = msg
 
@@ -21,23 +22,23 @@ class mrt_splitter():
     Copy-pasta of the original mrtparer lib to split an MRT file into N files.
     """
 
-    def __init__(self, filename=None):
+    def __init__(self, filename: str = None):
 
-        # Magic Number
-        GZIP_MAGIC = b'\x1f\x8b'
-        BZ2_MAGIC = b'\x42\x5a\x68'
-
-        self.data = None
-        self.f = None
-        self.filename = filename
-
-        if not self.filename:
+        if not filename:
             raise ValueError("MRT filename missing")
 
         if not os.path.isfile(filename):
             raise FileNotFoundError(
                 errno.ENOENT, os.strerror(errno.ENOENT), filename
             )
+
+        self.data: bytearray
+        self.f: Any
+        self.filename = filename
+
+        # Magic Number
+        GZIP_MAGIC = b'\x1f\x8b'
+        BZ2_MAGIC = b'\x42\x5a\x68'
 
         f = open(filename, 'rb')
         hdr = f.read(max(len(BZ2_MAGIC), len(GZIP_MAGIC)))
@@ -53,17 +54,17 @@ class mrt_splitter():
             self.f = open(filename, 'rb')
             logging.debug("Assuming binary file")
 
-    def close(self):
+    def close(self) -> NoReturn:
         """
         Close the open MRT file.
         """
         self.f.close()
         raise StopIteration
 
-    def __iter__(self):
+    def __iter__(self) -> mrt_splitter:
         return self
 
-    def __next__(self):
+    def __next__(self) -> mrt_splitter:
         """
         Move to the next entry in the MRT file.
         """
@@ -73,7 +74,7 @@ class mrt_splitter():
             self.close()
         elif len(mrt_entry) < 12:
             raise MrtFormatError(
-                'Invalid MRT header length %d < 12 byte' % len(buf)
+                f"Invalid MRT header length {len(mrt_entry)} < 12 bytes"
             )
 
         val = 0
@@ -86,7 +87,7 @@ class mrt_splitter():
 
         return self
 
-    def split(self, no_chunks=None, outdir=None):
+    def split(self, no_chunks: int = None, outdir: str = None) -> Tuple[int, List[str]]:
         """
         Split the MRT data into N equal chunks written to disk.
         Return the total number of MRT entries and the list of chunk filenames.
