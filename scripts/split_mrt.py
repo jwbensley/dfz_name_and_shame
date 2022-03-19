@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 
-# Accomodate the use of the script, even when the dnas library isn't installed
+# Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(
         os.path.dirname(os.path.realpath(__file__))

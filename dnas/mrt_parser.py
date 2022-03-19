@@ -1,8 +1,10 @@
-import errno
-import os
-import mrtparse
 import datetime
+import errno
+import logging
+import mrtparse # type: ignore
 import operator
+import os
+from typing import Dict
 
 from dnas.config import config as cfg
 from dnas.mrt_entry import mrt_entry
@@ -15,13 +17,18 @@ class mrt_parser:
     """
 
     @staticmethod
-    def get_timestamp(filename):
+    def get_timestamp(filename: str = None) -> str:
         """
         Return the timestamp from the start of an MRT file.
         """
         if not filename:
             raise ValueError(
                 f"Missing required arguments: filename={filename}."
+            )
+
+        if type(filename) != str:
+            raise TypeError(
+                f"filename is not a string: {type(filename)}"
             )
 
         _ = mrtparse.Reader(filename)
@@ -38,7 +45,7 @@ class mrt_parser:
         return timestamp
 
     @staticmethod
-    def posix_to_ts(posix):
+    def posix_to_ts(posix: int = None) -> str:
         """
         Convert the posix timestamp in an MRT dump, to the UTC time in the
         standard format of MRTs.
@@ -48,12 +55,17 @@ class mrt_parser:
                 f"Missing required arguments: posix={posix}."
             )
 
+        if type(posix) != int:
+            raise TypeError(
+                f"posix is not a string: {type(posix)}"
+            )
+
         return datetime.datetime.utcfromtimestamp(posix).strftime(
             cfg.TIME_FORMAT
         )
 
     @staticmethod
-    def parse_rib_dump(filename):
+    def parse_rib_dump(filename: str = None) -> mrt_stats:
         """
         Take filename of RIB dump MRT as input and return an MRT stats obj.
         """
@@ -70,9 +82,9 @@ class mrt_parser:
             orig_filename = filename
         file_ts = mrt_parser.get_timestamp(orig_filename)
 
-        rib_data = mrt_stats()
-        rib_data.timestamp = file_ts
-        rib_data.file_list.append(orig_filename)
+        mrt_s = mrt_stats()
+        mrt_s.timestamp = file_ts
+        mrt_s.file_list.append(orig_filename)
 
         if cfg.SPLIT_DIR:
             mrt_entries = mrtparse.Reader(
@@ -101,8 +113,8 @@ class mrt_parser:
                 next_hop = None
 
                 for attr in rib_entry["path_attributes"]:
-                    #attr_t = path_attr["type"][0]   ##### FIX ME
-                    attr_t = next(iter(path_attr["type"]))
+                    #attr_t = attr["type"][0]   ##### FIX ME
+                    attr_t = next(iter(attr["type"]))
 
                     # mrtparse.BGP_ATTR_T['AS_PATH']
                     if attr_t == 2:
@@ -177,18 +189,18 @@ class mrt_parser:
                         )
                     ]
 
-            if len(longest_as_path[0].as_path) == len(rib_data.longest_as_path[0].as_path):
-                rib_data.longest_as_path.extend(longest_as_path)
-            elif len(longest_as_path[0].as_path) > len(rib_data.longest_as_path[0].as_path):
-                rib_data.longest_as_path = longest_as_path.copy()
+            if len(longest_as_path[0].as_path) == len(mrt_s.longest_as_path[0].as_path):
+                mrt_s.longest_as_path.extend(longest_as_path)
+            elif len(longest_as_path[0].as_path) > len(mrt_s.longest_as_path[0].as_path):
+                mrt_s.longest_as_path = longest_as_path.copy()
 
-            if len(longest_comm_set[0].comm_set) == len(rib_data.longest_comm_set[0].comm_set):
-                rib_data.longest_comm_set.extend(longest_comm_set)
-            elif len(longest_comm_set[0].comm_set) > len(rib_data.longest_comm_set[0].comm_set):
-                rib_data.longest_comm_set = longest_comm_set.copy()
+            if len(longest_comm_set[0].comm_set) == len(mrt_s.longest_comm_set[0].comm_set):
+                mrt_s.longest_comm_set.extend(longest_comm_set)
+            elif len(longest_comm_set[0].comm_set) > len(mrt_s.longest_comm_set[0].comm_set):
+                mrt_s.longest_comm_set = longest_comm_set.copy()
 
-            if len(origin_asns) == len(rib_data.most_origin_asns[0].origin_asns):
-                rib_data.most_origin_asns.append(
+            if len(origin_asns) == len(mrt_s.most_origin_asns[0].origin_asns):
+                mrt_s.most_origin_asns.append(
                     mrt_entry(
                         filename = orig_filename,
                         origin_asns = origin_asns,
@@ -196,8 +208,8 @@ class mrt_parser:
                         timestamp=ts,
                     )
                 )
-            elif len(origin_asns) > len(rib_data.most_origin_asns[0].origin_asns):
-                rib_data.most_origin_asns = [
+            elif len(origin_asns) > len(mrt_s.most_origin_asns[0].origin_asns):
+                mrt_s.most_origin_asns = [
                     mrt_entry(
                         origin_asns = origin_asns,
                         filename = orig_filename,
@@ -206,10 +218,10 @@ class mrt_parser:
                     )
                 ]
 
-        return rib_data
+        return mrt_s
 
     @staticmethod
-    def parse_upd_dump(filename):
+    def parse_upd_dump(filename: str = None) -> mrt_stats:
         """
         Take filename of UPDATE dump MRT as input and return an MRT stats obj.
         """
@@ -220,10 +232,10 @@ class mrt_parser:
 
         longest_as_path = [mrt_entry()]
         longest_comm_set = [mrt_entry()]
-        origin_asns_prefix = {}
-        upd_prefix = {}
-        advt_per_origin_asn = {}
-        upd_peer_asn = {}
+        origin_asns_prefix: Dict[str, set] = {}
+        upd_prefix: Dict[str, dict] = {}
+        advt_per_origin_asn: Dict[str, int] = {}
+        upd_peer_asn: Dict[str, dict] = {}
 
         # If parsing a chunk of an MRT file, try to work out the orig filename
         if cfg.SPLIT_DIR:
@@ -234,9 +246,9 @@ class mrt_parser:
 
         file_ts = mrt_parser.get_timestamp(orig_filename)
 
-        upd_stats = mrt_stats()
-        upd_stats.timestamp = file_ts
-        upd_stats.file_list.append(orig_filename)
+        mrt_s = mrt_stats()
+        mrt_s.timestamp = file_ts
+        mrt_s.file_list.append(orig_filename)
 
         if cfg.SPLIT_DIR:
             mrt_entries = mrtparse.Reader(
@@ -299,13 +311,13 @@ class mrt_parser:
                 upd_peer_asn[peer_asn]["advt"] += 1
                 prefixes = []
 
-                for path_attr in mrt_e.data["bgp_message"]["path_attributes"]:
-                    #attr_t = path_attr["type"][0]   ##### FIX ME
-                    attr_t = next(iter(path_attr["type"]))
+                for attr in mrt_e.data["bgp_message"]["path_attributes"]:
+                    #attr_t = attr["type"][0]   ##### FIX ME
+                    attr_t = next(iter(attr["type"]))
 
                     # AS_PATH
                     if attr_t == 2:
-                        as_path = path_attr["value"][0]["value"]
+                        as_path = attr["value"][0]["value"]
                         origin_asn = as_path[-1]
                         if origin_asn not in advt_per_origin_asn:
                             advt_per_origin_asn[origin_asn] = 1
@@ -314,16 +326,16 @@ class mrt_parser:
 
                     # NEXT_HOP
                     elif attr_t == 3:
-                        next_hop = path_attr["value"]
+                        next_hop = attr["value"]
 
                     # COMMUNITY or LARGE_COMMUNITY
                     elif (attr_t == 8 or attr_t == 32):
-                        comm_set = path_attr["value"]
+                        comm_set = attr["value"]
 
                     # MP_REACH_NLRI
                     elif attr_t == 14:
-                        next_hop = path_attr["value"]["next_hop"]
-                        for nlri in path_attr["value"]["nlri"]:
+                        next_hop = attr["value"]["next_hop"]
+                        for nlri in attr["value"]["nlri"]:
                             prefixes.append(
                                 nlri["prefix"] + "/" + str(nlri["prefix_length"])
                             )
@@ -407,18 +419,18 @@ class mrt_parser:
                 ]
 
 
-        ################## FIX ME - REMOVE "if" upd_states is empty
-        if len(longest_as_path[0].as_path) > len(upd_stats.longest_as_path[0].as_path):
-            upd_stats.longest_as_path = longest_as_path.copy()
+        ################## FIX ME - REMOVE "if" mrt_s is empty
+        if len(longest_as_path[0].as_path) > len(mrt_s.longest_as_path[0].as_path):
+            mrt_s.longest_as_path = longest_as_path.copy()
 
-        ################## FIX ME - REMOVE "if" upd_states is empty
-        if len(longest_comm_set[0].comm_set) > len(upd_stats.longest_comm_set[0].comm_set):
-            upd_stats.longest_comm_set = longest_comm_set.copy()
+        ################## FIX ME - REMOVE "if" mrt_s is empty
+        if len(longest_comm_set[0].comm_set) > len(mrt_s.longest_comm_set[0].comm_set):
+            mrt_s.longest_comm_set = longest_comm_set.copy()
 
         for prefix in upd_prefix:
-            if (upd_prefix[prefix]["advt"] == upd_stats.most_advt_prefixes[0].advt and
-                upd_stats.most_advt_prefixes[0].advt > 0):
-                upd_stats.most_advt_prefixes.append(
+            if (upd_prefix[prefix]["advt"] == mrt_s.most_advt_prefixes[0].advt and
+                mrt_s.most_advt_prefixes[0].advt > 0):
+                mrt_s.most_advt_prefixes.append(
                     mrt_entry(
                         advt=upd_prefix[prefix]["advt"],
                         filename=orig_filename,
@@ -427,8 +439,8 @@ class mrt_parser:
 
                     )
                 )
-            elif upd_prefix[prefix]["advt"] > upd_stats.most_advt_prefixes[0].advt:
-                upd_stats.most_advt_prefixes = [
+            elif upd_prefix[prefix]["advt"] > mrt_s.most_advt_prefixes[0].advt:
+                mrt_s.most_advt_prefixes = [
                     mrt_entry(
                         advt=upd_prefix[prefix]["advt"],
                         filename=orig_filename,
@@ -439,9 +451,9 @@ class mrt_parser:
 
 
         for prefix in upd_prefix:
-            if (upd_prefix[prefix]["withdraws"] == upd_stats.most_withd_prefixes[0].withdraws and
-                upd_stats.most_withd_prefixes[0].withdraws > 0):
-                upd_stats.most_withd_prefixes.append(
+            if (upd_prefix[prefix]["withdraws"] == mrt_s.most_withd_prefixes[0].withdraws and
+                mrt_s.most_withd_prefixes[0].withdraws > 0):
+                mrt_s.most_withd_prefixes.append(
                     mrt_entry(
                         filename=orig_filename,
                         prefix=prefix,
@@ -449,8 +461,8 @@ class mrt_parser:
                         withdraws=upd_prefix[prefix]["withdraws"],
                     )
                 )
-            elif upd_prefix[prefix]["withdraws"] > upd_stats.most_withd_prefixes[0].withdraws:
-                upd_stats.most_withd_prefixes = [
+            elif upd_prefix[prefix]["withdraws"] > mrt_s.most_withd_prefixes[0].withdraws:
+                mrt_s.most_withd_prefixes = [
                     mrt_entry(
                         filename=orig_filename,
                         prefix=prefix,
@@ -468,7 +480,7 @@ class mrt_parser:
             elif (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]) == most_updates:
                 most_upd_prefixes.append(prefix)
 
-        upd_stats.most_upd_prefixes = [
+        mrt_s.most_upd_prefixes = [
             mrt_entry(
                 filename=orig_filename,
                 prefix=prefix,
@@ -479,9 +491,9 @@ class mrt_parser:
 
 
         for asn in upd_peer_asn:
-            if (upd_peer_asn[asn]["advt"] == upd_stats.most_advt_peer_asn[0].advt and
-                upd_stats.most_advt_peer_asn[0].advt > 0):
-                upd_stats.most_advt_peer_asn.append(
+            if (upd_peer_asn[asn]["advt"] == mrt_s.most_advt_peer_asn[0].advt and
+                mrt_s.most_advt_peer_asn[0].advt > 0):
+                mrt_s.most_advt_peer_asn.append(
                     mrt_entry(
                         advt=upd_peer_asn[asn]["advt"],
                         filename=orig_filename,
@@ -489,8 +501,8 @@ class mrt_parser:
                         timestamp=file_ts,
                     )
                 )
-            elif upd_peer_asn[asn]["advt"] > upd_stats.most_advt_peer_asn[0].advt:
-                upd_stats.most_advt_peer_asn = [
+            elif upd_peer_asn[asn]["advt"] > mrt_s.most_advt_peer_asn[0].advt:
+                mrt_s.most_advt_peer_asn = [
                     mrt_entry(
                         advt=upd_peer_asn[asn]["advt"],
                         filename=orig_filename,
@@ -500,9 +512,9 @@ class mrt_parser:
                 ]
 
         for asn in upd_peer_asn:
-            if (upd_peer_asn[asn]["withdraws"] == upd_stats.most_withd_peer_asn[0].withdraws and
-                upd_stats.most_withd_peer_asn[0].withdraws > 0):
-                upd_stats.most_withd_peer_asn.append(
+            if (upd_peer_asn[asn]["withdraws"] == mrt_s.most_withd_peer_asn[0].withdraws and
+                mrt_s.most_withd_peer_asn[0].withdraws > 0):
+                mrt_s.most_withd_peer_asn.append(
                     mrt_entry(
                         filename=orig_filename,
                         peer_asn=asn,
@@ -510,8 +522,8 @@ class mrt_parser:
                         withdraws=upd_peer_asn[asn]["withdraws"],
                     )
                 )
-            elif upd_peer_asn[asn]["withdraws"] > upd_stats.most_withd_peer_asn[0].withdraws:
-                upd_stats.most_withd_peer_asn = [
+            elif upd_peer_asn[asn]["withdraws"] > mrt_s.most_withd_peer_asn[0].withdraws:
+                mrt_s.most_withd_peer_asn = [
                     mrt_entry(
                         filename=orig_filename,
                         peer_asn=asn,
@@ -529,7 +541,7 @@ class mrt_parser:
             elif (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"]) == most_updates:
                 most_upd_asns.append(asn)
 
-        upd_stats.most_upd_peer_asn = [
+        mrt_s.most_upd_peer_asn = [
             mrt_entry(
                 filename=orig_filename,
                 peer_asn=asn,
@@ -547,7 +559,7 @@ class mrt_parser:
             elif len(origin_asns_prefix[prefix]) == most_origins:
                 most_origin_prefixes.append(prefix)
 
-        upd_stats.most_origin_asns = [
+        mrt_s.most_origin_asns = [
             mrt_entry(
                 filename=orig_filename,
                 origin_asns=origin_asns_prefix[prefix],
@@ -556,20 +568,20 @@ class mrt_parser:
             ) for prefix in most_origin_prefixes
         ]
 
-        advt_per_origin_asn = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
-        upd_stats.most_advt_origin_asn = [
+        advt_per_orig_asn_sorted = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
+        mrt_s.most_advt_origin_asn = [
             mrt_entry(
                 advt=x[1],
                 filename=orig_filename,
                 origin_asns=set([x[0]]),
                 timestamp=file_ts,
-            ) for x in advt_per_origin_asn if x[1] == advt_per_origin_asn[-1][1]
+            ) for x in advt_per_orig_asn_sorted if x[1] == advt_per_orig_asn_sorted[-1][1]
         ]
 
-        return upd_stats
+        return mrt_s
 
     @staticmethod
-    def test_mrt_rib_dump(filename):
+    def test_mrt_rib_dump(filename: str = None) -> int:
 
         if not filename:
             raise ValueError("MRT filename missing")
@@ -602,7 +614,7 @@ class mrt_parser:
         return idx
 
     @staticmethod
-    def test_mrt_update_dump(data):
+    def test_mrt_update_dump(filename: str = None) -> int:
 
         if not filename:
             raise ValueError("MRT filename missing")
@@ -634,7 +646,7 @@ class mrt_parser:
         return idx
 
     @staticmethod
-    def mrt_count(filename):
+    def mrt_count(filename: str = None) -> int:
         """
         Return the total number of MRT records in an MRT file.
         """
