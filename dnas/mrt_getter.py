@@ -14,7 +14,7 @@ class mrt_getter:
 
     @staticmethod
     def get_latest_rib(
-        arch: mrt_archive = None,
+        arch: 'mrt_archive' = None,
         replace: bool = False,
     ) -> Tuple[str, str]:
         """
@@ -38,7 +38,7 @@ class mrt_getter:
 
     @staticmethod
     def get_latest_upd(
-        arch: mrt_archive = None,
+        arch: 'mrt_archive' = None,
         replace: bool = False,
     ) -> Tuple[str, str]:
         """
@@ -62,7 +62,7 @@ class mrt_getter:
 
     @staticmethod
     def get_range_rib(
-        arch: mrt_archive = None,
+        arch: 'mrt_archive' = None,
         end_date: str = None,
         replace: bool = False,
         start_date: str = None,
@@ -112,7 +112,7 @@ class mrt_getter:
 
     @staticmethod
     def get_range_upd(
-        arch: mrt_archive = None,
+        arch: 'mrt_archive' = None,
         end_date: str = None,
         replace: bool = False,
         start_date: str = None,

@@ -8,7 +8,7 @@ from dnas.mrt_archive import mrt_archive
 
 class mrt_archives:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.archives = []
 
         for arch in cfg.MRT_ARCHIVES:
@@ -33,7 +33,7 @@ class mrt_archives:
                 )
             )
 
-    def arch_from_file_path(self, file_path: str = None) -> Union[mrt_archive, Literal[False]]:
+    def arch_from_file_path(self, file_path: str = None) -> Union['mrt_archive', Literal[False]]:
         """
         Return the MRT archive the file came from, based on the file path.
         """
@@ -50,7 +50,7 @@ class mrt_archives:
         logging.error(f"Couldn't match {file_path} to any MRT archive")
         return False
 
-    def arch_from_url(self, url: str = None) -> Union[mrt_archive, Literal[False]]:
+    def arch_from_url(self, url: str = None) -> Union['mrt_archive', Literal[False]]:
         """
         Return the MRT archive the URL belongs to, based on the url.
         """

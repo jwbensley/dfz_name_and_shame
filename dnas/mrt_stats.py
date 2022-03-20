@@ -1,6 +1,6 @@
 import datetime
 import json
-import typing
+from typing import List
 
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
@@ -8,7 +8,7 @@ from dnas.mrt_entry import mrt_entry
 
 class mrt_stats:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.longest_as_path = [mrt_entry()]
         self.longest_comm_set = [mrt_entry()]
         self.most_advt_prefixes = [mrt_entry()]
@@ -19,10 +19,10 @@ class mrt_stats:
         self.most_upd_peer_asn = [mrt_entry()]
         self.most_withd_peer_asn = [mrt_entry()]
         self.most_origin_asns = [mrt_entry()]
-        self.file_list = []
-        self.timestamp = None
+        self.file_list: List[str] = []
+        self.timestamp: str
 
-    def add(self, merge_data: mrt_stats = None) -> bool:
+    def add(self, merge_data: 'mrt_stats' = None) -> bool:
         """
         This function adds another MRT stats object into this one.
         This means that values which are equal in both objects are added and
@@ -424,7 +424,7 @@ class mrt_stats:
 
         return changed
 
-    def equal_to(self, mrt_s: mrt_stats = None) -> bool:
+    def equal_to(self, mrt_s: 'mrt_stats' = None) -> bool:
         """
         Return True if this MRT stats obj is the same as mrt_s, else False.
         Don't compare meta data like file list or timestamp, on the stats.
@@ -703,7 +703,7 @@ class mrt_stats:
         """
         return "GLOBAL"
 
-    def get_diff(self, mrt_s: mrt_stats = None) -> mrt_stats:
+    def get_diff(self, mrt_s: 'mrt_stats' = None) -> 'mrt_stats':
         """
         Generate an mrt_stats obj with entries unique to mrt_s.
         Don't diff meta data like timestamp or file list.
@@ -822,7 +822,7 @@ class mrt_stats:
 
         return diff
 
-    def get_diff_larger(self, mrt_s: mrt_stats = None) -> mrt_stats:
+    def get_diff_larger(self, mrt_s: 'mrt_stats' = None) -> 'mrt_stats':
         """
         Generate an mrt_stats obj with entries which are unique to mrt_s, and
         are larger than the equivilent values in this obj. For example, only 
@@ -964,7 +964,7 @@ class mrt_stats:
         else:
             return False
 
-    def merge(self, merge_data: mrt_stats = None) -> bool:
+    def merge(self, merge_data: 'mrt_stats' = None) -> bool:
         """
         This functions takes the bigger stat from the local object and
         merge_data object, and stores the bigger of the two back in this object.

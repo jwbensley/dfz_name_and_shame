@@ -13,7 +13,7 @@ class twitter:
     Class for interacting with Twitter API using Tweepy.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         self.client = tweepy.Client(
             consumer_key=twitter_auth.consumer_key,
@@ -43,7 +43,7 @@ class twitter:
             raise RuntimeError(f"Error deleting Tweet {tweet_id}: {r}")
 
     @staticmethod
-    def gen_tweets(mrt_s: mrt_stats = None) -> List[twitter_msg]:
+    def gen_tweets(mrt_s: 'mrt_stats' = None) -> List['twitter_msg']:
         """
         Generate Tweets using the data in an mrt stats object.
         """
@@ -251,7 +251,7 @@ class twitter:
 
         return msg_q
 
-    def tweet(self, msg: twitter_msg = None, print_only: bool = False):
+    def tweet(self, msg: 'twitter_msg' = None, print_only: bool = False):
         """
         Tweet the header of a twitter message obj.
         Then tweet the body as a series of paged replies.
@@ -269,7 +269,7 @@ class twitter:
         self.tweet_hdr(msg, print_only)
         self.tweet_body(msg, print_only)
 
-    def tweet_hdr(self, msg: twitter_msg = None, print_only: bool = False):
+    def tweet_hdr(self, msg: 'twitter_msg' = None, print_only: bool = False):
         """
         Tweet a message header.
         """
@@ -303,7 +303,7 @@ class twitter:
             )
             msg.hdr_id = int(r.data["id"])
 
-    def tweet_body(self, msg: twitter_msg = None, print_only: bool = False):
+    def tweet_body(self, msg: 'twitter_msg' = None, print_only: bool = False):
         """
         Tweet a message body as a series of pages replies to the header.
         """
@@ -346,7 +346,7 @@ class twitter:
                 )
                 msg.body_ids.append(r.data["id"])
 
-    def split_tweet(self, msg: twitter_msg = None) -> List[str]:
+    def split_tweet(self, msg: 'twitter_msg' = None) -> List[str]:
         """
         Return a Tweet body split into a list of 280 character strings
         """

@@ -30,7 +30,7 @@ class mrt_archive:
         get_rib_url=None,
         get_upd_url=None,
 
-    ):
+    ) -> None:
 
         self.BASE_URL = BASE_URL
         self.ENABLED = ENABLED

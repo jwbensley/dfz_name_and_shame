@@ -65,7 +65,7 @@ class mrt_parser:
         )
 
     @staticmethod
-    def parse_rib_dump(filename: str = None) -> mrt_stats:
+    def parse_rib_dump(filename: str = None) -> 'mrt_stats':
         """
         Take filename of RIB dump MRT as input and return an MRT stats obj.
         """
@@ -221,7 +221,7 @@ class mrt_parser:
         return mrt_s
 
     @staticmethod
-    def parse_upd_dump(filename: str = None) -> mrt_stats:
+    def parse_upd_dump(filename: str = None) -> 'mrt_stats':
         """
         Take filename of UPDATE dump MRT as input and return an MRT stats obj.
         """

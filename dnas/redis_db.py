@@ -1,7 +1,7 @@
 import datetime
 import json
 import redis
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 from dnas.redis_auth import redis_auth
 from dnas.mrt_stats import mrt_stats
@@ -12,7 +12,7 @@ class redis_db():
     Class to manage connection to Redis DB and martial data in and out.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.r = redis.Redis(
             host=redis_auth.host,
             port=redis_auth.port,
@@ -105,7 +105,13 @@ class redis_db():
 
         t = self.r.type(key).decode("utf-8")
         if t == "string":
-            return self.r.get(key).decode("utf-8")
+            val = self.r.get(key)
+            if val:
+                return val.decode("utf-8")
+            else:
+                raise ValueError(
+                    f"Couldn't decode data stored under key {key}"
+                )
         elif t == "list":
             return [x.decode("utf-8") for x in self.r.lrange(key, 0, -1)]
         else:
@@ -124,7 +130,7 @@ class redis_db():
 
         return [x.decode("utf-8") for x in self.r.keys(pattern)]
 
-    def get_queue_msgs(self, key: str = None) -> List[twitter_msg]:
+    def get_queue_msgs(self, key: str = None) -> List['twitter_msg']:
         """
         Return the list of Tweets stored under key as Twitter messages objects.
         """
@@ -144,7 +150,7 @@ class redis_db():
 
         return msgs
 
-    def get_stats(self, key: str = None) -> Union[None, mrt_stats]:
+    def get_stats(self, key: str = None) -> Union[None, 'mrt_stats']:
         """
         Return MRT stats from Redis as JSON, and return as an MRT stats object.
         """
@@ -161,18 +167,7 @@ class redis_db():
             mrt_s.from_json(json_str.decode("utf-8"))
             return mrt_s
 
-    def get_stats_json(self, key: str = None):
-        """
-        Return MRT stats from Redis as JSON string.
-        """
-        if not key:
-            raise ValueError(
-                f"Missing required arguments: key={key}"
-            )
-
-        return self.r.get(key).decode("utf-8")
-
-    def set_stats(self, key: str = None, mrt_s: mrt_stats = None):
+    def set_stats(self, key: str = None, mrt_s: 'mrt_stats' = None):
         """
         Take an MRT stats object, serialise it to JSON, store in Redis.
         """
@@ -215,8 +210,13 @@ class redis_db():
         """
         Dump the entire redis DB to JSON
         """
-        d = {}
+        d: Dict[str, Any] = {}
         for k in self.r.keys("*"):
-            k = k.decode("utf-8")
-            d[k] = self.r.get(k).decode("utf-8")
-        return json.dumps(d)
+            val = self.r.get(k)
+            if val:
+                d[k.decode("utf-8")] = val.decode("utf-8")
+
+        if d:
+            return json.dumps(d)
+        else:
+            raise ValueError("DB dump is empty")
