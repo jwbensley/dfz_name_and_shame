@@ -123,7 +123,7 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def parse_file(filename: str = None, keep_chunks: bool = False) -> mrt_stats:
+def parse_file(filename: str = None, keep_chunks: bool = False) -> 'mrt_stats':
     """
     Split and parse an individual MRT file, return the mrt_stats.
     """

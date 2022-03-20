@@ -6,24 +6,24 @@ class twitter_msg:
     This object contains a twitter message, to be tweeted.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         The header contains the main message to be tweeted.
         It must be is <= cfg.TWITTER_LEN
         This field is required.
         """
-        self.hdr: str = ""
+        self.hdr: str
 
         """
         The Tweet ID of the header message.
         """
-        self.hdr_id: int = None
+        self.hdr_id: int
 
         """
         The body is an optional field, which contains any subsequent info to be
         tweeted. This will be split across multiple replies to the header tweet.
         """
-        self.body: str = ""
+        self.body: str
 
         """
         List of Tweet IDs which are the pages replies to the header Tweet.

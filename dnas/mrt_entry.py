@@ -19,7 +19,7 @@ class mrt_entry:
         timestamp=None,
         updates=0,
         withdraws=0,
-    ):
+    ) -> None:
 
         self.advt = advt
         self.as_path = as_path
@@ -33,7 +33,7 @@ class mrt_entry:
         self.updates = updates
         self.withdraws = withdraws
 
-    def equal_to(self, mrt_e: mrt_entry = None) -> bool:
+    def equal_to(self, mrt_e: 'mrt_entry' = None) -> bool:
         """
         Return True if this MRT stat entry obj is the same as mrt_e, else False.
         Doesn't compare meta data like filename.

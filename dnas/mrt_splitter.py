@@ -22,7 +22,7 @@ class mrt_splitter():
     Copy-pasta of the original mrtparer lib to split an MRT file into N files.
     """
 
-    def __init__(self, filename: str = None):
+    def __init__(self, filename: str = None) -> None:
 
         if not filename:
             raise ValueError("MRT filename missing")
@@ -61,10 +61,10 @@ class mrt_splitter():
         self.f.close()
         raise StopIteration
 
-    def __iter__(self) -> mrt_splitter:
+    def __iter__(self) -> 'mrt_splitter':
         return self
 
-    def __next__(self) -> mrt_splitter:
+    def __next__(self) -> 'mrt_splitter':
         """
         Move to the next entry in the MRT file.
         """
