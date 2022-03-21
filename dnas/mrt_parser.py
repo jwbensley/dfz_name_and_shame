@@ -278,6 +278,7 @@ class mrt_parser:
             ts = mrt_parser.posix_to_ts(
                 next(iter(mrt_e.data["timestamp"].items()))[0]
             ) # E.g., 1486801684
+
             as_path = []
             comm_set = []
 

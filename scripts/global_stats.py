@@ -15,6 +15,7 @@ sys.path.append(
     )
 )
 
+from dnas.config import config as cfg
 from dnas.redis_db import redis_db
 from dnas.mrt_archives import mrt_archives
 from dnas.mrt_archive import mrt_archive
@@ -46,6 +47,7 @@ def gen_day_stats(args: Dict[str, Any] = None):
     mrt_a = mrt_archives()
     day_stats = mrt_stats()
     day_stats.timestamp = mrt_stats.gen_ts_from_ymd(args["ymd"])
+    day_keys = []
 
     for arch in mrt_a.archives:
         if (args["enabled"] and not arch.ENABLED):
@@ -58,6 +60,7 @@ def gen_day_stats(args: Dict[str, Any] = None):
 
             if arch_stats:
                 if day_stats.merge(arch_stats):
+                    day_keys.append(day_key)
                     logging.info(
                         f"Compiling {day_key} RIB stats into daily stats for "
                         f"{args['ymd']}"
@@ -74,6 +77,7 @@ def gen_day_stats(args: Dict[str, Any] = None):
 
             if arch_stats:
                 if day_stats.merge(arch_stats):
+                    day_keys.append(day_key)
                     logging.info(
                         f"Compiling {day_key} UPDATE stats into daily stats "
                         f"for {args['ymd']}"
@@ -84,12 +88,17 @@ def gen_day_stats(args: Dict[str, Any] = None):
                         f"for {args['ymd']}"
                     )
 
+    """
+    Overwrite the list of MRT files this stats object is made with,
+    with the list of redis DB keys
+    """
+    day_stats.file_list = day_keys
     day_key = mrt_stats.gen_daily_key(args["ymd"])
     db_day_stats = rdb.get_stats(day_key)
     if not db_day_stats:
         logging.info(
             f"No existing global stats obj for day {args['ymd']}, "
-            "storing compiled stats"
+            f"storing compiled stats under {day_key}"
         )
         rdb.set_stats(day_key, day_stats)
     else:
@@ -97,11 +106,12 @@ def gen_day_stats(args: Dict[str, Any] = None):
         if db_day_stats.merge(day_stats):
             rdb.set_stats(day_key, db_day_stats)
             logging.info(
-                f"Merged {args['ymd']} stats with existing day stats in redis"
+                f"Merged {args['ymd']} stats with existing day stats under "
+                f"{day_key}"
             )
         else:
             logging.info(
-                f"No update to exsiting {args['ymd']} stats in redis"
+                f"No update to exsiting {args['ymd']} stats under {day_key}"
             )
 
     rdb.close()

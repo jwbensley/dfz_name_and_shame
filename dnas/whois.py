@@ -4,8 +4,8 @@ import typing
 class whois:
 
     @staticmethod
-    def as_lookup(as_num: int = None) -> str:
-        if not as_num:
+    def as_lookup(as_num: int = -1) -> str:
+        if as_num < 0:
             raise ValueError(
                 f"Missing required arguments: as_num={as_num}"
             )

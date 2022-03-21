@@ -15,6 +15,7 @@ sys.path.append(
     )
 )
 
+from dnas.config import config as cfg
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_db import redis_db
 from dnas.twitter import twitter
