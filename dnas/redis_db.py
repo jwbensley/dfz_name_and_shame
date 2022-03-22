@@ -220,13 +220,13 @@ class redis_db():
                     d[k.decode("utf-8")] = val.decode("utf-8")
                 else:
                     raise ValueError(
-                        f"Couldn't decode data stored under key {k}"
+                        f"Couldn't decode data stored under key {k.decode('utf-8')}"
                     )
             elif t == "list":
                 d[k.decode("utf-8")] = [x.decode("utf-8") for x in self.r.lrange(k, 0, -1)]
             else:
                 raise TypeError(
-                    f"Unsupported data type {t} stored under key {k}"
+                    f"Unsupported data type {t} stored under key {k.decode('utf-8')}"
                 )
 
         if d:

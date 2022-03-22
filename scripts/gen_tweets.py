@@ -79,7 +79,7 @@ def gen_tweets(ymd: str = None):
 
     rdb.close()
 
-def tweet(hdr_only: bool = True, print_only: bool = False, ymd: str = None):
+def tweet(body: bool = False, print_only: bool = False, ymd: str = None):
     """
     Tweet all the Tweets in the redis queue for a specific day.
     """
@@ -100,7 +100,7 @@ def tweet(hdr_only: bool = True, print_only: bool = False, ymd: str = None):
     for msg in msg_q:
         if not msg.hidden:
 
-            t.tweet(hdr_only, msg, print_only)
+            t.tweet(body, msg, print_only)
             if print_only:
                 continue
 
@@ -122,6 +122,13 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate and publish Tweets based on stats in redis.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--body",
+        help="Tweet the body of the Tweets in reply to the header.",
+        default=False,
+        action="store_true",
+        required=False,
     )
     parser.add_argument(
         "--debug",
@@ -214,7 +221,7 @@ def main():
         gen_tweets(args["ymd"])
 
     if args["tweet"]:
-        tweet(args["ymd"], args["print"])
+        tweet(args["body"], args["print"], args["ymd"])
 
     if args["yesterday"]:
         gen_tweets_yest()

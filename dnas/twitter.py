@@ -264,7 +264,7 @@ class twitter:
 
     def tweet(
             self,
-            hdr_only: bool = True,
+            body: bool = False,
             msg: 'twitter_msg' = None,
             print_only: bool = False
         ):
@@ -283,7 +283,7 @@ class twitter:
             )
 
         self.tweet_hdr(msg, print_only)
-        if not hdr_only:
+        if body:
             self.tweet_body(msg, print_only)
 
     def tweet_hdr(self, msg: 'twitter_msg' = None, print_only: bool = False):
