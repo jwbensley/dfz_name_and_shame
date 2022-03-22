@@ -21,6 +21,9 @@ class mrt_stats:
         self.most_origin_asns = [mrt_entry()]
         self.file_list: List[str] = []
         self.timestamp: str
+        self.total_upd: int = 0
+        self.total_advt: int = 0
+        self.total_withd: int = 0
 
     def add(self, merge_data: 'mrt_stats' = None) -> bool:
         """
@@ -415,6 +418,18 @@ class mrt_stats:
                     self.most_origin_asns = merge_data.most_origin_asns.copy()
                     changed = True
 
+        # If stats from a rib dump are being added, these will be 0:
+        if merge_data.total_upd:
+            self.total_upd += merge_data.total_upd
+            changed = True
+
+        if merge_data.total_advt:
+            self.total_advt += merge_data.total_advt
+            changed = True
+
+        if merge_data.total_withd:
+            self.total_withd += merge_data.total_withd
+            changed = True
 
         if changed:
             for filename in merge_data.file_list:
@@ -427,7 +442,7 @@ class mrt_stats:
     def equal_to(self, mrt_s: 'mrt_stats' = None) -> bool:
         """
         Return True if this MRT stats obj is the same as mrt_s, else False.
-        Don't compare meta data like file list or timestamp, on the stats.
+        Don't compare meta data like file list or timestamp, only the stats.
         """
         if not mrt_s:
             raise ValueError(
@@ -548,6 +563,15 @@ class mrt_stats:
         if mrt_s.most_origin_asns:
             return False
 
+        if self.total_upd != mrt_s.total_upd:
+            return False
+
+        if self.total_advt != mrt_s.total_advt:
+            return False
+
+        if self.total_withd != mrt_s.total_withd:
+            return False
+
         return True
 
     def from_file(self, filename: str = None):
@@ -646,6 +670,18 @@ class mrt_stats:
         self.file_list = json_dict["file_list"]
 
         self.timestamp = json_dict["timestamp"]
+
+        self.total_upd = 0
+        if "total_upd" in json_dict:
+            self.total_upd = int(json_dict["total_upd"])
+
+        self.total_advt = 0
+        if "total_advt" in json_dict:
+            self.total_advt = int(json_dict["total_advt"])
+
+        self.total_withd = 0
+        if "total_withd" in json_dict:
+            self.total_withd = int(json_dict["total_withd"])
 
     @staticmethod
     def gen_ts_from_ymd(ymd: str = None) -> str:
@@ -820,6 +856,15 @@ class mrt_stats:
             if not found:
                 diff.most_origin_asns.append(mrt_e)
 
+        if mrt_s.total_upd != self.total_upd:
+            diff.total_upd = mrt_s.total_upd
+
+        if mrt_s.total_advt != self.total_advt:
+            diff.total_advt = mrt_s.total_advt
+
+        if mrt_s.total_withd != self.total_withd:
+            diff.total_withd = mrt_s.total_withd
+
         return diff
 
     def get_diff_larger(self, mrt_s: 'mrt_stats' = None) -> 'mrt_stats':
@@ -918,6 +963,22 @@ class mrt_stats:
                 diff.most_origin_asns = mrt_s.most_origin_asns.copy()
                 updated = True
 
+        # If stats from a rib dump are being compared, these wont be present:
+        # More updates parsed
+        if mrt_s.total_upd > self.total_upd:
+            diff.total_upd = mrt_s.total_upd
+            updated = True
+
+        # More updates with advertisements
+        if mrt_s.total_advt > self.total_advt:
+            diff.total_advt = mrt_s.total_advt
+            updated = True
+
+        # More updates with withdraws
+        if mrt_s.total_withd > self.total_withd:
+            diff.total_withd = mrt_s.total_withd
+            updated = True
+
         if updated:
             ### FIXME - this least to an accumulating file list
             ###diff.file_list.extend(self.file_list)
@@ -958,7 +1019,10 @@ class mrt_stats:
             not self.most_advt_peer_asn and
             not self.most_upd_peer_asn and
             not self.most_withd_peer_asn and
-            not self.most_origin_asns
+            not self.most_origin_asns and
+            not self.total_upd and
+            not self.total_advt and
+            not self.total_withd
         ):
             return True
         else:
@@ -1156,6 +1220,27 @@ class mrt_stats:
                 self.most_origin_asns = merge_data.most_origin_asns.copy()
                 changed = True
 
+        """
+        If stats from a rib dump are being merged, these wont be present:
+        Most updates parsed
+        """
+        if merge_data.total_upd:
+            if merge_data.total_upd > self.total_upd:
+                self.total_upd = merge_data.total_upd
+                changed = True
+
+        # Most updates announcing prefixes
+        if merge_data.total_advt:
+            if merge_data.total_advt > self.total_advt:
+                self.total_advt = merge_data.total_advt
+                changed = True
+
+        # Most updates withdrawing prefixes
+        if merge_data.total_withd:
+            if merge_data.total_withd > self.total_withd:
+                self.total_withd = merge_data.total_withd
+                changed = True
+
         if changed:
             for filename in merge_data.file_list:
                 if filename not in self.file_list:
@@ -1298,6 +1383,11 @@ class mrt_stats:
             print(f"most_origin_asns->withdraws: {mrt_e.withdraws}")
         print("")
 
+        print(f"total_upd: {self.total_upd}")
+        print(f"total_advt: {self.total_advt}")
+        print(f"total_withd: {self.total_withd}")
+        print("")
+
         print(f"file_list: {self.file_list}")
 
         print(f"timestamp: {self.timestamp}")
@@ -1349,6 +1439,9 @@ class mrt_stats:
             "most_origin_asns": [
                 mrt_e.to_json() for mrt_e in self.most_origin_asns
             ],
+            "total_upd": self.total_upd,
+            "total_advt": self.total_advt,
+            "total_withd": self.total_withd,
             "file_list": self.file_list,
             "timestamp": self.timestamp,
         }
