@@ -28,7 +28,10 @@ def delete(key: str = None):
             f"Missing required arguments: key={key}"
         )
 
-    rdb.delete(key)
+    if rdb.delete(key):
+        logging.info(f"Deleted {key}")
+    else:
+        logging.info(f"Nothing to delete for {key}")
 
 def dump_json(filename: str = None):
     """
@@ -40,6 +43,7 @@ def dump_json(filename: str = None):
         )
 
     rdb.to_file(filename)
+    logging.info(f"Written DB dump to {filename}")
 
 def load_json(filename: str = None):
     """
@@ -246,6 +250,7 @@ def wipe():
     """
     for k in rdb.get_keys("*"):
         rdb.delete(k)
+    logging.info(f"Database wiped")
 
 def main():
 
