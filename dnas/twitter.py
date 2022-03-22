@@ -62,7 +62,7 @@ class twitter:
         if mrt_s.longest_as_path:
             msg = twitter_msg()
             msg.hdr = (
-                f"New longest AS path: on the day {mrt_s.ts_ymd_format()} "
+                f"Longest AS path on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.longest_as_path)} prefix(es) had an AS path length "
                 f"of {len(mrt_s.longest_as_path[0].as_path)} ASNs"
             )
@@ -84,7 +84,7 @@ class twitter:
         if mrt_s.longest_comm_set:
             msg = twitter_msg()
             msg.hdr = (
-                f"New longest community set: on the day {mrt_s.ts_ymd_format()} "
+                f"Longest community set on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.longest_comm_set)} prefix(es) had a comm set length"
                 f" of {len(mrt_s.longest_comm_set[0].comm_set)} communities"
             )
@@ -106,8 +106,8 @@ class twitter:
         if mrt_s.most_advt_prefixes:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most BGP advertisements per prefix: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most BGP advertisements per prefix "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_advt_prefixes)} prefix(es) had "
                 f"{mrt_s.most_advt_prefixes[0].advt} advertisements"
             )
@@ -121,8 +121,8 @@ class twitter:
         if mrt_s.most_upd_prefixes:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most BGP updates per prefix: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most BGP updates per prefix "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_upd_prefixes)} prefix(es) had "
                 f"{mrt_s.most_upd_prefixes[0].updates} updates"
             )
@@ -135,8 +135,8 @@ class twitter:
         if mrt_s.most_withd_prefixes:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most BGP withdraws per prefix: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most BGP withdraws per prefix "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_withd_prefixes)} prefix(es) had "
                 f"{mrt_s.most_withd_prefixes[0].withdraws} withdraws"
             )
@@ -149,8 +149,8 @@ class twitter:
         if mrt_s.most_advt_origin_asn:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most BGP advertisements per origin ASN: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most BGP advertisements per origin ASN "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_advt_origin_asn)} origin ASN(s) sent "
                 f"{mrt_s.most_advt_origin_asn[0].advt} advertisements"
             )
@@ -170,8 +170,8 @@ class twitter:
         if mrt_s.most_advt_peer_asn:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most BGP advertisements per peer ASN: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most BGP advertisements per peer ASN "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_advt_peer_asn)} peer ASN(s) sent "
                 f"{mrt_s.most_advt_peer_asn[0].advt} advertisements"
             )
@@ -190,8 +190,8 @@ class twitter:
         if mrt_s.most_upd_peer_asn:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most BGP updates per peer ASN: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most BGP updates per peer ASN "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_upd_peer_asn)} peer ASN(s) sent "
                 f"{mrt_s.most_upd_peer_asn[0].updates} updates"
             )
@@ -210,8 +210,8 @@ class twitter:
         if mrt_s.most_withd_peer_asn:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most BGP withdraws per peer ASN: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most BGP withdraws per peer ASN "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_withd_peer_asn)} peer ASN(s) sent "
                 f"{mrt_s.most_withd_peer_asn[0].withdraws} withdraws"
             )
@@ -230,8 +230,8 @@ class twitter:
         if mrt_s.most_origin_asns:
             msg = twitter_msg()
             msg.hdr = (
-                f"New most origin ASNs per prefix: "
-                f"on the day {mrt_s.ts_ymd_format()} "
+                f"Most origin ASNs per prefix "
+                f"on {mrt_s.ts_ymd_format()}: "
                 f"{len(mrt_s.most_origin_asns)} prefix(es) had "
                 f"{len(mrt_s.most_origin_asns[0].origin_asns)} origin ASNs"
             )
@@ -246,6 +246,17 @@ class twitter:
                         msg.body += f" AS{asn}"
                 msg.body += ", "
             msg.body = msg.body[0:-2]
+            msg.hidden = False
+            msg_q.append(msg)
+
+        if mrt_s.total_upd:
+            msg = twitter_msg()
+            msg.hdr = (
+                f"On {mrt_s.ts_ymd_format()} {mrt_s.total_upd} BGP updates "
+                f"were parsed. {mrt_s.total_advt} UPDATES contained prefix "
+                f"advertisements. {mrt_s.total_withd} UPDATES contained prefix "
+                f"withdraws"
+            )
             msg.hidden = False
             msg_q.append(msg)
 
