@@ -236,6 +236,9 @@ class mrt_parser:
         upd_prefix: Dict[str, dict] = {}
         advt_per_origin_asn: Dict[str, int] = {}
         upd_peer_asn: Dict[str, dict] = {}
+        total_upd: int = 0 # How many update messages were parsed
+        total_advt: int = 0 # Updates containing prefix avertisement
+        total_withd: int = 0 # Updates containing prefix withdraw
 
         # If parsing a chunk of an MRT file, try to work out the orig filename
         if cfg.SPLIT_DIR:
@@ -274,6 +277,7 @@ class mrt_parser:
             """
             if next(iter(mrt_e.data["bgp_message"]["type"])) != 2: # UPDATE
                 continue
+            total_upd += 1
 
             ts = mrt_parser.posix_to_ts(
                 next(iter(mrt_e.data["timestamp"].items()))[0]
@@ -294,8 +298,9 @@ class mrt_parser:
             all Route-Views MRTs do. Yay!
             """
             if "withdrawn_routes" in ["bgp_message"]:
-                if len(mrt_e.data["bgp_message"]) > 0:
+                if len(mrt_e.data["bgp_message"]["withdrawn_routes"]) > 0:
                     upd_peer_asn[peer_asn]["withdraws"] += 1
+                    total_withd += 1
 
                     for withdrawn_route in mrt_e.data["bgp_message"]["withdrawn_routes"]:
                         prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
@@ -310,6 +315,7 @@ class mrt_parser:
 
             if len(mrt_e.data["bgp_message"]["path_attributes"]) > 1:
                 upd_peer_asn[peer_asn]["advt"] += 1
+                total_advt += 1
                 prefixes = []
 
                 for attr in mrt_e.data["bgp_message"]["path_attributes"]:
