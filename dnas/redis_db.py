@@ -58,7 +58,7 @@ class redis_db():
 
         self.r.lrem(key, 0, elem)
 
-    def delete(self, key: str = None):
+    def delete(self, key: str = None) -> int:
         """
         Delete key entry in Redis.
         """
@@ -67,7 +67,7 @@ class redis_db():
                 f"Missing required arguments: key={key}"
             )
 
-        self.r.delete(key)
+        return self.r.delete(key)
 
     def from_file(self, filename: str = None):
         """
@@ -212,11 +212,24 @@ class redis_db():
         """
         d: Dict[str, Any] = {}
         for k in self.r.keys("*"):
-            val = self.r.get(k)
-            if val:
-                d[k.decode("utf-8")] = val.decode("utf-8")
+
+            t = self.r.type(k).decode("utf-8")
+            if t == "string":
+                val = self.r.get(k)
+                if val:
+                    d[k.decode("utf-8")] = val.decode("utf-8")
+                else:
+                    raise ValueError(
+                        f"Couldn't decode data stored under key {k}"
+                    )
+            elif t == "list":
+                d[k.decode("utf-8")] = [x.decode("utf-8") for x in self.r.lrange(k, 0, -1)]
+            else:
+                raise TypeError(
+                    f"Unsupported data type {t} stored under key {k}"
+                )
 
         if d:
             return json.dumps(d)
         else:
-            raise ValueError("DB dump is empty")
+            raise ValueError("Database is empty")
