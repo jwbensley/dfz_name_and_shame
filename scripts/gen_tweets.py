@@ -43,7 +43,7 @@ def gen_tweets_yest():
 
 def gen_tweets(ymd: str = None):
     """
-    Generate Tweets based on stat changes for a specific day.
+    Generate Tweets based on stats for a specific day.
     """
     if not ymd:
         raise ValueError(
@@ -56,13 +56,13 @@ def gen_tweets(ymd: str = None):
         )
 
     rdb = redis_db()
-    diff_key = mrt_stats.gen_diff_key(ymd)
-    diff_stats = rdb.get_stats(diff_key)
-    if not diff_stats:
-        logging.info(f"No daily diff stored for {ymd}")
+    diff_key = mrt_stats.gen_daily_key(ymd)
+    day_stats = rdb.get_stats(diff_key)
+    if not day_stats:
+        logging.info(f"No daily stats stored for {ymd}")
         return
 
-    msg_q = twitter.gen_tweets(diff_stats)
+    msg_q = twitter.gen_tweets(day_stats)
     if not msg_q:
         logging.info(f"No tweets generated for day {ymd}")
 
@@ -79,7 +79,7 @@ def gen_tweets(ymd: str = None):
 
     rdb.close()
 
-def tweet(ymd: str = None, print_only: bool = False):
+def tweet(body: bool = False, print_only: bool = False, ymd: str = None):
     """
     Tweet all the Tweets in the redis queue for a specific day.
     """
@@ -100,7 +100,7 @@ def tweet(ymd: str = None, print_only: bool = False):
     for msg in msg_q:
         if not msg.hidden:
 
-            t.tweet(msg, print_only)
+            t.tweet(body, msg, print_only)
             if print_only:
                 continue
 
@@ -124,6 +124,13 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
+        "--body",
+        help="Tweet the body of the Tweets in reply to the header.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "--debug",
         help="Enable debug logging for this script.",
         default=False,
@@ -139,7 +146,7 @@ def parse_args():
     )
     parser.add_argument(
         "--generate",
-        help="Generate Tweets for stat changes of a specific day, "
+        help="Generate Tweets for stats from a specific day, "
         "and add to tweet queue. Use --ymd option.",
         default=False,
         action="store_true",
@@ -214,7 +221,7 @@ def main():
         gen_tweets(args["ymd"])
 
     if args["tweet"]:
-        tweet(args["ymd"], args["print"])
+        tweet(args["body"], args["print"], args["ymd"])
 
     if args["yesterday"]:
         gen_tweets_yest()

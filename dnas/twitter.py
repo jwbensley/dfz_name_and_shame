@@ -252,7 +252,7 @@ class twitter:
         if mrt_s.total_upd:
             msg = twitter_msg()
             msg.hdr = (
-                f"On {mrt_s.ts_ymd_format()} {mrt_s.total_upd} BGP updates "
+                f"On {mrt_s.ts_ymd_format()} {mrt_s.total_upd} BGP UPDATES "
                 f"were parsed. {mrt_s.total_advt} UPDATES contained prefix "
                 f"advertisements. {mrt_s.total_withd} UPDATES contained prefix "
                 f"withdraws"
@@ -262,7 +262,12 @@ class twitter:
 
         return msg_q
 
-    def tweet(self, msg: 'twitter_msg' = None, print_only: bool = False):
+    def tweet(
+            self,
+            body: bool = False,
+            msg: 'twitter_msg' = None,
+            print_only: bool = False
+        ):
         """
         Tweet the header of a twitter message obj.
         Then tweet the body as a series of paged replies.
@@ -278,7 +283,8 @@ class twitter:
             )
 
         self.tweet_hdr(msg, print_only)
-        self.tweet_body(msg, print_only)
+        if body:
+            self.tweet_body(msg, print_only)
 
     def tweet_hdr(self, msg: 'twitter_msg' = None, print_only: bool = False):
         """
