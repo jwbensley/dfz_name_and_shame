@@ -18,12 +18,14 @@ class config:
     LOG_DIR = os.path.join(BASE_DIR, "logs/")
     # Logging from script: get_mrts.py
     LOG_GETTER = os.path.join(LOG_DIR, "get_mrts.log")
-    # Logging from script: global_stats.py
-    LOG_STATS = os.path.join(LOG_DIR, "global_stats.log")
+    # Logging from script: git.py
+    LOG_GIT = os.path.join(LOG_DIR, "git.log")
+    # Logging from script: stats.py
+    LOG_STATS = os.path.join(LOG_DIR, "stats.log")
     # Logging from script: parse_mrts.py
     LOG_PARSER = os.path.join(LOG_DIR, "parse_mrts.log")
-    # Logging from script: gen_tweets.py
-    LOG_TWITTER = os.path.join(LOG_DIR, "gen_tweets.log")
+    # Logging from script: tweets.py
+    LOG_TWITTER = os.path.join(LOG_DIR, "tweets.log")
 
 
     """
@@ -31,6 +33,16 @@ class config:
     timestamps. The format below is the same format used by the MRT archives.
     """
     TIME_FORMAT = "%Y%m%d.%H%M"
+    DAY_FORMAT = "%Y%m%d"
+
+
+    ################
+    # GIT SETTINGS #
+    ################
+
+    # Path to git repo
+    GIT_BASE = os.path.join(BASE_DIR, "dnas_stats/")
+    GIT_REPORT_BRANCH = "main"
 
 
     ####################
