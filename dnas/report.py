@@ -58,7 +58,7 @@ class report:
                         text += f" AS{asn} ({as_name})"
                     else:
                         text += f" AS{asn}"
-                text += f". AS Path: AS{' AS'.join(mrt_e.as_path)}. "
+                text += f". AS Path: AS{' AS'.join(mrt_e.as_path)}.\n"
             text = text[0:-1]
             text += "\n\n"
             report.append(text)
