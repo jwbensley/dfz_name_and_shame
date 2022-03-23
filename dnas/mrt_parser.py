@@ -272,6 +272,13 @@ class mrt_parser:
                 continue
 
             """
+            I'm not sure why but some MRT files contain a BGP message with no
+            UPDATE.
+            """
+            if "bgp_message" not in mrt_e.data:
+                continue
+
+            """
             Some RIPE UPDATE MRTs contain all the BGP messages types
             (OPEN, KEEPALIVE, etc), whereas Route-Views don't. Yay!
             """
@@ -297,7 +304,7 @@ class mrt_parser:
             Some RIPE MRTs don't always contain "withdraw_routes" key, whereas
             all Route-Views MRTs do. Yay!
             """
-            if "withdrawn_routes" in ["bgp_message"]:
+            if "withdrawn_routes" in mrt_e.data["bgp_message"]:
                 if len(mrt_e.data["bgp_message"]["withdrawn_routes"]) > 0:
                     upd_peer_asn[peer_asn]["withdraws"] += 1
                     total_withd += 1
