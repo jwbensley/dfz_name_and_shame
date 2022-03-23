@@ -698,7 +698,7 @@ class mrt_stats:
         mrt_archive.valid_ymd(ymd)
 
         return datetime.datetime.strftime(
-            datetime.datetime.strptime(ymd, "%Y%m%d"),
+            datetime.datetime.strptime(ymd, cfg.DAY_FORMAT),
             cfg.TIME_FORMAT
         )
 
@@ -1001,8 +1001,8 @@ class mrt_stats:
         mrt_archive.valid_ymd(ymd)
 
         return "DAILY:" + datetime.datetime.strftime(
-            datetime.datetime.strptime(ymd, "%Y%m%d") - datetime.timedelta(days=1),
-            "%Y%m%d"
+            datetime.datetime.strptime(ymd, cfg.DAY_FORMAT) - datetime.timedelta(days=1),
+            cfg.DAY_FORMAT
         )
 
     def is_empty(self) -> bool:

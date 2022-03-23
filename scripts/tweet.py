@@ -38,7 +38,9 @@ def gen_tweets_yest():
     Generate Tweets based on for yesterday's stats changes.
     """
     delta = datetime.timedelta(days=1)
-    yesterday = datetime.datetime.strftime(datetime.datetime.now() - delta,"%Y%m%d")
+    yesterday = datetime.datetime.strftime(
+        datetime.datetime.now() - delta, cfg.DAY_FORMAT
+    )
     gen_tweets(yesterday)
 
 def gen_tweets(ymd: str = None):
@@ -56,8 +58,8 @@ def gen_tweets(ymd: str = None):
         )
 
     rdb = redis_db()
-    diff_key = mrt_stats.gen_daily_key(ymd)
-    day_stats = rdb.get_stats(diff_key)
+    day_key = mrt_stats.gen_daily_key(ymd)
+    day_stats = rdb.get_stats(day_key)
     if not day_stats:
         logging.info(f"No daily stats stored for {ymd}")
         return

@@ -205,7 +205,7 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
     for i in range(0, no_days + 1):
 
         delta = datetime.timedelta(days=i)
-        ymd = datetime.datetime.strftime(start + delta, "%Y%m%d")
+        ymd = datetime.datetime.strftime(start + delta, cfg.DAY_FORMAT)
 
         for arch in mrt_a.archives:
             if (args["enabled"] and not arch.ENABLED):
