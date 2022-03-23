@@ -53,7 +53,5 @@ class whois:
                 if tmp.strip():
                     as_name = tmp
                     break
-        if as_name:
-            return as_name
 
         return as_name
