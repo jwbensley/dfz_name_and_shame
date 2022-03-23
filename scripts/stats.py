@@ -188,8 +188,14 @@ def gen_range(args: Dict[str, Any] = None):
             "Both --start and --end must be specified when using --range"
         )
 
-    start_day = datetime.datetime.strptime(args["start"], "%Y%m%d")
-    end_day = datetime.datetime.strptime(args["end"], "%Y%m%d")
+    if (type(args["end"]) != str and type(args["start"]) != str):
+        raise TypeError(
+            f"Both end and start must be strings, not: {type(args['end'])} "
+            f"and {type(args['start'])}"
+        )
+
+    start_day = datetime.datetime.strptime(args["start"], cfg.DAY_FORMAT)
+    end_day = datetime.datetime.strptime(args["end"], cfg.DAY_FORMAT)
 
     if end_day < start_day:
         raise ValueError(
@@ -197,11 +203,14 @@ def gen_range(args: Dict[str, Any] = None):
         )
 
     diff = end_day - start_day
-    logging.debug(f"Generating stats for {diff.days + 1} days from {start_day} to {end_day}")
+    logging.debug(
+        f"Generating stats for {diff.days + 1} days from {start_day} to "
+        f"{end_day}"
+    )
 
     for i in range(0, diff.days + 1):
         delta = datetime.timedelta(days=i)
-        ymd = datetime.datetime.strftime(start_day + delta, "%Y%m%d")
+        ymd = datetime.datetime.strftime(start_day + delta, cfg.DAY_FORMAT)
 
         if args["daily"]:
             gen_day_stats(

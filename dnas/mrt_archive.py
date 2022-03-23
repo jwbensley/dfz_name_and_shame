@@ -231,7 +231,7 @@ class mrt_archive:
 
         h_delta = datetime.timedelta(hours=cfg.RV_UPD_OFFSET)
 
-        ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta,"%Y%m%d.%H%M")
+        ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta, cfg.TIME_FORMAT)
         return self.UPD_PREFIX + ymd_hm + "." + self.MRT_EXT
 
     def gen_rib_fn_date(self, ymd_hm: str = None) -> str:

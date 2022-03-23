@@ -360,7 +360,7 @@ def process_range(args: Dict[str, Any] = None):
     for i in range(0, diff.days + 1):
 
         delta = datetime.timedelta(days=i)
-        ymd = datetime.datetime.strftime(start_time + delta, "%Y%m%d")
+        ymd = datetime.datetime.strftime(start_time + delta, cfg.DAY_FORMAT)
 
         for arch in mrt_a.archives:
             if (args["enabled"] and not arch.ENABLED):
