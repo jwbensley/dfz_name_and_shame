@@ -49,7 +49,15 @@ class report:
             )
 
             for mrt_e in mrt_s.longest_as_path:
-                text += f"{mrt_e.prefix} from origin ASN(s)"
+                text += f"Prefix {mrt_e.prefix} "
+                peeras = mrt_e.peer_asn
+                if peeras not in whois_cache:
+                    whois_cache[peeras] = whois.as_lookup(int(peeras))
+                if whois_cache[peeras]:
+                    text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                else:
+                    text += f"via peer AS{peeras} "
+                text += f"from origin ASN(s)"
                 for asn in mrt_e.origin_asns:
                     if asn not in whois_cache:
                         whois_cache[asn] = whois.as_lookup(int(asn))
@@ -58,7 +66,8 @@ class report:
                         text += f" AS{asn} ({as_name})"
                     else:
                         text += f" AS{asn}"
-                text += f". AS Path: AS{' AS'.join(mrt_e.as_path)}.\n"
+                text += f". AS Path length {len(mrt_e.as_path)}: "
+                text += f"AS{' AS'.join(mrt_e.as_path)}.\n"
             text = text[0:-1]
             text += "\n\n"
             report.append(text)
@@ -71,7 +80,15 @@ class report:
             )
 
             for mrt_e in mrt_s.longest_comm_set:
-                text += f"{mrt_e.prefix} from origin ASN(s)"
+                text += f"Prefix {mrt_e.prefix} "
+                peeras = mrt_e.peer_asn
+                if peeras not in whois_cache:
+                    whois_cache[peeras] = whois.as_lookup(int(peeras))
+                if whois_cache[peeras]:
+                    text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                else:
+                    text += f"via peer AS{peeras} "
+                text += f"from origin ASN(s)"
                 for asn in mrt_e.origin_asns:
                     if asn not in whois_cache:
                         whois_cache[asn] = whois.as_lookup(int(asn))
@@ -80,7 +97,8 @@ class report:
                         text += f" AS{asn} ({as_name})"
                     else:
                         text += f" AS{asn}"
-                text += f". Commnuity set: {' '.join(mrt_e.comm_set)}.\n"
+                text += f". Commnuity set length {(len(mrt_e.comm_set))}: "
+                text += f"{' '.join(mrt_e.comm_set)}.\n"
             text = text[0:-1]
             text += "\n\n"
             report.append(text)

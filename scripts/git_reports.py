@@ -178,7 +178,7 @@ def publish(ymd: str = None):
     git_dir = git.gen_git_path_ymd(ymd)
     txt_filename = os.path.join(git_dir, report.gen_txt_report_fn_ymd(ymd))
 
-    git.clear()
+    #git.clear()
     git.add(txt_filename)
     if git.diff():
         git.commit(f"Adding report(s) for {ymd}")
