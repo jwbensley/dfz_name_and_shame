@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 import typing
+import urllib.parse
 
 from dnas.config import config as cfg
 
@@ -139,6 +140,29 @@ class git:
         git_dir = os.path.join(git_dir, f"{day.day:02}")
 
         return git_dir
+
+    @staticmethod
+    def gen_git_url_ymd(ymd: str = None) -> str:
+        """
+        Generate and return the URL to the report files for a specific date.
+        """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}."
+            )
+
+        if type(ymd) != str:
+            raise TypeError(
+                f"ymd is not a string: {type(ymd)}"
+            )
+
+        day = datetime.datetime.strptime(ymd, cfg.DAY_FORMAT)
+
+        git_url = os.path.join(str(day.year), f"{day.month:02}")
+        git_url = os.path.join(git_url, f"{day.day:02}")
+        git_url = urllib.parse.urljoin(cfg.GIT_STAT_BASE_URL, git_url)
+
+        return git_url
 
     @staticmethod
     def push():

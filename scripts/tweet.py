@@ -4,6 +4,7 @@ import argparse
 import datetime
 import logging
 import os
+import re
 import sys
 import typing
 
@@ -16,6 +17,7 @@ sys.path.append(
 )
 
 from dnas.config import config as cfg
+from dnas.git import git
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_db import redis_db
 from dnas.twitter import twitter
@@ -81,7 +83,7 @@ def gen_tweets(ymd: str = None):
 
     rdb.close()
 
-def tweet(body: bool = False, print_only: bool = False, ymd: str = None):
+def tweet(print_only: bool = False, ymd: str = None):
     """
     Tweet all the Tweets in the redis queue for a specific day.
     """
@@ -97,22 +99,35 @@ def tweet(body: bool = False, print_only: bool = False, ymd: str = None):
 
     rdb = redis_db()
     t = twitter()
-    msg_q = rdb.get_queue_msgs(twitter_msg.gen_tweet_q_key(ymd))
+    tweet_q = rdb.get_queue_msgs(twitter_msg.gen_tweet_q_key(ymd))
+    tweeted_q = rdb.get_queue_msgs(twitter_msg.gen_tweeted_q_key(ymd))
 
-    for msg in msg_q:
-        if not msg.hidden:
+    thread_hdr = twitter_msg(
+        hdr=f"Thread for {t.ymd_to_nice(ymd)}. "
+        f"Full details at {git.gen_git_url_ymd(ymd)}",
+        body="",
+        hidden=False,
+    )
+    t.tweet_hdr(thread_hdr, print_only)
 
-            t.tweet(body, msg, print_only)
+    for tweet in tweet_q:
+
+        if tweet.hdr in [t.hdr for t in tweeted_q]:
+            logging.debug(f"Skipping already tweeted message: {tweet.msg}")
+            continue
+
+        if not tweet.hidden:
+            t.tweet_as_reply(tweet, print_only, thread_hdr.hdr_id)
             if print_only:
                 continue
 
             rdb.add_to_queue(
                 twitter_msg.gen_tweeted_q_key(ymd),
-                msg.to_json()
+                tweet.to_json()
             )
             rdb.del_from_queue(
                 twitter_msg.gen_tweet_q_key(ymd),
-                msg.to_json()
+                tweet.to_json()
             )
 
     rdb.close()
@@ -124,13 +139,6 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate and publish Tweets based on stats in redis.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "--body",
-        help="Tweet the body of the Tweets in reply to the header.",
-        default=False,
-        action="store_true",
-        required=False,
     )
     parser.add_argument(
         "--debug",
@@ -223,7 +231,7 @@ def main():
         gen_tweets(args["ymd"])
 
     if args["tweet"]:
-        tweet(args["body"], args["print"], args["ymd"])
+        tweet(args["print"], args["ymd"])
 
     if args["yesterday"]:
         gen_tweets_yest()

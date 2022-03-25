@@ -13,9 +13,10 @@ class report:
     """
 
     @staticmethod
-    def gen_txt_report(mrt_s: 'mrt_stats' = None) -> List[str]:
+    def gen_txt_report(mrt_s: 'mrt_stats' = None, body: bool = True) -> List[str]:
         """
         Generate a text report using the data in an mrt stats object.
+        If body == False, only generate the headline info for each stat.
         """
         if not mrt_s:
             raise ValueError(
@@ -24,7 +25,12 @@ class report:
 
         if type(mrt_s) != mrt_stats:
             raise TypeError(
-                f"mrt_s is not an mrt_s object: {type(mrt_s)}"
+                f"mrt_s is not an mrt stats object: {type(mrt_s)}"
+            )
+
+        if type(body) != bool:
+            raise TypeError(
+                f"body is not a bool: {type(body)}"
             )
 
         # Reduce the load on WHOIS by caching responses. It's also faster :)
@@ -48,29 +54,34 @@ class report:
                 f"ASNs.\n"
             )
 
-            for mrt_e in mrt_s.longest_as_path:
-                text += f"Prefix {mrt_e.prefix} "
-                peeras = mrt_e.peer_asn
-                if peeras not in whois_cache:
-                    whois_cache[peeras] = whois.as_lookup(int(peeras))
-                if whois_cache[peeras]:
-                    text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
-                else:
-                    text += f"via peer AS{peeras} "
-                text += f"from origin ASN(s)"
-                for asn in mrt_e.origin_asns:
-                    if asn not in whois_cache:
-                        whois_cache[asn] = whois.as_lookup(int(asn))
-                    as_name = whois_cache[asn]
-                    if as_name:
-                        text += f" AS{asn} ({as_name})"
-                    else:
-                        text += f" AS{asn}"
-                text += f". AS Path length {len(mrt_e.as_path)}: "
-                text += f"AS{' AS'.join(mrt_e.as_path)}.\n"
-            text = text[0:-1]
-            text += "\n\n"
             report.append(text)
+
+            if body:
+
+                text = ""
+                for mrt_e in mrt_s.longest_as_path:
+                    text += f"Prefix {mrt_e.prefix} "
+                    peeras = mrt_e.peer_asn
+                    if peeras not in whois_cache:
+                        whois_cache[peeras] = whois.as_lookup(int(peeras))
+                    if whois_cache[peeras]:
+                        text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                    else:
+                        text += f"via peer AS{peeras} "
+                    text += f"from origin ASN(s)"
+                    for asn in mrt_e.origin_asns:
+                        if asn not in whois_cache:
+                            whois_cache[asn] = whois.as_lookup(int(asn))
+                        as_name = whois_cache[asn]
+                        if as_name:
+                            text += f" AS{asn} ({as_name})"
+                        else:
+                            text += f" AS{asn}"
+                    text += f". AS Path length {len(mrt_e.as_path)}: "
+                    text += f"AS{' AS'.join(mrt_e.as_path)}.\n"
+                text = text[0:-1]
+                text += "\n\n"
+                report.append(text)
 
         if mrt_s.longest_comm_set:
             text = (
@@ -79,29 +90,34 @@ class report:
                 f"{len(mrt_s.longest_comm_set[0].comm_set)} communities.\n"
             )
 
-            for mrt_e in mrt_s.longest_comm_set:
-                text += f"Prefix {mrt_e.prefix} "
-                peeras = mrt_e.peer_asn
-                if peeras not in whois_cache:
-                    whois_cache[peeras] = whois.as_lookup(int(peeras))
-                if whois_cache[peeras]:
-                    text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
-                else:
-                    text += f"via peer AS{peeras} "
-                text += f"from origin ASN(s)"
-                for asn in mrt_e.origin_asns:
-                    if asn not in whois_cache:
-                        whois_cache[asn] = whois.as_lookup(int(asn))
-                    as_name = whois_cache[asn]
-                    if as_name:
-                        text += f" AS{asn} ({as_name})"
-                    else:
-                        text += f" AS{asn}"
-                text += f". Commnuity set length {(len(mrt_e.comm_set))}: "
-                text += f"{' '.join(mrt_e.comm_set)}.\n"
-            text = text[0:-1]
-            text += "\n\n"
             report.append(text)
+
+            if body:
+
+                text = ""
+                for mrt_e in mrt_s.longest_comm_set:
+                    text += f"Prefix {mrt_e.prefix} "
+                    peeras = mrt_e.peer_asn
+                    if peeras not in whois_cache:
+                        whois_cache[peeras] = whois.as_lookup(int(peeras))
+                    if whois_cache[peeras]:
+                        text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                    else:
+                        text += f"via peer AS{peeras} "
+                    text += f"from origin ASN(s)"
+                    for asn in mrt_e.origin_asns:
+                        if asn not in whois_cache:
+                            whois_cache[asn] = whois.as_lookup(int(asn))
+                        as_name = whois_cache[asn]
+                        if as_name:
+                            text += f" AS{asn} ({as_name})"
+                        else:
+                            text += f" AS{asn}"
+                    text += f". Commnuity set length {(len(mrt_e.comm_set))}: "
+                    text += f"{' '.join(mrt_e.comm_set)}.\n"
+                text = text[0:-1]
+                text += "\n\n"
+                report.append(text)
 
         if mrt_s.most_advt_prefixes:
             text = (
@@ -110,12 +126,16 @@ class report:
                 f"{mrt_s.most_advt_prefixes[0].advt} advertisements.\n"
             )
 
-            text += "Prefix(es):"
-            for mrt_e in mrt_s.most_advt_prefixes:
-                text += f" {mrt_e.prefix}"
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Prefix(es):"
+                for mrt_e in mrt_s.most_advt_prefixes:
+                    text += f" {mrt_e.prefix}"
+                text += "\n\n"
+
+                report.append(text)
 
         if mrt_s.most_upd_prefixes:
             text = (
@@ -124,12 +144,16 @@ class report:
                 f"{mrt_s.most_upd_prefixes[0].updates} updates.\n"
             )
 
-            text += "Prefix(es):"
-            for mrt_e in mrt_s.most_upd_prefixes:
-                text += f" {mrt_e.prefix}"
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Prefix(es):"
+                for mrt_e in mrt_s.most_upd_prefixes:
+                    text += f" {mrt_e.prefix}"
+                text += "\n\n"
+
+                report.append(text)
 
         if mrt_s.most_withd_prefixes:
             text = (
@@ -138,12 +162,16 @@ class report:
                 f"{mrt_s.most_withd_prefixes[0].withdraws} withdraws.\n"
             )
 
-            text += "Prefix(es):"
-            for mrt_e in mrt_s.most_withd_prefixes:
-                text += f" {mrt_e.prefix}"
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Prefix(es):"
+                for mrt_e in mrt_s.most_withd_prefixes:
+                    text += f" {mrt_e.prefix}"
+                text += "\n\n"
+
+                report.append(text)
 
         if mrt_s.most_advt_origin_asn:
             text = (
@@ -152,21 +180,25 @@ class report:
                 f"{mrt_s.most_advt_origin_asn[0].advt} advertisements.\n"
             )
 
-            text += "Origin ASN(s):"
-            for mrt_e in mrt_s.most_advt_origin_asn:
-                for asn in mrt_e.origin_asns:
-                    if asn not in whois_cache:
-                        whois_cache[asn] = whois.as_lookup(int(asn))
-                    as_name = whois_cache[asn]
-                    if as_name:
-                        text += f" AS{asn} ({as_name})"
-                    else:
-                        text += f" AS{asn}"
-                text += ", "
-            text = text[0:-2]
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Origin ASN(s):"
+                for mrt_e in mrt_s.most_advt_origin_asn:
+                    for asn in mrt_e.origin_asns:
+                        if asn not in whois_cache:
+                            whois_cache[asn] = whois.as_lookup(int(asn))
+                        as_name = whois_cache[asn]
+                        if as_name:
+                            text += f" AS{asn} ({as_name})"
+                        else:
+                            text += f" AS{asn}"
+                    text += ", "
+                text = text[0:-2]
+                text += "\n\n"
+
+                report.append(text)
 
         if mrt_s.most_advt_peer_asn:
             text = (
@@ -175,20 +207,26 @@ class report:
                 f"{mrt_s.most_advt_peer_asn[0].advt} advertisements.\n"
             )
 
-            text += "Peer ASN(s):"
-            for mrt_e in mrt_s.most_advt_peer_asn:
-                if mrt_e.peer_asn not in whois_cache:
-                    whois_cache[mrt_e.peer_asn] = whois.as_lookup(int(mrt_e.peer_asn))
-                as_name = whois_cache[mrt_e.peer_asn]
-                if as_name:
-                    text += f" AS{mrt_e.peer_asn} ({as_name})"
-                else:
-                    text += f" AS{mrt_e.peer_asn}"
-                text += ", "
-            text = text[0:-2]
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Peer ASN(s):"
+                for mrt_e in mrt_s.most_advt_peer_asn:
+                    if mrt_e.peer_asn not in whois_cache:
+                        whois_cache[mrt_e.peer_asn] = whois.as_lookup(
+                            int(mrt_e.peer_asn)
+                        )
+                    as_name = whois_cache[mrt_e.peer_asn]
+                    if as_name:
+                        text += f" AS{mrt_e.peer_asn} ({as_name})"
+                    else:
+                        text += f" AS{mrt_e.peer_asn}"
+                    text += ", "
+                text = text[0:-2]
+                text += "\n\n"
+
+                report.append(text)
 
         if mrt_s.most_upd_peer_asn:
             text = (
@@ -197,20 +235,26 @@ class report:
                 f"{mrt_s.most_upd_peer_asn[0].updates} updates.\n"
             )
 
-            text += "Peer ASN(s):"
-            for mrt_e in mrt_s.most_upd_peer_asn:
-                if mrt_e.peer_asn not in whois_cache:
-                    whois_cache[mrt_e.peer_asn] = whois.as_lookup(int(mrt_e.peer_asn))
-                as_name = whois_cache[mrt_e.peer_asn]
-                if as_name:
-                    text += f" AS{mrt_e.peer_asn} ({as_name})"
-                else:
-                    text += f" AS{mrt_e.peer_asn}"
-                text += ", "
-            text = text[0:-2]
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Peer ASN(s):"
+                for mrt_e in mrt_s.most_upd_peer_asn:
+                    if mrt_e.peer_asn not in whois_cache:
+                        whois_cache[mrt_e.peer_asn] = whois.as_lookup(
+                            int(mrt_e.peer_asn)
+                        )
+                    as_name = whois_cache[mrt_e.peer_asn]
+                    if as_name:
+                        text += f" AS{mrt_e.peer_asn} ({as_name})"
+                    else:
+                        text += f" AS{mrt_e.peer_asn}"
+                    text += ", "
+                text = text[0:-2]
+                text += "\n\n"
+
+                report.append(text)
 
         if mrt_s.most_withd_peer_asn:
             text = (
@@ -219,20 +263,26 @@ class report:
                 f"{mrt_s.most_withd_peer_asn[0].withdraws} withdraws.\n"
             )
 
-            text += "Peer ASN(s):"
-            for mrt_e in mrt_s.most_withd_peer_asn:
-                if mrt_e.peer_asn not in whois_cache:
-                    whois_cache[mrt_e.peer_asn] = whois.as_lookup(int(mrt_e.peer_asn))
-                as_name = whois_cache[mrt_e.peer_asn]
-                if as_name:
-                    text += f" AS{mrt_e.peer_asn} ({as_name})"
-                else:
-                    text += f" AS{mrt_e.peer_asn}"
-                text += ", "
-            text = text[0:-2]
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Peer ASN(s):"
+                for mrt_e in mrt_s.most_withd_peer_asn:
+                    if mrt_e.peer_asn not in whois_cache:
+                        whois_cache[mrt_e.peer_asn] = whois.as_lookup(
+                            int(mrt_e.peer_asn)
+                        )
+                    as_name = whois_cache[mrt_e.peer_asn]
+                    if as_name:
+                        text += f" AS{mrt_e.peer_asn} ({as_name})"
+                    else:
+                        text += f" AS{mrt_e.peer_asn}"
+                    text += ", "
+                text = text[0:-2]
+                text += "\n\n"
+
+                report.append(text)
 
         if mrt_s.most_origin_asns:
             text = (
@@ -241,22 +291,26 @@ class report:
                 f"{len(mrt_s.most_origin_asns[0].origin_asns)} origin ASNs.\n"
             )
 
-            text += "Prefix(es): "
-            for mrt_e in mrt_s.most_origin_asns:
-                text += f"{mrt_e.prefix}"
-                for asn in mrt_e.origin_asns:
-                    if asn not in whois_cache:
-                        whois_cache[asn] = whois.as_lookup(int(asn))
-                    as_name = whois_cache[asn]
-                    if as_name:
-                        text += f" AS{asn} ({as_name})"
-                    else:
-                        text += f" AS{asn}"
-                text += "\n"
-            text = text[0:-1]
-            text += "\n\n"
-
             report.append(text)
+
+            if body:
+
+                text = "Prefix(es): "
+                for mrt_e in mrt_s.most_origin_asns:
+                    text += f"{mrt_e.prefix}"
+                    for asn in mrt_e.origin_asns:
+                        if asn not in whois_cache:
+                            whois_cache[asn] = whois.as_lookup(int(asn))
+                        as_name = whois_cache[asn]
+                        if as_name:
+                            text += f" AS{asn} ({as_name})"
+                        else:
+                            text += f" AS{asn}"
+                    text += "\n"
+                text = text[0:-1]
+                text += "\n\n"
+
+                report.append(text)
 
         return report
 
