@@ -113,7 +113,7 @@ def tweet(print_only: bool = False, ymd: str = None):
     for tweet in tweet_q:
 
         if tweet.hdr in [t.hdr for t in tweeted_q]:
-            logging.debug(f"Skipping already tweeted message: {tweet.msg}")
+            logging.debug(f"Skipping already tweeted message: {tweet.hdr}")
             continue
 
         if not tweet.hidden:
