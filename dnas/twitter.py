@@ -257,5 +257,15 @@ class twitter:
         """
         Convert a ymd value to a nice format for Twitter.
         """
+        if not ymd:
+            raise ValueError(
+                f"Missing required arguments: ymd={ymd}"
+            )
+
+        if type(ymd) != str:
+            raise TypeError(
+                f"ymd is not a string: {type(ymd)}"
+            )
+
         mrt_archive.valid_ymd(ymd)
         return ymd[0:4] + "/" + ymd[4:6] + "/" + ymd[6:8]
