@@ -6,34 +6,41 @@ class twitter_msg:
     This object contains a twitter message, to be tweeted.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            hdr: str = "",
+            hdr_id: int = 0,
+            body: str = "",
+            body_ids: List[int] = [],
+            hidden: bool = True,
+        ) -> None:
         """
         The header contains the main message to be tweeted.
         It must be is <= cfg.TWITTER_LEN
         This field is required.
         """
-        self.hdr: str = ""
+        self.hdr = hdr
 
         """
         The Tweet ID of the header message.
         """
-        self.hdr_id: int = 0
+        self.hdr_id = hdr_id
 
         """
         The body is an optional field, which contains any subsequent info to be
         tweeted. This will be split across multiple replies to the header tweet.
         """
-        self.body: str = ""
+        self.body = body
 
         """
         List of Tweet IDs which are the pages replies to the header Tweet.
         """
-        self.body_ids: List[int] = []
+        self.body_ids = body_ids
 
         """
         Only tweet the message if False.
         """
-        self.hidden: bool = True
+        self.hidden = hidden
 
     def from_json(self, json_str: str = None):
         """

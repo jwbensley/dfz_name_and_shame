@@ -40,7 +40,10 @@ class config:
     # GIT SETTINGS #
     ################
 
-    # Path to git repo
+    # Remote git details
+    GIT_STAT_BASE_URL = "https://github.com/DFZ-Name-and-Shame/dnas_stats/tree/main/"
+
+    # Local git repo details
     GIT_BASE = os.path.join(BASE_DIR, "dnas_stats/")
     GIT_REPORT_BRANCH = "main"
 

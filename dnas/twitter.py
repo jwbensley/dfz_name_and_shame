@@ -3,7 +3,9 @@ import tweepy # type: ignore
 from typing import List
 
 from dnas.config import config as cfg
+from dnas.mrt_archive import mrt_archive
 from dnas.mrt_stats import mrt_stats
+from dnas.report import report
 from dnas.twitter_auth import twitter_auth
 from dnas.twitter_msg import twitter_msg
 from dnas.whois import whois
@@ -59,208 +61,53 @@ class twitter:
 
         msg_q = []
 
-        if mrt_s.longest_as_path:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Longest AS path on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.longest_as_path)} prefix(es) had an AS path length "
-                f"of {len(mrt_s.longest_as_path[0].as_path)} ASNs"
+        txt_report = report.gen_txt_report(mrt_s =mrt_s, body = False)
+        for hdr in txt_report:
+            msg_q.append(
+                twitter_msg(
+                    hdr = hdr,
+                    body = "",
+                    hidden = False,
+                )
             )
-
-            for mrt_e in mrt_s.longest_as_path:
-                msg.body += f"{mrt_e.prefix} from origin ASN(s)"
-                for asn in mrt_e.origin_asns:
-                    as_name = whois.as_lookup(int(asn))
-                    if as_name:
-                        msg.body += f" AS{asn} ({as_name})"
-                    else:
-                        msg.body += f" AS{asn}"
-                msg.body += ", "
-            msg.body = msg.body[0:-2]
-
-            msg.hidden = False
-            msg_q.append(msg)
-
-        if mrt_s.longest_comm_set:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Longest community set on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.longest_comm_set)} prefix(es) had a comm set length"
-                f" of {len(mrt_s.longest_comm_set[0].comm_set)} communities"
-            )
-
-            for mrt_e in mrt_s.longest_comm_set:
-                msg.body += f"{mrt_e.prefix} from origin ASN(s)"
-                for asn in mrt_e.origin_asns:
-                    as_name = whois.as_lookup(int(asn))
-                    if as_name:
-                        msg.body += f" AS{asn} ({as_name})"
-                    else:
-                        msg.body += f" AS{asn}"
-                msg.body += ", "
-            msg.body = msg.body[0:-2]
-
-            msg.hidden = False
-            msg_q.append(msg)
-
-        if mrt_s.most_advt_prefixes:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most BGP advertisements per prefix "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_advt_prefixes)} prefix(es) had "
-                f"{mrt_s.most_advt_prefixes[0].advt} advertisements"
-            )
-
-            msg.body = "Prefix(es):"
-            for mrt_e in mrt_s.most_advt_prefixes:
-                msg.body += f" {mrt_e.prefix}"
-            msg.hidden = False
-            msg_q.append(msg)
-
-        if mrt_s.most_upd_prefixes:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most BGP updates per prefix "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_upd_prefixes)} prefix(es) had "
-                f"{mrt_s.most_upd_prefixes[0].updates} updates"
-            )
-            msg.body = "Prefix(es):"
-            for mrt_e in mrt_s.most_upd_prefixes:
-                msg.body += f" {mrt_e.prefix}"
-            msg.hidden = False
-            msg_q.append(msg)
-
-        if mrt_s.most_withd_prefixes:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most BGP withdraws per prefix "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_withd_prefixes)} prefix(es) had "
-                f"{mrt_s.most_withd_prefixes[0].withdraws} withdraws"
-            )
-            msg.body = "Prefix(es):"
-            for mrt_e in mrt_s.most_withd_prefixes:
-                msg.body += f" {mrt_e.prefix}"
-            msg.hidden = False
-            msg_q.append(msg)
-
-        if mrt_s.most_advt_origin_asn:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most BGP advertisements per origin ASN "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_advt_origin_asn)} origin ASN(s) sent "
-                f"{mrt_s.most_advt_origin_asn[0].advt} advertisements"
-            )
-            msg.body = "Origin ASN(s):"
-            for mrt_e in mrt_s.most_advt_origin_asn:
-                for asn in mrt_e.origin_asns:
-                    as_name = whois.as_lookup(int(asn))
-                    if as_name:
-                        msg.body += f" AS{asn} ({as_name})"
-                    else:
-                        msg.body += f" AS{asn}"
-                msg.body += ", "
-            msg.body = msg.body[0:-2]
-            msg.hidden = False
-            msg_q.append(msg)
-
-        if mrt_s.most_advt_peer_asn:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most BGP advertisements per peer ASN "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_advt_peer_asn)} peer ASN(s) sent "
-                f"{mrt_s.most_advt_peer_asn[0].advt} advertisements"
-            )
-            msg.body = "Peer ASN(s):"
-            for mrt_e in mrt_s.most_advt_peer_asn:
-                for asn in mrt_e.peer_asn:
-                    as_name = whois.as_lookup(int(asn))
-                    if as_name:
-                        msg.body += f" AS{asn} ({as_name})"
-                    else:
-                        msg.body += f" AS{asn}"
-                msg.body += ", "
-            msg.body = msg.body[0:-2]
-            msg_q.append(msg)
-
-        if mrt_s.most_upd_peer_asn:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most BGP updates per peer ASN "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_upd_peer_asn)} peer ASN(s) sent "
-                f"{mrt_s.most_upd_peer_asn[0].updates} updates"
-            )
-            msg.body = "Peer ASN(s):"
-            for mrt_e in mrt_s.most_upd_peer_asn:
-                for asn in mrt_e.peer_asn:
-                    as_name = whois.as_lookup(int(asn))
-                    if as_name:
-                        msg.body += f" AS{asn} ({as_name})"
-                    else:
-                        msg.body += f" AS{asn}"
-                msg.body += ", "
-            msg.body = msg.body[0:-2]
-            msg_q.append(msg)
-
-        if mrt_s.most_withd_peer_asn:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most BGP withdraws per peer ASN "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_withd_peer_asn)} peer ASN(s) sent "
-                f"{mrt_s.most_withd_peer_asn[0].withdraws} withdraws"
-            )
-            msg.body = "Peer ASN(s):"
-            for mrt_e in mrt_s.most_withd_peer_asn:
-                for asn in mrt_e.peer_asn:
-                    as_name = whois.as_lookup(int(asn))
-                    if as_name:
-                        msg.body += f" AS{asn} ({as_name})"
-                    else:
-                        msg.body += f" AS{asn}"
-                msg.body += ", "
-            msg.body = msg.body[0:-2]
-            msg_q.append(msg)
-
-        if mrt_s.most_origin_asns:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"Most origin ASNs per prefix "
-                f"on {mrt_s.ts_ymd_format()}: "
-                f"{len(mrt_s.most_origin_asns)} prefix(es) had "
-                f"{len(mrt_s.most_origin_asns[0].origin_asns)} origin ASNs"
-            )
-            msg.body = "Prefix(es):"
-            for mrt_e in mrt_s.most_origin_asns:
-                msg.body += f" {mrt_e.prefix}"
-                for asn in mrt_e.origin_asns:
-                    as_name = whois.as_lookup(int(asn))
-                    if as_name:
-                        msg.body += f" AS{asn} ({as_name})"
-                    else:
-                        msg.body += f" AS{asn}"
-                msg.body += ", "
-            msg.body = msg.body[0:-2]
-            msg.hidden = False
-            msg_q.append(msg)
-
-        if mrt_s.total_upd:
-            msg = twitter_msg()
-            msg.hdr = (
-                f"On {mrt_s.ts_ymd_format()} {mrt_s.total_upd} BGP UPDATES "
-                f"were parsed. {mrt_s.total_advt} UPDATES contained prefix "
-                f"advertisements. {mrt_s.total_withd} UPDATES contained prefix "
-                f"withdraws"
-            )
-            msg.hidden = False
-            msg_q.append(msg)
 
         return msg_q
+
+    def split_tweet(self, msg: 'twitter_msg' = None) -> List[str]:
+        """
+        Return a Tweet body split into a list of 280 character strings
+        """
+        if not msg:
+            raise ValueError(
+                f"Missing required arguments: msg={msg}"
+            )
+
+        if type(msg) != twitter_msg:
+            raise TypeError(
+                f"msg is not a twitter_msg: {type(msg)}"
+            )
+
+        if len(msg.body) <= cfg.TWITTER_LEN:
+            return [msg.body]
+        else:
+            chunks = []
+            tmp_str = msg.body
+
+            while(len(tmp_str) > cfg.TWITTER_LEN):
+                end = cfg.TWITTER_LEN - 1
+
+                while tmp_str[end] != " ":
+                    end -= 1
+                    if end == 0:
+                        raise ValueError(
+                            "Reached start of Tweet"
+                        )
+
+                chunks.append(tmp_str[0:end])
+                tmp_str = tmp_str[end + 1:]
+
+            chunks.append(tmp_str)
+            return chunks
 
     def tweet(
             self,
@@ -285,6 +132,48 @@ class twitter:
         self.tweet_hdr(msg, print_only)
         if body:
             self.tweet_body(msg, print_only)
+
+    def tweet_as_reply(
+            self,
+            msg: 'twitter_msg' = None,
+            print_only: bool = False,
+            tweet_id: int = 0,
+        ):
+        """
+        Tweet a message in reply to an existing Tweet.
+        """
+        if not msg:
+            raise ValueError(
+                f"Missing required arguments: msg={msg}"
+            )
+
+        if type(msg) != twitter_msg:
+            raise TypeError(
+                f"msg is not a twitter_msg: {type(msg)}"
+            )
+
+        if msg.hidden:
+            logging.debug(f"Skipping hidden Tweet: {msg.hdr}")
+            return
+
+        if len(msg.hdr) > cfg.TWITTER_LEN:
+            logging.debug(
+                f"Skipping Tweet which is too long ({len(msg.hdr)}): {msg.hdr}"
+            )
+            return
+
+        if print_only:
+            logging.info(msg.hdr)
+        else:
+            r = self.client.create_tweet(
+                text=msg.hdr,
+                in_reply_to_tweet_id=tweet_id,
+            )
+            logging.info(
+                f"Replied: "
+                f"https://twitter.com/{cfg.TWITTER_USER}/status/{r.data['id']}"
+            )
+            msg.hdr_id = int(r.data["id"])
 
     def tweet_hdr(self, msg: 'twitter_msg' = None, print_only: bool = False):
         """
@@ -363,38 +252,10 @@ class twitter:
                 )
                 msg.body_ids.append(r.data["id"])
 
-    def split_tweet(self, msg: 'twitter_msg' = None) -> List[str]:
+    @staticmethod
+    def ymd_to_nice(ymd: str = None) -> str:
         """
-        Return a Tweet body split into a list of 280 character strings
+        Convert a ymd value to a nice format for Twitter.
         """
-        if not msg:
-            raise ValueError(
-                f"Missing required arguments: msg={msg}"
-            )
-
-        if type(msg) != twitter_msg:
-            raise TypeError(
-                f"msg is not a twitter_msg: {type(msg)}"
-            )
-
-        if len(msg.body) <= cfg.TWITTER_LEN:
-            return [msg.body]
-        else:
-            chunks = []
-            tmp_str = msg.body
-
-            while(len(tmp_str) > cfg.TWITTER_LEN):
-                end = cfg.TWITTER_LEN - 1
-
-                while tmp_str[end] != " ":
-                    end -= 1
-                    if end == 0:
-                        raise ValueError(
-                            "Reached start of Tweet"
-                        )
-
-                chunks.append(tmp_str[0:end])
-                tmp_str = tmp_str[end + 1:]
-
-            chunks.append(tmp_str)
-            return chunks
+        mrt_archive.valid_ymd(ymd)
+        return ymd[0:4] + "/" + ymd[4:6] + "/" + ymd[6:8]

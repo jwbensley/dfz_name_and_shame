@@ -21,9 +21,9 @@ class mrt_stats:
         self.most_origin_asns = [mrt_entry()]
         self.file_list: List[str] = []
         self.timestamp: str
-        self.total_upd: int = 0
-        self.total_advt: int = 0
-        self.total_withd: int = 0
+        self.total_upd: int = 0 # How many update messages were parsed
+        self.total_advt: int = 0 # Updates containing prefix avertisement
+        self.total_withd: int = 0 # Updates containing prefix withdraw
 
     def add(self, merge_data: 'mrt_stats' = None) -> bool:
         """
