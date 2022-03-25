@@ -164,7 +164,7 @@ class config:
     )
 
     """
-    RRC24 LACNIC
+    RRC24 Uruguay
     RIB dumps are every 8 hours
     RIB dump example: https://data.ris.ripe.net/rrc24/2021.12/bview.20211208.1600.gz
     UPDATE dumps are every 5 minutes
