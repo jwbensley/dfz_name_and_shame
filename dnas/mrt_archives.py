@@ -98,7 +98,7 @@ class mrt_archives:
                 f"Unable to determine MRT archive from file path {file_path}"
             )
 
-        ymd = file_path.split(".")[1]
+        ymd = arch.ymd_from_file_path(file_path)
 
         if self.is_rib_from_filename(file_path):
             return arch.gen_rib_key(ymd)
