@@ -7,6 +7,7 @@ import os
 from typing import Dict
 
 from dnas.config import config as cfg
+from dnas.bogon_ip import bogon_ip
 from dnas.mrt_entry import mrt_entry
 from dnas.mrt_stats import mrt_stats
 
@@ -230,6 +231,7 @@ class mrt_parser:
                 f"Missing required arguments: filename={filename}."
             )
 
+        bogon_prefix_entries = [mrt_entry()]
         longest_as_path = [mrt_entry()]
         longest_comm_set = [mrt_entry()]
         origin_asns_prefix: Dict[str, set] = {}
@@ -288,7 +290,9 @@ class mrt_parser:
             ) # E.g., 1486801684
 
             as_path = []
+            bogon_prefixes = []
             comm_set = []
+
 
             peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
@@ -345,14 +349,33 @@ class mrt_parser:
 
                     # MP_REACH_NLRI
                     elif attr_t == 14:
+                        """
+                        IPV6_UNICAST:
+                        if 2 in attr["value"]["afi"] and 
+                        1 in attr["value"]["safi"]
+                        ^ This is always the case.
+                        """
                         next_hop = attr["value"]["next_hop"]
                         for nlri in attr["value"]["nlri"]:
                             prefixes.append(
                                 nlri["prefix"] + "/" + str(nlri["prefix_length"])
                             )
+                            for prefix in prefixes:
+                                if bogon_ip.is_v6_bogon(prefix):
+                                    bogon_prefixes.append(prefix)
 
-                for nlri in mrt_e.data["bgp_message"]["nlri"]:
-                    prefixes.append(nlri["prefix"] + "/" + str(nlri["prefix_length"]))
+                """
+                Note that IPv6 prefix advertisements will be encoded as an NLRI 
+                NLRI attribute of a MP_REACH_NLRI update as above.
+                IPv4 prefix advertisements are encoded in the NLRI field of
+                a BGP UPDATE message, not as multi-protocol attribute.
+                """
+                if mrt_e.data["bgp_message"]["nlri"]:
+                    for nlri in mrt_e.data["bgp_message"]["nlri"]:
+                        prefixes.append(nlri["prefix"] + "/" + str(nlri["prefix_length"]))
+                    for prefix in prefixes:
+                        if bogon_ip.is_v4_bogon(prefix):
+                            bogon_prefixes.append(prefix)
 
                 for prefix in prefixes:
 
@@ -366,6 +389,29 @@ class mrt_parser:
                         upd_prefix[prefix]["advt"] += 1
                         origin_asns_prefix[prefix].add(origin_asn)
 
+            """
+            Unique prefixes only with additional origin ASNs for thr same
+            prefix appended
+            """
+            for prefix in bogon_prefixes:
+                for mrt_e in bogon_prefix_entries:
+                    if prefix == mrt_e.prefix:
+                        if origin_asn not in mrt_e.origin_asns:
+                            mrt_e.origin_asns.add(origin_asn)
+                        break
+                else:
+                    bogon_prefix_entries.append(
+                        mrt_entry(
+                            as_path=as_path,
+                            comm_set=comm_set,
+                            filename=orig_filename,
+                            next_hop=next_hop,
+                            origin_asns=set([origin_asn]),
+                            peer_asn=peer_asn,
+                            prefix=prefix,
+                            timestamp=ts,
+                        )
+                    )
 
             if len(as_path) == len(longest_as_path[0].as_path):
                 known_prefixes = [mrt_e.prefix for mrt_e in longest_as_path]
@@ -429,6 +475,12 @@ class mrt_parser:
                     ) for prefix in prefixes
                 ]
 
+        # Only get the bogons prefixes with the most origin ASNs
+        for mrt_e in bogon_prefix_entries:
+            if len(mrt_e.origin_asns) == len(mrt_s.bogon_prefixes[0].origin_asns):
+                mrt_s.bogon_prefixes.append(mrt_e)
+            elif len(mrt_e.origin_asns) > len(mrt_s.bogon_prefixes[0].origin_asns):
+                mrt_s.bogon_prefixes = [mrt_e]
 
         ################## FIX ME - REMOVE "if" mrt_s is empty
         if len(longest_as_path[0].as_path) > len(mrt_s.longest_as_path[0].as_path):

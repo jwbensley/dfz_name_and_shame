@@ -398,7 +398,10 @@ def main():
 
     if args["daily"]:
         gen_day_stats(
-            rib = args["rib"], update = args["update"], ymd = args["ymd"]
+            enabled = args["enabled"],
+            rib = args["rib"],
+            update = args["update"],
+            ymd = args["ymd"]
         )
 
     if args["diff"]:

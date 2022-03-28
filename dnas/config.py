@@ -57,6 +57,44 @@ class config:
     TWITTER_LEN = 280
 
 
+    #####################
+    # BOGON IP SETTINGS #
+    #####################
+
+    BOGONS_V4 = [
+        "0.0.0.0/8", # RFC 1700
+        "10.0.0.0/8", # RFC 1918 
+        "100.64.0.0/10", # RFC 6598
+        "127.0.0.0/8", # RFC 6890
+        "169.254.0.0/16", # RFC 6890
+        "172.16.0.0/12", # RFC 1918 
+        "192.0.0.0/29", # RFC 6333
+        "192.0.2.0/24",# RFC 5737 IPv4
+        "192.88.99.0/24", # RFC 3068
+        "192.168.0.0/16", #RFC 1918 
+        "198.18.0.0/15", # RFC 2544 
+        "198.51.100.0/24",# RFC 5737 IPv4
+        "203.0.113.0/24",# RFC 5737 IPv4
+        "224.0.0.0/4", # RFC 5771
+        "240.0.0.0/4", # RFC 6890
+    ]
+
+    BOGONS_V6 = [
+        "::/8", # RFC 4291
+        "0100::/64", # RFC 6666
+        "2001:2::/48", # RFC 5180
+        "2001:10::/28", # RFC 4843
+        "2001:db8::/32", # RFC 3849
+        "2002::/16", # RFC 7526
+        "3ffe::/16", # RFC 3701
+        "fc00::/7", # RFC 4193
+        "fe00::/9", # IETF Reserved
+        "fe80::/10", # RFC 4291
+        "fec0::/10", # RFC 3879
+        "ff00::/8", # RFC 4291
+     ];
+
+
     ########################
     # MRT ARCHIVE SETTINGS #
     ########################
@@ -83,6 +121,34 @@ class config:
     MRT_ARCHIVES = []
 
     """
+    Transit session from @LukaszBromirski
+    RIB dumps are every 1 hour. RIB dumps are disabled!
+    RIB dump example: http://192.168.58.8/lukasz/ribs/20211222.0600.dump
+    UPDATE dumps are every 10 minutes
+    UPDATE dump example: http://192.168.58.8/lukasz/updates/20211222.0600.dump
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "lukasz",
+            "NAME": "Lukasz-AS57355",
+            "ENABLED": True,
+            "BASE_URL": "http://192.168.58.8/lukasz/",
+            "RIB_URL": "/ribs/",
+            "UPD_URL": "/updates/",
+            "MRT_EXT": "dump",
+            "MRT_DIR": os.path.join(DL_DIR, "lukasz/"),
+            "RIB_GLOB": "*.dump",
+            "UPD_GLOB": "*.dump",
+            "RIB_KEY": "LUKASZ_RIB",
+            "UPD_KEY": "LUKASZ_UPD",
+            "RIB_INTERVAL": 60,
+            "UPD_INTERVAL": 10,
+            "RIB_PREFIX": "rib.",
+            "UPD_PREFIX": "",
+        }
+    )
+
+    """
     Route-Views London
     RIB dumps are every 2 hours
     RIB dump example: http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/RIBS/rib.20211222.0600.bz2
@@ -93,7 +159,7 @@ class config:
         {
             "TYPE": "RV",
             "NAME": "RV_LINX",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "http://archive.routeviews.org/route-views.linx/bgpdata/",
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
