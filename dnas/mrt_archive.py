@@ -696,3 +696,24 @@ class mrt_archive:
                 f"Invalid year, month, day, hour, minute format: {ymd_hm}. "
                 "Must be yyyymmdd.hhmm e.g., 20220115.1045."
             )
+
+    def ymd_from_file_path(self, file_path: str = None) -> str:
+        """
+        Return the ymd from the filename.
+        """
+        if not file_path:
+            raise ValueError(
+                f"Missing required arguments: file_path={file_path}"
+            )
+
+        if type(file_path) != str:
+            raise TypeError(
+                f"file_path is not of type string: {type(file_path)}"
+            )
+
+        if (self.TYPE == "RV" or self.TYPE == "RIPE"):
+            return os.path.basename(file_path).split(".")[1]
+        elif self.TYPE == "lukasz":
+            return os.path.basename(file_path).split(".")[0]
+        else:
+            raise ValueError(f"Couldn't infer ymd from file {file_path}")
