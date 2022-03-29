@@ -139,7 +139,12 @@ class redis_db():
                 f"Missing required arguments: key={key}"
             )
 
+        """
+        Return from list in reverse order, to present items in the same order
+        they went into the queue/list:
+        """
         db_q = [x for x in self.r.lrange(key, 0, -1)]
+        db_q.reverse()
         msgs = []
 
         for msg in db_q:
