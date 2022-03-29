@@ -35,7 +35,7 @@ class report:
 
         # Reduce the load on WHOIS by caching responses. It's also faster :)
         whois_cache = {}
-        report = []
+        txt_report = []
 
         if mrt_s.total_upd:
             text = (
@@ -45,7 +45,7 @@ class report:
                 f"withdraws.\n\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
         if mrt_s.bogon_prefixes:
             text = (
@@ -54,7 +54,7 @@ class report:
                 f"{len(mrt_s.bogon_prefixes[0].origin_asns)} origin ASNs.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
                 text = ""
@@ -72,7 +72,7 @@ class report:
                 text = text[0:-1]
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.longest_as_path:
             text = (
@@ -81,7 +81,7 @@ class report:
                 f"ASNs.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -108,7 +108,7 @@ class report:
                     text += f"AS{' AS'.join(mrt_e.as_path)}.\n"
                 text = text[0:-1]
                 text += "\n\n"
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.longest_comm_set:
             text = (
@@ -117,7 +117,7 @@ class report:
                 f"{len(mrt_s.longest_comm_set[0].comm_set)} communities.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -144,7 +144,7 @@ class report:
                     text += f"{' '.join(mrt_e.comm_set)}.\n"
                 text = text[0:-1]
                 text += "\n\n"
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_advt_prefixes:
             text = (
@@ -153,7 +153,7 @@ class report:
                 f"{mrt_s.most_advt_prefixes[0].advt} advertisements.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -162,7 +162,7 @@ class report:
                     text += f" {mrt_e.prefix}"
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_upd_prefixes:
             text = (
@@ -171,7 +171,7 @@ class report:
                 f"{mrt_s.most_upd_prefixes[0].updates} updates.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -180,7 +180,7 @@ class report:
                     text += f" {mrt_e.prefix}"
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_withd_prefixes:
             text = (
@@ -189,7 +189,7 @@ class report:
                 f"{mrt_s.most_withd_prefixes[0].withdraws} withdraws.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -198,7 +198,7 @@ class report:
                     text += f" {mrt_e.prefix}"
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_advt_origin_asn:
             text = (
@@ -207,7 +207,7 @@ class report:
                 f"{mrt_s.most_advt_origin_asn[0].advt} advertisements.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -225,7 +225,7 @@ class report:
                 text = text[0:-2]
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_advt_peer_asn:
             text = (
@@ -234,7 +234,7 @@ class report:
                 f"{mrt_s.most_advt_peer_asn[0].advt} advertisements.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -253,7 +253,7 @@ class report:
                 text = text[0:-2]
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_upd_peer_asn:
             text = (
@@ -262,7 +262,7 @@ class report:
                 f"{mrt_s.most_upd_peer_asn[0].updates} updates.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -281,7 +281,7 @@ class report:
                 text = text[0:-2]
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_withd_peer_asn:
             text = (
@@ -290,7 +290,7 @@ class report:
                 f"{mrt_s.most_withd_peer_asn[0].withdraws} withdraws.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -309,7 +309,7 @@ class report:
                 text = text[0:-2]
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
         if mrt_s.most_origin_asns:
             text = (
@@ -318,7 +318,7 @@ class report:
                 f"{len(mrt_s.most_origin_asns[0].origin_asns)} origin ASNs.\n"
             )
 
-            report.append(text)
+            txt_report.append(text)
 
             if body:
 
@@ -337,9 +337,9 @@ class report:
                 text = text[0:-1]
                 text += "\n\n"
 
-                report.append(text)
+                txt_report.append(text)
 
-        return report
+        return txt_report
 
     @staticmethod
     def gen_txt_report_fn_ymd(ymd: str = None) -> str:
