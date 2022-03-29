@@ -49,7 +49,7 @@ class report:
 
         if mrt_s.bogon_prefixes:
             text = (
-                f"Bogon prefixes with most ASNs per prefix: "
+                f"Bogon prefixes with most origin ASNs per prefix: "
                 f"{len(mrt_s.bogon_prefixes)} bogon prefix(es) had "
                 f"{len(mrt_s.bogon_prefixes[0].origin_asns)} origin ASNs.\n"
             )
@@ -57,7 +57,7 @@ class report:
             report.append(text)
 
             if body:
-
+                text = ""
                 for mrt_e in mrt_s.bogon_prefixes:
                     text += f"Prefix {mrt_e.prefix} from origin ASN(s)"
                     for asn in mrt_e.origin_asns:
