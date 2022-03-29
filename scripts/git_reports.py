@@ -16,6 +16,7 @@ sys.path.append(
 )
 
 from dnas.config import config as cfg
+from dnas.log import log
 from dnas.git import git
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_db import redis_db
@@ -183,7 +184,10 @@ def publish(ymd: str = None):
     if git.diff():
         git.commit(f"Adding report(s) for {ymd}")
         git.push()
-        logging.info(f"Changes commited and push to git for {ymd}.")
+        logging.info(
+            f"Changes commited and pushed to git for {ymd}: "
+            f"{git.gen_git_url_ymd(ymd)}"
+        )
     else:
         logging.info(f"No changes to commit to git for {ymd}.")
 
@@ -224,36 +228,14 @@ def publish_range(end: str = "", start: str = ""):
         publish(ymd)
         logging.info(f"Done {i+1}/{total}")
 
-def setup_logging(debug: bool = False):
-    os.makedirs(os.path.dirname(cfg.LOG_DIR), exist_ok=True)
-    if debug:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
-            level=logging.DEBUG,
-            handlers=[
-                logging.FileHandler(cfg.LOG_GIT, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(message)s',
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler(cfg.LOG_GIT, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-
-    logging.info(
-        f"Starting report generation and posting with logging level "
-        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
-    )
-
 def main():
 
     args = parse_args()
-    setup_logging(args["debug"])
+    log.setup(
+        debug = args["debug"],
+        log_src = "report generation and posting script",
+        log_path = cfg.LOG_GIT,
+    )
 
     if args["generate"]:
         if args["ymd"]:

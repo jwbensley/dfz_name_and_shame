@@ -14,6 +14,9 @@ sys.path.append(
         , "../"
     )
 )
+
+from dnas.config import config as cfg
+from dnas.log import log
 from dnas.redis_db import redis_db
 from dnas.mrt_stats import mrt_stats
 
@@ -255,23 +258,11 @@ def wipe():
 def main():
 
     args = parse_args()
-
-    if args["debug"]:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
-            level=logging.DEBUG
-        )
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(message)s',
-            level=logging.INFO
-        )
-
-    logging.info(
-        f"Starting Redis management with logging level "
-        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
+    log.setup(
+        debug = args["debug"],
+        log_src = "Redis management script",
+        log_path = cfg.LOG_REDIS,
     )
-
 
     if args["dump"]:
         dump_json(args["dump"])

@@ -16,6 +16,7 @@ sys.path.append(
 )
 
 from dnas.config import config as cfg
+from dnas.log import log
 from dnas.redis_db import redis_db
 from dnas.mrt_archives import mrt_archives
 from dnas.mrt_archive import mrt_archive
@@ -361,30 +362,10 @@ def upd_global_with_day(ymd: str = None):
 def main():
 
     args = parse_args()
-
-    os.makedirs(os.path.dirname(cfg.LOG_DIR), exist_ok=True)
-    if args["debug"]:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
-            level=logging.DEBUG,
-            handlers=[
-                logging.FileHandler(cfg.LOG_STATS, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(message)s',
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler(cfg.LOG_STATS, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-
-    logging.info(
-        f"Starting global stats compiler with logging level "
-        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
+    log.setup(
+        debug = args["debug"],
+        log_src = "global stats compiler script",
+        log_path = cfg.LOG_STATS,
     )
 
     if (not args["daily"] and not args["diff"] and not args["global"]):

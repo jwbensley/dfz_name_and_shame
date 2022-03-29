@@ -14,18 +14,26 @@ class config:
 
     # Log mode, 'a'ppend or over'w'rite
     LOG_MODE = "a"
+    # Standard logging format
+    LOG_STANDARD = "%(asctime)s|%(levelname)s|%(message)s"
+    # Debugging logging formart
+    LOG_DEBUG = "%(asctime)s|%(levelname)s|%(process)d|%(funcName)s|%(message)s"
     # Log directory for all logs
     LOG_DIR = os.path.join(BASE_DIR, "logs/")
     # Logging from script: get_mrts.py
     LOG_GETTER = os.path.join(LOG_DIR, "get_mrts.log")
-    # Logging from script: git.py
-    LOG_GIT = os.path.join(LOG_DIR, "git.log")
-    # Logging from script: stats.py
-    LOG_STATS = os.path.join(LOG_DIR, "stats.log")
+    # Logging from script: git_report.py
+    LOG_GIT = os.path.join(LOG_DIR, "git_report.log")
     # Logging from script: parse_mrts.py
     LOG_PARSER = os.path.join(LOG_DIR, "parse_mrts.log")
-    # Logging from script: tweets.py
-    LOG_TWITTER = os.path.join(LOG_DIR, "tweets.log")
+    # Logging from script: redis_mgmt.py
+    LOG_REDIS = os.path.join(LOG_DIR, "redis_mgmt.log")
+    # Logging from script: split_mrt.py
+    LOG_SPLITTER = os.path.join(LOG_DIR, "split_mrt.log")
+    # Logging from script: stats.py
+    LOG_STATS = os.path.join(LOG_DIR, "stats.log")
+    # Logging from script: tweet.py
+    LOG_TWITTER = os.path.join(LOG_DIR, "tweet.log")
 
 
     """
