@@ -20,6 +20,7 @@ sys.path.append(
 )
 
 from dnas.config import config as cfg
+from dnas.log import log
 from dnas.mrt_archives import mrt_archives
 from dnas.mrt_archive import mrt_archive
 from dnas.mrt_stats import mrt_stats
@@ -422,30 +423,10 @@ def process_range(args: Dict[str, Any] = None):
 def main():
 
     args = parse_args()
-
-    os.makedirs(os.path.dirname(cfg.LOG_DIR), exist_ok=True)
-    if args["debug"]:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
-            level=logging.DEBUG,
-            handlers=[
-                logging.FileHandler(cfg.LOG_PARSER, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(message)s',
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler(cfg.LOG_PARSER, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-
-    logging.info(
-        f"Starting MRT parser with logging level "
-        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
+    log.setup(
+        debug = args["debug"],
+        log_src = "MRT parser script",
+        log_path = cfg.LOG_PARSER,
     )
 
     if (not args["rib"] and not args["update"] and not args["single"]):

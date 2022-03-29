@@ -89,10 +89,9 @@ class mrt_splitter():
 
     def split(self, no_chunks: int = None, outdir: str = None) -> Tuple[int, List[str]]:
         """
-        Split the MRT data into N equal chunks written to disk.
+        Split the MRT data into N equal sized chunks written to disk.
         Return the total number of MRT entries and the list of chunk filenames.
         """
-
         if not self.f:
             raise AttributeError("No MRT file is currently open")
 
