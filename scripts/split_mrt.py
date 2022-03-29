@@ -12,6 +12,8 @@ sys.path.append(
     )
 )
 
+from dnas.config import config as cfg
+from dnas.log import log
 from dnas.mrt_splitter import mrt_splitter
 
 def parse_args():
@@ -46,30 +48,32 @@ def parse_args():
     )
     return vars(parser.parse_args())
 
+def split(filename: str = None, num_chunks: int = None):
+    """
+    Split an MRT file into N equal sized files ("chunks").
+    """
+    if not filename or not num_chunks:
+        raise ValueError(
+            f"Missing required arguments: filename={filename}, "
+            f"num_chunks={num_chunks}"
+        )
+
+    splitter = mrt_splitter(filename)
+    num_entires, chunk_names = splitter.split(num_chunks)
+    logging.info(f"Split {num_entires} MRT entries into {len(chunk_names)} files:")
+    logging.info(chunk_names)
+
 def main():
 
     args = parse_args()
-
-    if args["debug"]:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
-            level=logging.DEBUG
-        )
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(message)s',
-            level=logging.INFO
-        )
-
-    logging.info(
-        f"Starting MRT splitter with logging level "
-        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
+    log.setup(
+        debug = args["debug"],
+        log_src = "MRT splitter script",
+        log_path = cfg.LOG_SPLITTER,
     )
 
-    splitter = mrt_splitter(args["filename"])
-    total, chunk_names = splitter.split(args["chunks"])
-    logging.info(f"Split {total} MRT entries into {len(chunk_names)} files:")
-    logging.info(chunk_names)
+    split(args["filename"], int(args["chunks"]))
+
 
 if __name__ == '__main__':
     main()

@@ -17,8 +17,9 @@ sys.path.append(
     )
 )
 
-from dnas.mrt_archives import mrt_archives
 from dnas.config import config as cfg
+from dnas.log import log
+from dnas.mrt_archives import mrt_archives
 from dnas.redis_db import redis_db
 from dnas.mrt_getter import mrt_getter
 
@@ -424,30 +425,10 @@ def parse_args():
 def main():
 
     args = parse_args()
-
-    os.makedirs(os.path.dirname(cfg.LOG_DIR), exist_ok=True)
-    if args["debug"]:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
-            level=logging.DEBUG,
-            handlers=[
-                logging.FileHandler(cfg.LOG_GETTER, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(levelname)s %(message)s',
-            level=logging.INFO,
-            handlers=[
-                logging.FileHandler(cfg.LOG_GETTER, mode=cfg.LOG_MODE),
-                logging.StreamHandler()
-            ]
-        )
-
-    logging.info(
-        f"Starting MRT downloader with logging level "
-        f"{logging.getLevelName(logging.getLogger().getEffectiveLevel())}"
+    log.setup(
+        debug = args["debug"],
+        log_src = "MRT downloader script",
+        log_path = cfg.LOG_GETTER,
     )
 
     if not args["continuous"] and not args["range"] and not args["ymd"]:
