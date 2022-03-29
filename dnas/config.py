@@ -114,16 +114,11 @@ class config:
     SPLIT_DIR = "/tmp/" # Set to None to disable
 
     """
-    If the machine running this code is in a different timezone to the
-    route-views MRT archives, an additional offset in hous is required.
-    A negative int is "hours in the future", a positive int is
-    "hours in the past".
+    If the machine running this code is in a different timezone to the MRT
+    archive, an additional offset in hous is required. A negative int means
+    "hours in the future", a positive int means "hours in the past". These are
+    the RIB_OFFSET and UPD_INTERVAL values below.
     """
-    RV_RIB_OFFSET = 0
-    RV_UPD_OFFSET = 1
-    RCC_RIB_OFFSET = 0
-    RCC_UPD_OFFSET = 1
-
 
     # Locations of popular MRT dump archives:
     MRT_ARCHIVES = []
@@ -137,20 +132,22 @@ class config:
     """
     MRT_ARCHIVES.append(
         {
-            "TYPE": "lukasz",
-            "NAME": "Lukasz-AS57355",
+            "TYPE": "AS57355",
+            "NAME": "AS57355-Lukasz",
             "ENABLED": True,
-            "BASE_URL": "http://192.168.58.8/lukasz/",
-            "RIB_URL": "/ribs/",
-            "UPD_URL": "/updates/",
+            "BASE_URL": "http://192.168.58.8:8000/lukasz/",
+            "RIB_URL": "/rib/",
+            "UPD_URL": "/update/",
             "MRT_EXT": "dump",
-            "MRT_DIR": os.path.join(DL_DIR, "lukasz/"),
+            "MRT_DIR": os.path.join(DL_DIR, "AS57355/"),
             "RIB_GLOB": "*.dump",
             "UPD_GLOB": "*.dump",
-            "RIB_KEY": "LUKASZ_RIB",
-            "UPD_KEY": "LUKASZ_UPD",
+            "RIB_KEY": "AS57355Z_RIB",
+            "UPD_KEY": "AS57355_UPD",
             "RIB_INTERVAL": 60,
             "UPD_INTERVAL": 10,
+            "RIB_OFFSET": 0,
+            "UPD_OFFSET": 1,
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "",
         }
@@ -179,6 +176,8 @@ class config:
             "UPD_KEY": "RV_LINX_UPD",
             "RIB_INTERVAL": 120,
             "UPD_INTERVAL": 15,
+            "RIB_OFFSET": 0,
+            "UPD_OFFSET": 1,
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
         }
@@ -207,6 +206,8 @@ class config:
             "UPD_KEY": "RV_SYDNEY_UPD",
             "RIB_INTERVAL": 120,
             "UPD_INTERVAL": 15,
+            "RIB_OFFSET": 0,
+            "UPD_OFFSET": 1,            
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
         }
@@ -235,6 +236,8 @@ class config:
             "UPD_KEY": "RCC_23_UPD",
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 0,
+            "UPD_OFFSET": 1,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
         }
@@ -263,6 +266,8 @@ class config:
             "UPD_KEY": "RCC_24_UPD",
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 0,
+            "UPD_OFFSET": 1,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
         }
