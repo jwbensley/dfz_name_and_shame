@@ -19,12 +19,14 @@ class mrt_archive:
         RIB_GLOB=None,
         RIB_INTERVAL=None,
         RIB_KEY=None,
+        RIB_OFFSET=None,
         RIB_PREFIX=None,
         RIB_URL=None,
         TYPE=None,
         UPD_GLOB=None,
         UPD_INTERVAL=None,
         UPD_KEY=None,
+        UPD_OFFSET=None,
         UPD_PREFIX=None,
         UPD_URL=None,
         get_rib_url=None,
@@ -40,12 +42,14 @@ class mrt_archive:
         self.RIB_GLOB = RIB_GLOB
         self.RIB_INTERVAL = RIB_INTERVAL
         self.RIB_KEY = RIB_KEY
+        self.RIB_OFFSET = RIB_OFFSET
         self.RIB_PREFIX = RIB_PREFIX
         self.RIB_URL = RIB_URL
         self.TYPE = TYPE
         self.UPD_GLOB = UPD_GLOB
         self.UPD_INTERVAL = UPD_INTERVAL
         self.UPD_KEY = UPD_KEY
+        self.UPD_OFFSET = UPD_OFFSET
         self.UPD_PREFIX = UPD_PREFIX
         self.UPD_URL = UPD_URL
 
@@ -79,8 +83,41 @@ class mrt_archive:
             return self.gen_latest_rib_fn_ripe()
         elif self.TYPE == "RV":
             return self.gen_latest_rib_fn_rv()
+        elif self.TYPE == "AS57355":
+            return self.gen_latest_rib_fn_as57355()
         else:
             raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
+    def gen_latest_rib_fn_as57355(self) -> str:
+        """
+        Generate and return the filename for the newest/most recent RIB dump
+        from an AS57355 MRT archive.
+
+        RIPE RIB dumps are every 1 hours.
+
+        When downloading rib dumps from AS57355, calculate the time of the last
+        whole 8 hour interval. RIPE RIB files are dumped every 8 hours, if it's
+        09.00 we're half way through the 08.00 to 16.00 time period,
+        which will be available from 16.00 onwards. This means that the latest
+        complete RIB dump we can download at 09.00 would be from the 00.00-08.00
+        period and it would be called "0000". h_delta gets us back to 00.00.
+
+        If this machine is in a different timezone to the archive server, an
+        additional offset is required, RIB_OFFSET.
+        """
+        hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
+        mod = hours % (self.RIB_INTERVAL // 60)
+        if mod == 0:
+            h_delta = datetime.timedelta(hours=(self.RIB_INTERVAL // 60))
+        else:
+            h_delta = datetime.timedelta(hours=((self.RIB_INTERVAL // 60) + mod))
+
+        ymd_hm = datetime.datetime.strftime(
+            datetime.datetime.now() - h_delta,
+            "%Y%m%d.%H00"
+        )
+
+        return self.RIB_PREFIX + ymd_hm + "." + self.MRT_EXT
 
     def gen_latest_rib_fn_ripe(self) -> str:
         """
@@ -90,14 +127,14 @@ class mrt_archive:
         RIPE RIB dumps are every 8 hours.
 
         When downloading rib dumps from RIPE, calculate the time of the last
-        whole 8 hour interval. RIPE RIB files are dumped every 8 hours, if it's
-        09.00 we're half way through the 08.00 to 16.00 time period,
-        which will be available from 16.00 onwards. This means that the latest
-        complete RIB dump we can download at 09.00 would be from the 00.00-08.00
-        period and it would be called "0000". h_delta gets us back to 00.00.
+        whole RIB dump interval. AS57355 RIB files are dumped every hour, if
+        it's 09.30 we're half way through the 09.00 to 10.00 time period,
+        which will be available from 10.00 onwards. This means that the latest
+        complete RIB dump we can download at 09.00 would be from the 08.00-09.00
+        period, and it would be called "0800". h_delta gets us back to 08.00.
 
         If this machine is in a different timezone to the archive server, an
-        additional offset is required, RIPE_RIB_OFFSET.
+        additional offset is required, RIB_OFFSET.
         """
         hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
         mod = hours % (self.RIB_INTERVAL // 60)
@@ -128,13 +165,13 @@ class mrt_archive:
         from 08.00. h_delta gets us back to 08.00.
 
         If this machine is in a different timezone to the archive server, an
-        additional offset is required, RV_RIB_OFFSET.
+        additional offset is required, RIB_OFFSET.
         """
         hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
         if hours % (self.RIB_INTERVAL // 60) != 0:
-            hours = ((self.RIB_INTERVAL // 60) + 1) + cfg.RV_RIB_OFFSET
+            hours = ((self.RIB_INTERVAL // 60) + 1) + self.RIB_OFFSET
         else:
-            hours = (self.RIB_INTERVAL // 60) + cfg.RV_RIB_OFFSET
+            hours = (self.RIB_INTERVAL // 60) + self.RIB_OFFSET
 
         h_delta = datetime.timedelta(hours=hours)
         ymd_hm = datetime.datetime.strftime(
@@ -153,8 +190,51 @@ class mrt_archive:
             return self.gen_latest_upd_fn_ripe()
         elif self.TYPE == "RV":
             return self.gen_latest_upd_fn_rv()
+        elif self.TYPE == "AS57355":
+            return self.gen_latest_upd_fn_as57355()
         else:
             raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
+    def gen_latest_upd_fn_as57355(self) -> str:
+        """
+        Generate and return the filename of the newest/most recent UPDATE dump
+        for an AS57355 MRT archive.
+
+        AS57355 UPDATE dumps are every 10 minutes.
+
+        When downloading updates from AS57355, we calculate the name of
+        the last complete update file. At 09.13 the last complete
+        update file will be called "0900", it will be for the period
+        09.00-09.10. So the filename can be calculatd as:
+        "round down to the last 10 minute whole interval - another 10 minutes".
+
+        If the current time is 09.20 (a round 10 minute interval) a dump
+        should be available called "0910" for 09.10-09.20 period. The archive
+        might be slow to update though.
+
+        To be safe:
+        At 09.13 this function will download the "0850" file (08.50-09.00).
+        At 09.20 this function will download the "0850" file too.
+        At 09.23 this function will download the "0900" file (09.00-09.10).
+
+        If this machine is in a different timezone to the archive server, an
+        additional offset is required, UPD_OFFSET.
+        """
+        minutes = int(datetime.datetime.strftime(datetime.datetime.now(), "%M"))
+        mod = minutes % self.UPD_INTERVAL
+        if mod == 0:
+            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL * 2))
+        else:
+            m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
+
+        h_delta = datetime.timedelta(hours=self.UPD_OFFSET)
+
+        ymd_hm = datetime.datetime.strftime(
+            datetime.datetime.now() - h_delta - m_delta,
+            cfg.TIME_FORMAT
+        )
+
+        return self.UPD_PREFIX + ymd_hm + "." + self.MRT_EXT
 
     def gen_latest_upd_fn_ripe(self) -> str:
         """
@@ -179,16 +259,16 @@ class mrt_archive:
         At 09.17 this function will download the "0910" file (09.10-09.15).
 
         If this machine is in a different timezone to the archive server, an
-        additional offset is required, RCC_UPD_OFFSET.
+        additional offset is required, UPD_OFFSET.
         """
         minutes = int(datetime.datetime.strftime(datetime.datetime.now(), "%M"))
         mod = minutes % self.UPD_INTERVAL
         if mod == 0:
-            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL* 2))
+            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL * 2))
         else:
-            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL + mod))
+            m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
 
-        h_delta = datetime.timedelta(hours=cfg.RCC_UPD_OFFSET)
+        h_delta = datetime.timedelta(hours=self.UPD_OFFSET)
 
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta - m_delta,
@@ -225,11 +305,11 @@ class mrt_archive:
         minutes = int(datetime.datetime.strftime(datetime.datetime.now(), "%M"))
         mod = minutes % self.UPD_INTERVAL
         if mod == 0:
-            m_delta = datetime.timedelta(minutes=2*self.UPD_INTERVAL)
+            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL * 2))
         else:
-            m_delta = datetime.timedelta(minutes=(self.UPD_INTERVAL + mod))
+            m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
 
-        h_delta = datetime.timedelta(hours=cfg.RV_UPD_OFFSET)
+        h_delta = datetime.timedelta(hours=self.UPD_OFFSET)
 
         ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta, cfg.TIME_FORMAT)
         return self.UPD_PREFIX + ymd_hm + "." + self.MRT_EXT
@@ -326,8 +406,41 @@ class mrt_archive:
             return self.gen_rib_url_ripe(filename)
         elif self.TYPE == "RV":
             return self.gen_rib_url_rv(filename)
+        elif self.TYPE == "AS57355":
+            return self.gen_rib_url_as57355(filename)
         else:
             raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
+    def gen_rib_url_as57355(self, filename: str = None) -> str:
+        """
+        Generate the URL for a given RIB MRT file, for an AS57355 MRT archive.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename{filename}"
+            )
+
+        if filename[0:len(self.RIB_PREFIX)] != self.RIB_PREFIX:
+            raise ValueError(
+                f"MRT file prefix {filename[0:len(self.RIB_PREFIX)]} "
+                f"is not {self.RIB_PREFIX}"
+            )
+
+        ym = filename.split(".")[0][0:6]
+        ymd_hm = '.'.join(filename.split(".")[0:2])
+
+        mrt_archive.valid_ym(ym)
+        mrt_archive.valid_ymd_hm(ymd_hm)
+
+        if filename.split(".")[-1] != self.MRT_EXT:
+            raise ValueError(
+                f"MRT file extension {filename.split('.')[-1]} "
+                f"is not {self.MRT_EXT}"
+            )
+
+        return mrt_archive.concat_url(
+            [self.BASE_URL, "/", self.RIB_URL, "/", filename]
+        )
 
     def gen_rib_url_range(self, end_date: str = None, start_date: str = None) -> List[str]:
         """
@@ -437,12 +550,12 @@ class mrt_archive:
                 f"Missing required arguments: ymd_hm={ymd_hm}"
             )
         mrt_archive.valid_ymd_hm(ymd_hm)
-        return f"{self.RIB_PREFIX}{ymd_hm}.{self.MRT_EXT}"
+        return f"{self.UPD_PREFIX}{ymd_hm}.{self.MRT_EXT}"
 
     def gen_upd_fns_day(self, ymd: str = None) -> List[str]:
         """
-        Generate a list of all the RIB MRT filename for a specific day, for
-        a specific MRT archive.
+        Generate a list of all the UPDATE MRT filename for a specific day, for
+        a specific MRT archive. This function is MRT archive type agnostic.
         """
         if not ymd:
             raise ValueError(
@@ -519,8 +632,45 @@ class mrt_archive:
             return self.gen_upd_url_ripe(filename)
         elif self.TYPE == "RV":
             return self.gen_upd_url_rv(filename)
+        elif self.TYPE == "AS57355":
+            return self.gen_upd_url_as57355(filename)
         else:
             raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
+    def gen_upd_url_as57355(self, filename: str = None) -> str:
+        """
+        Return the URL from a given UPDATE MRT filename, from an AS57355 MRT
+        archive.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required options: filename{filename}"
+            )
+
+        if filename[0:len(self.UPD_PREFIX)] != self.UPD_PREFIX:
+            raise ValueError(
+                f"MRT file prefix {filename[0:len(self.UPD_PREFIX)]} "
+                f"is not {self.UPD_PREFIX}"
+            )
+
+        ym = filename.split(".")[0][0:6]
+        ymd_hm = '.'.join(filename.split(".")[0:2])
+
+        mrt_archive.valid_ym(ym)
+        mrt_archive.valid_ymd_hm(ymd_hm)
+
+        if filename.split(".")[-1] != self.MRT_EXT:
+            raise ValueError(
+                f"MRT file extension {filename.split('.')[-1]} "
+                f"is not {self.MRT_EXT}"
+            )
+
+        y = ym[0:4]
+        m = ym[4:]
+
+        return mrt_archive.concat_url(
+            [self.BASE_URL, "/", self.UPD_URL, "/", filename]
+        )
 
     def gen_upd_url_range(self, end_date: str = None, start_date: str = None) -> List[str]:
         """
@@ -590,7 +740,9 @@ class mrt_archive:
                 f"is not {self.MRT_EXT}"
             )
 
-        return mrt_archive.concat_url([self.BASE_URL, ym[0:4] + "." + ym[4:] + "/", self.UPD_URL, filename])
+        return mrt_archive.concat_url(
+            [self.BASE_URL, ym[0:4] + "." + ym[4:] + "/", self.UPD_URL, filename]
+        )
 
     def gen_upd_url_rv(self, filename: str = None) -> str:
         """
@@ -626,6 +778,64 @@ class mrt_archive:
         return mrt_archive.concat_url(
             [self.BASE_URL, y + "." + m + "/", self.UPD_URL, filename]
         )
+
+    def ts_from_filename(self, filename: str = None) -> datetime.datetime:
+        """
+        Extract the ymd.hm timestamp from an MRT filename and return it.
+        This function is MRT archive type agnostic.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
+        if self.TYPE == "RIPE":
+            return self.ts_from_filename_ripe(filename)
+        elif self.TYPE == "RV":
+            return self.ts_from_filename_rv(filename)
+        elif self.TYPE == "AS57355":
+            return self.ts_from_filename_as57355(filename)
+        else:
+            raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+
+    def ts_from_filename_as57355(self, filename: str = None) -> datetime.datetime:
+        """
+        Extract the ymd.hm timestamp from an MRT filename and return it.
+        This function is specific to an AS57355 MRT file.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
+        raw_ts = '.'.join(os.path.basename(filename).split(".")[0:2])
+        return datetime.datetime.strptime(raw_ts, cfg.TIME_FORMAT)
+
+    def ts_from_filename_ripe(self, filename: str = None) -> datetime.datetime:
+        """
+        Extract the ymd.hm timestamp from an MRT filename and return it.
+        This function is specific to a RIPE MRT file.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
+        raw_ts = '.'.join(os.path.basename(filename).split(".")[1:3])
+        return datetime.datetime.strptime(raw_ts, cfg.TIME_FORMAT)
+
+    def ts_from_filename_rv(self, filename: str = None) -> datetime.datetime:
+        """
+        Extract the ymd.hm timestamp from an MRT filename and return it.
+        This function is specific to a Route-Views MRT file.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
+        raw_ts = '.'.join(os.path.basename(filename).split(".")[1:3])
+        return datetime.datetime.strptime(raw_ts, cfg.TIME_FORMAT)
 
     @staticmethod
     def valid_ym(ym: str = None):
@@ -713,7 +923,7 @@ class mrt_archive:
 
         if (self.TYPE == "RV" or self.TYPE == "RIPE"):
             return os.path.basename(file_path).split(".")[1]
-        elif self.TYPE == "lukasz":
+        elif self.TYPE == "AS57355":
             return os.path.basename(file_path).split(".")[0]
         else:
             raise ValueError(f"Couldn't infer ymd from file {file_path}")

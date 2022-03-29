@@ -96,7 +96,6 @@ class mrt_stats:
                     self.bogon_prefixes = merge_data.bogon_prefixes.copy()
                     changed = True
 
-
         # Longest AS path
         if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
             s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
@@ -414,18 +413,26 @@ class mrt_stats:
 
         # Most origin ASNs per prefix
         tmp = []
-        for idx, u_e in enumerate(merge_data.most_origin_asns[:]):
-            for res_e in self.most_origin_asns:
-                if (res_e.prefix == u_e.prefix and
-                    res_e.origin_asns != u_e.origin_asns):
+
+        self_prefixes = {}
+        for mrt_e in self.most_origin_asns:
+            self_prefixes[mrt_e.prefix] = None
+        # ^ This is a hack to speed up this section up:
+        for mrt_e in merge_data.most_origin_asns:
+            if mrt_e.prefix not in self_prefixes:
+                continue
+            for s_e in self.most_origin_asns:
+                if (s_e.prefix == mrt_e.prefix and
+                    s_e.origin_asns != mrt_e.origin_asns):
                     tmp.append(
                         mrt_entry(
-                            filename=u_e.filename,
-                            origin_asns=res_e.origin_asns.union(u_e.origin_asns),
-                            prefix=res_e.prefix,
-                            timestamp=u_e.timestamp,
+                            filename=mrt_e.filename,
+                            origin_asns=s_e.origin_asns.union(mrt_e.origin_asns),
+                            prefix=s_e.prefix,
+                            timestamp=mrt_e.timestamp,
                         )
                     )
+                    break
 
         if tmp:
             for tmp_e in tmp:
@@ -451,6 +458,7 @@ class mrt_stats:
                 elif len(merge_data.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
                     self.most_origin_asns = merge_data.most_origin_asns.copy()
                     changed = True
+
 
         # If stats from a rib dump are being added, these will be 0:
         if merge_data.total_upd:
