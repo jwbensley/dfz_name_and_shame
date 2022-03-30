@@ -9,6 +9,7 @@ import multiprocessing
 from multiprocessing import Pool
 import os
 import sys
+import time
 from typing import Any, Dict, List
 
 # Accomodate the use of the dnas library, even when the library isn't installed
@@ -28,6 +29,81 @@ from dnas.mrt_parser import mrt_parser
 from dnas.mrt_splitter import mrt_splitter
 from dnas.redis_db import redis_db
 
+def continuous(args: Dict[str, Any] = None):
+    """
+    Continuous parse new MRT files as they are download from the configured MRT
+    archives. This function simply globs for all MRTs that match todays "ymd"
+    value. This is problematic around midnight e.g., an MRT for 23.50 to 00.00
+    might not be avaiable until 00.05 the next day. This function sets the "ymd"
+    value to be now() - 30 minutes, meaning it glob's for files from the
+    previous up until 00.30 each day.
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    if type(args) != dict:
+        raise TypeError(
+            f"args is not a dict: {type(args)}"
+        )
+
+    mrt_a = mrt_archives()
+    min_interval = cfg.DFT_INTERVAL
+
+    while(True):
+
+        delta = datetime.timedelta(minutes = 30)
+        glob_ymd = datetime.datetime.strftime(
+            datetime.datetime.now() - delta, cfg.DAY_FORMAT
+        )
+        logging.debug(f"Glob ymd is {glob_ymd}")
+
+        filelist = []
+        for arch in mrt_a.archives:
+            if (args["enabled"] and not arch.ENABLED):
+                continue
+            logging.debug(f"Archive {arch.NAME} is enabled")
+
+
+            if args["rib"]:
+                glob_str = str(
+                    arch.MRT_DIR + "/" + arch.RIB_PREFIX + "/"
+                ).replace("///", "/").replace("//", "/")
+                glob_str += "*" + glob_ymd + "*"
+                filelist.extend(glob.glob(glob_str))
+
+                """
+                Only check for new MRTs to parse as frequently as the MRT archive
+                which provides the most frequenty dumps:
+                """
+                if arch.RIB_INTERVAL < min_interval:
+                    min_interval = arch.RIB_INTERVAL * 60
+                    logging.debug(
+                        f"Parse interval set to {min_interval} by "
+                        f"{arch.NAME} RIB interval"
+                    )
+
+            if args["update"]:
+                glob_str = str(
+                    arch.MRT_DIR + "/" + arch.UPD_PREFIX + "/"
+                ).replace("///", "/").replace("//", "/")
+                glob_str += "*" + glob_ymd + "*"
+                filelist.extend(glob.glob(glob_str))
+
+                if arch.UPD_INTERVAL < min_interval:
+                    min_interval = arch.UPD_INTERVAL * 60
+                    logging.debug(
+                        f"Parse interval set to {min_interval} by "
+                        f"{arch.NAME} UPD interval"
+                    )
+
+        if filelist:
+            logging.debug(f"Checking for files: {filelist}")
+            parse_files(filelist=filelist, args=args)
+
+        time.sleep(min_interval)
+
 def parse_args():
     """
     Parse the CLI args to this script.
@@ -40,6 +116,14 @@ def parse_args():
         "specific MRT files of the given types, use one of --range, --ymd, or "
         "--single.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--continuous",
+        help="Run in continuous mode - parse available MRT files from each "
+        "archive as they are downloaded. Use with --rib and/or --update.",
+        default=False,
+        action="store_true",
+        required=False,
     )
     parser.add_argument(
         "--debug",
@@ -434,7 +518,9 @@ def main():
             "At least one of --rib and/or --update must be specified!"
         )
 
-    if args["single"]:
+    if args["continuous"]:
+        continuous(args)
+    elif args["single"]:
         process_mrt_file(filename=args["single"], args=args)
     elif args["ymd"]:
         process_day(args)
