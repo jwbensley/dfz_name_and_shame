@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import List
+from typing import Dict, List
 
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
@@ -414,7 +414,7 @@ class mrt_stats:
         # Most origin ASNs per prefix
         tmp = []
 
-        self_prefixes = {}
+        self_prefixes: Dict[str, None] = {}
         for mrt_e in self.most_origin_asns:
             self_prefixes[mrt_e.prefix] = None
         # ^ This is a hack to speed up this section up:
