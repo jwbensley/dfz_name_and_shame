@@ -274,10 +274,7 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
                 all_upd_filenames = arch.gen_upd_fns_day(ymd)
 
                 for filename in all_upd_filenames[:]:
-                    raw_ts = '.'.join(filename.split(".")[1:3])
-                    timestamp = datetime.datetime.strptime(
-                        raw_ts, cfg.TIME_FORMAT
-                    )
+                    timestamp = arch.ts_from_filename(filename)
                     if (timestamp < start or timestamp > end):
                         all_upd_filenames.remove(filename)
 
