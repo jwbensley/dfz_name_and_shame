@@ -113,15 +113,17 @@ class config:
     # Temporary directory to split MRT files into
     SPLIT_DIR = "/tmp/" # Set to None to disable
 
+    # Default interval for downloading and parsing new MRT files (seconds)
+    DFT_INTERVAL = 3600
+
+    # Locations of popular MRT dump archives:
+    MRT_ARCHIVES = []
     """
     If the machine running this code is in a different timezone to the MRT
     archive, an additional offset in hous is required. A negative int means
     "hours in the future", a positive int means "hours in the past". These are
     the RIB_OFFSET and UPD_INTERVAL values below.
     """
-
-    # Locations of popular MRT dump archives:
-    MRT_ARCHIVES = []
 
     """
     Transit session from @LukaszBromirski
