@@ -25,8 +25,8 @@ from dnas.mrt_getter import mrt_getter
 
 def continuous(args: Dict[str, Any] = None):
     """
-    Continuous check for new MRT files and download them from the MRT archives
-    enabled in the config.
+    Continuous check for new MRT files and download them from the configured MRT
+    archives.
     """
     if not args:
         raise ValueError(
