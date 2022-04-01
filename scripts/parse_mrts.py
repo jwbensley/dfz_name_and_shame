@@ -67,39 +67,36 @@ def continuous(args: Dict[str, Any] = None):
 
 
             if args["rib"]:
-                glob_str = str(
-                    arch.MRT_DIR + "/" + arch.RIB_PREFIX + "/"
-                ).replace("///", "/").replace("//", "/")
-                glob_str += "*" + glob_ymd + "*"
+                glob_str = str(arch.MRT_DIR + "/").replace("///", "/").replace("//", "/")
+                glob_str += arch.RIB_PREFIX + "*" + glob_ymd + "*"
                 filelist.extend(glob.glob(glob_str))
 
                 """
                 Only check for new MRTs to parse as frequently as the MRT archive
                 which provides the most frequenty dumps:
                 """
-                if arch.RIB_INTERVAL < min_interval:
-                    min_interval = arch.RIB_INTERVAL * 60
+                if (arch.RIB_INTERVAL * 60) < min_interval:
+                    min_interval = (arch.RIB_INTERVAL * 60)
                     logging.debug(
                         f"Parse interval set to {min_interval} by "
                         f"{arch.NAME} RIB interval"
                     )
 
             if args["update"]:
-                glob_str = str(
-                    arch.MRT_DIR + "/" + arch.UPD_PREFIX + "/"
-                ).replace("///", "/").replace("//", "/")
-                glob_str += "*" + glob_ymd + "*"
+                glob_str = str(arch.MRT_DIR + "/").replace("///", "/").replace("//", "/")
+                glob_str += arch.UPD_PREFIX + "*" + glob_ymd + "*"
+                print(glob_str)
                 filelist.extend(glob.glob(glob_str))
 
-                if arch.UPD_INTERVAL < min_interval:
-                    min_interval = arch.UPD_INTERVAL * 60
+                if (arch.UPD_INTERVAL * 60) < min_interval:
+                    min_interval = (arch.UPD_INTERVAL * 60)
                     logging.debug(
                         f"Parse interval set to {min_interval} by "
                         f"{arch.NAME} UPD interval"
                     )
 
         if filelist:
-            logging.debug(f"Checking for files: {filelist}")
+            logging.debug(f"Checking for {len(filelist)} files: {filelist}")
             parse_files(filelist=filelist, args=args)
 
         time.sleep(min_interval)
