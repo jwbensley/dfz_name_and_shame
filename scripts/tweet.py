@@ -38,13 +38,14 @@ def delete(tweet_id: int = None):
 
 def gen_tweets_yest():
     """
-    Generate Tweets based on for yesterday's stats changes.
+    Generate Tweets based on for yesterday's stats changes and publish them.
     """
     delta = datetime.timedelta(days=1)
     yesterday = datetime.datetime.strftime(
         datetime.datetime.now() - delta, cfg.DAY_FORMAT
     )
     gen_tweets(yesterday)
+    tweet(False, yesterday)
 
 def gen_tweets(ymd: str = None):
     """
@@ -181,8 +182,8 @@ def parse_args():
     )
     parser.add_argument(
         "--yesterday",
-        help="Generate Tweets for yesterdays stat changes, "
-        "and add to tweet queue.",
+        help="Generate Tweets for yesterdays stat changes, and publish them. "
+        "This is a shortcut for --generate --tweet --ymd yyyymmdd",
         default=False,
         action="store_true",
         required=False,

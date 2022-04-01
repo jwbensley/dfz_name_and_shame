@@ -39,7 +39,7 @@ class report:
 
         if mrt_s.total_upd:
             text = (
-                f"On {mrt_s.ts_ymd_format()} {mrt_s.total_upd} BGP UPDATES "
+                f"For {mrt_s.ts_ymd_format()} {mrt_s.total_upd} BGP UPDATES "
                 f"were parsed. {mrt_s.total_advt} UPDATES contained prefix "
                 f"advertisements. {mrt_s.total_withd} UPDATES contained prefix "
                 f"withdraws.\n\n"

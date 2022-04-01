@@ -60,6 +60,30 @@ class git:
             )
         logging.debug(f"Cleared git index in {cfg.GIT_BASE}")
 
+    @staticmethod
+    def clone():
+        """
+        Clone the DNS Stats repo.
+        """
+        os.makedirs(cfg.GIT_BASE)
+
+        ret = subprocess.run(
+            ["git", "clone", cfg.GIT_STAT_CLONE_URL],
+            cwd=cfg.BASE_DIR,
+            capture_output=True,
+        )
+        if ret.returncode != 0:
+            raise ChildProcessError(
+                f"Couldn't clone git repo {cfg.GIT_STAT_CLONE_URL} to directory "
+                f"{cfg.BASE_DIR}:\n"
+                f"args: {ret.args}\n"
+                f"stdout: {ret.stdout.decode()}\n"
+                f"stderr: {ret.stderr.decode()}"
+            )
+        logging.debug(
+            f"Cloned git repo {cfg.GIT_STAT_CLONE_URL} to {cfg.BASE_DIR}"
+        )
+
     @staticmethod        
     def commit(msg: str = None):
         """
@@ -117,6 +141,27 @@ class git:
             logging.debug(
                 f"Changes are staged git in cache in {cfg.GIT_BASE}")
             return True
+
+    @staticmethod
+    def git_exists():
+        """
+        Return True if DNAS Stats repo exists locally.
+        """
+        if not os.path.isdir(cfg.GIT_BASE):
+            logging.debug(f"Local git directory doesn't exist: {cfg.GIT_BASE}")
+            return False
+
+        ret = subprocess.run(
+            ["git", "status"],
+            cwd=cfg.GIT_BASE,
+            capture_output=True,
+        )
+        if ret.returncode != 0:
+            logging.debug(f"No git repo detected in {cfg.GIT_BASE}")
+            return False
+
+        logging.debug(f"Git repo found in {cfg.GIT_BASE}")
+        return True
 
     @staticmethod
     def gen_git_path_ymd(ymd: str = None) -> str:
