@@ -48,6 +48,9 @@ class config:
     # GIT SETTINGS #
     ################
 
+    # Git clone URL
+    GIT_STAT_CLONE_URL = "git@github.com:DFZ-Name-and-Shame/dnas_stats.git"
+
     # Remote git details
     GIT_STAT_BASE_URL = "https://github.com/DFZ-Name-and-Shame/dnas_stats/tree/main/"
 

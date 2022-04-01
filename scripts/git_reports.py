@@ -22,6 +22,13 @@ from dnas.mrt_stats import mrt_stats
 from dnas.redis_db import redis_db
 from dnas.report import report
 
+def check_git():
+    """
+    Check if the git repo exists locally, if not, clone it.
+    """
+    if not git.git_exists():
+        git.clone()
+
 def generate(ymd: str = None):
     """
     Generate the stats files for a specific day.
@@ -236,6 +243,9 @@ def main():
         log_src = "report generation and posting script",
         log_path = cfg.LOG_GIT,
     )
+
+    # Ensure the git repo exists, check it out if it doesn't:
+    check_git()
 
     if args["generate"]:
         if args["ymd"]:
