@@ -65,7 +65,7 @@ class git:
         """
         Clone the DNS Stats repo.
         """
-        os.makedirs(cfg.GIT_BASE)
+        os.makedirs(cfg.GIT_BASE, exist_ok = True)
 
         ret = subprocess.run(
             ["git", "clone", cfg.GIT_STAT_CLONE_URL],
