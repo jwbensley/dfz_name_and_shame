@@ -306,6 +306,14 @@ def parse_args():
         required=False,
     )
     parser.add_argument(
+        "--yesterday",
+        help="Generate the states for yesterday. "
+        "This is a shortcut for --daily --ymd yyyymmdd using yesterdays date.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "--ymd",
         help="Date must be in the format yyyymmdd e.g., 20211231.",
         type=str,
@@ -368,14 +376,12 @@ def main():
         log_path = cfg.LOG_STATS,
     )
 
-    if (not args["daily"] and not args["diff"] and not args["global"]):
+    if (not args["daily"] and not args["diff"] and not args["global"] and
+        not args["yesterday"]
+    ):
         raise ValueError(
             "At least one of --daily or --diff or --global must be specified!"
         )
-
-    if args["range"]:
-        gen_range(args)
-        exit(0)
 
     if args["daily"]:
         gen_day_stats(
@@ -390,6 +396,21 @@ def main():
 
     if args["global"]:
         upd_global_with_day(args["ymd"])
+
+    if args["range"]:
+        gen_range(args)
+
+    if args["yesterday"]:
+        delta = datetime.timedelta(days=1)
+        yesterday = datetime.datetime.strftime(
+            datetime.datetime.now() - delta, cfg.DAY_FORMAT
+        )
+        gen_day_stats(
+            enabled = args["enabled"],
+            rib = args["rib"],
+            update = args["update"],
+            ymd = yesterday
+        )
 
 if __name__ == '__main__':
     main()
