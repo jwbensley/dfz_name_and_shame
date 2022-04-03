@@ -380,7 +380,8 @@ def main():
         not args["yesterday"]
     ):
         raise ValueError(
-            "At least one of --daily or --diff or --global must be specified!"
+            "At least one of --daily, --diff, --global or --yesterday must be "
+            "specified!"
         )
 
     if args["daily"]:

@@ -195,6 +195,13 @@ def parse_args():
         required=False,
     )
     parser.add_argument(
+        "--yesterday",
+        help="This is a shortcut for --ymd yyyymmdd using yesterdays date.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "--ymd",
         help="Specify a day to parse all MRT files from that specific day. "
         "Must use yyyymmdd format e.g., 20220101.",
@@ -510,15 +517,31 @@ def main():
         log_path = cfg.LOG_PARSER,
     )
 
-    if (not args["rib"] and not args["update"] and not args["single"]):
+    if (not args["continuous"] and not args["range"] and not args["single"] and
+        not args["yesterday"] and not args["ymd"]
+    ):
         raise ValueError(
-            "At least one of --rib and/or --update must be specified!"
+            "At least one of --continuous, --range, --single, --yesterday, or "
+            "--ymd must be specified!"
+        )
+
+    if not args["single"] and not args["rib"] and not args["update"]:
+        raise ValueError(
+            "At least one of --rib and/or --update must be specified when not "
+            "using --single!"
         )
 
     if args["continuous"]:
         continuous(args)
     elif args["single"]:
         process_mrt_file(filename=args["single"], args=args)
+    elif args["yesterday"]:
+        delta = datetime.timedelta(days=1)
+        yesterday = datetime.datetime.strftime(
+            datetime.datetime.now() - delta, cfg.DAY_FORMAT
+        )
+        args["ymd"] = yesterday
+        process_day(args)
     elif args["ymd"]:
         process_day(args)
     elif args["range"]:
