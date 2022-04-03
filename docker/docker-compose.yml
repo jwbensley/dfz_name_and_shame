@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  redis_dnas:
+    container_name: redis_dnas
+    image: redis:6.2.6
+    ports:
+      - "6379:6379"
+    volumes:
+      - /opt/dnas/redis/data:/data
+      - /opt/dnas/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    restart: always
+    tty: true
+    entrypoint:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf
+
+  dnas_getter:
+    container_name: dnas_getter
+    image: dnas:latest
+    build:
+      context: /opt/dnas/
+      dockerfile: docker/dnas.Dockerfile
+    volumes:
+      - /media/usb0/:/media/usb0/
+      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/dnas/redis_auth.py
+    restart: always
+    tty: true
+    depends_on:
+      - redis_dnas
+    entrypoint:
+      - /opt/pypy3.8-v7.3.7-aarch64/bin/pypy3
+      - /opt/dnas/dnas/scripts/get_mrts.py
+      - --continuous
+      - --update
+
+  dnas_parser:
+    container_name: dnas_parser
+    image: dnas:latest
+    build:
+      context: /opt/dnas/
+      dockerfile: docker/dnas.Dockerfile
+    volumes:
+      - /media/usb0/:/media/usb0/
+      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/dnas/redis_auth.py
+    restart: always
+    tty: true
+    depends_on:
+      - redis_dnas
+    entrypoint:
+      - /opt/pypy3.8-v7.3.7-aarch64/bin/pypy3
+      - /opt/dnas/dnas/scripts/parse_mrts.py
+      - --continuous
+      - --update
+      - --remove
