@@ -1,8 +1,17 @@
-redis_auth.py
-twitter_auth.py
+# Don't sync test renders of READMEs to GitHub
+**/README.html
 
+# Don't sync secrets to GitHub
+**/redis_auth.py
+**/twitter_auth.py
+**/ed25519
+**/ed25519.pub
+
+# Don't sync test MRT files to GitHub
 **/*.bz2
 **/*.gz
+
+# Don't sync other shite to GitHub
 __pycache__/
 venv/
 
