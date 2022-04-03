@@ -229,7 +229,7 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
                     continue
 
                 """
-                if we are only downloading what is not already in the DB, pull
+                If we are only downloading what is not already in the DB, pull
                 the stats for this day and check which files are missing.
                 """
                 if args["backfill"]:
