@@ -409,6 +409,13 @@ def parse_args():
         required=False,
     )
     parser.add_argument(
+        "--yesterday",
+        help="This is a shortcut for --ymd yyyymmdd using yesterdays date.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    parser.add_argument(
         "--ymd",
         help="Specify a day to download all MRT files from, for that specific "
         "day. Must use yyyymmdd format e.g., 20220101.",
@@ -428,18 +435,18 @@ def main():
         log_path = cfg.LOG_GETTER,
     )
 
-    if not args["continuous"] and not args["range"] and not args["ymd"]:
-        logging.error(
-            "Exactly one of the three modes must be chosen: --continuous, "
-            "--range, or --ymd!"
+    if (not args["continuous"] and not args["range"] and not args["ymd"] and
+        not args["yesterday"]
+    ):
+        raise ValueError(
+            "Exactly one of the four modes must be chosen: --continuous, "
+            "--range, --yesterday, or --ymd!"
         )
-        exit(1)
 
     if not args["rib"] and not args["update"]:
-        logging.error(
+        raise ValueError(
             "At least one of --rib and/or --update must be specified!"
         )
-        exit(1)
 
     if args["continuous"]:
         continuous(args)
@@ -447,6 +454,14 @@ def main():
         get_range(args)
     elif args["ymd"]:
         get_day(args)
+    elif args["yesterday"]:
+        delta = datetime.timedelta(days=1)
+        yesterday = datetime.datetime.strftime(
+            datetime.datetime.now() - delta, cfg.DAY_FORMAT
+        )
+        args["ymd"] = yesterday
+        get_day(args)
+
 
 if __name__ == '__main__':
     main()
