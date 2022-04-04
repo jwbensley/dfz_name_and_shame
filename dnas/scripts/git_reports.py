@@ -235,6 +235,17 @@ def publish_range(end: str = "", start: str = ""):
         publish(ymd)
         logging.info(f"Done {i+1}/{total}")
 
+def yesterday():
+    """
+    A wrapped function to generate the report and publish for yesterday.
+    """
+    delta = datetime.timedelta(days=1)
+    yesterday = datetime.datetime.strftime(
+        datetime.datetime.now() - delta, cfg.DAY_FORMAT
+    )
+    generate(yesterday)
+    publish(yesterday)
+
 def main():
 
     args = parse_args()
