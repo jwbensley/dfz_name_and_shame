@@ -1,6 +1,9 @@
 # Don't sync test renders of READMEs to GitHub
 **/README.html
 
+# Dont sync Redis backups
+redis/backups/*
+
 # Don't sync secrets to GitHub
 **/redis_auth.py
 **/twitter_auth.py
