@@ -293,6 +293,9 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
         if day_stats:
             if file in day_stats.file_list and not args["overwrite"]:
                 logging.info(f"Skipping {file}, already in {day_key}")
+                if args["remove"]:
+                    logging.debug(f"Deleting {file}")
+                    os.remove(file)
                 continue
 
             mrt_s = parse_file(file)
