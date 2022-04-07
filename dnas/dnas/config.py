@@ -152,14 +152,14 @@ class config:
             "RIB_INTERVAL": 60,
             "UPD_INTERVAL": 10,
             "RIB_OFFSET": 0,
-            "UPD_OFFSET": 1,
-            "RIB_PREFIX": "rib.",
+            "UPD_OFFSET": 120,
+            "RIB_PREFIX": "",
             "UPD_PREFIX": "",
         }
     )
 
     """
-    Route-Views London
+    Route-Views London/LINX
     RIB dumps are every 2 hours
     RIB dump example: http://archive.routeviews.org/route-views.linx/bgpdata/2021.12/RIBS/rib.20211222.0600.bz2
     UPDATE dumps are every 15 minutes
@@ -181,15 +181,15 @@ class config:
             "UPD_KEY": "RV_LINX_UPD",
             "RIB_INTERVAL": 120,
             "UPD_INTERVAL": 15,
-            "RIB_OFFSET": 0,
-            "UPD_OFFSET": 1,
+            "RIB_OFFSET": 120,
+            "UPD_OFFSET": 120,
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
         }
     )
 
     """
-    Route-Views Sydnex
+    Route-Views Sydney/Equinix Sydney
     RIB dumps are every 2 hours
     RIB dump example: http://archive.routeviews.org/route-views.sydney/bgpdata/2021.12/RIBS/rib.20211201.0600.bz2
     UPDATE dumps are every 15 minutes
@@ -211,8 +211,8 @@ class config:
             "UPD_KEY": "RV_SYDNEY_UPD",
             "RIB_INTERVAL": 120,
             "UPD_INTERVAL": 15,
-            "RIB_OFFSET": 0,
-            "UPD_OFFSET": 1,            
+            "RIB_OFFSET": 120,
+            "UPD_OFFSET": 120,            
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
         }
@@ -242,7 +242,7 @@ class config:
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 0,
-            "UPD_OFFSET": 1,
+            "UPD_OFFSET": 120,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
         }
@@ -272,7 +272,7 @@ class config:
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 0,
-            "UPD_OFFSET": 1,
+            "UPD_OFFSET": 120,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
         }
