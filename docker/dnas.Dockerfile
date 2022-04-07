@@ -3,7 +3,8 @@ ARG OS="linux"
 FROM ubuntu:22.04
 LABEL description="DNAS"
 
-# Install all required programs, PyPy and modules in a single command to reduce docker image layers:
+# Keep this as one giant run command to reduce the number of layers in the image.
+# Remote apt cache, pip cache, pypy tar ball etc. to also reduce the image size.
 RUN apt-get update && \
 DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install ca-certificates wget bzip2 gzip unzip git less whois netbase vim ssh && \
 apt-get clean && \
@@ -20,10 +21,7 @@ cd pypy3.8-v7.3.7-aarch64/bin/ && \
 ./pypy3 -mpip install --no-cache-dir redis && \
 ./pypy3 -mpip install --no-cache-dir tweepy
 
-# Copy in the code directory only
-COPY ./dnas/ /opt/dnas/dnas/
-
-# Grab the SSH identify from GitHub so that the DNAS container can push commits, and premptively create SSH keys used for pushing
+# This is needed to clone the reports repo as the dnasbot user:
 RUN mkdir -p /root/.ssh && \
 chmod 0700 /root/.ssh && \
 ssh-keyscan github.com > /root/.ssh/known_hosts && \
@@ -32,5 +30,7 @@ touch /root/.ssh/id_ed25519.pub && \
 chmod 600 /root/.ssh/id_ed25519 && \
 chmod 600 /root/.ssh/id_ed25519.pub
 
-# Copy in the config file to auth as the DNAS bot
 COPY ./git/gitconfig /root/.gitconfig
+
+# Make sure this is last because the mostly likely part of the image to change is the Git repo
+COPY ./dnas/ /opt/dnas/

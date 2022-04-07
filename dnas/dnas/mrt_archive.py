@@ -96,11 +96,12 @@ class mrt_archive:
         RIPE RIB dumps are every 1 hours.
 
         When downloading rib dumps from AS57355, calculate the time of the last
-        whole 8 hour interval. RIPE RIB files are dumped every 8 hours, if it's
-        09.00 we're half way through the 08.00 to 16.00 time period,
-        which will be available from 16.00 onwards. This means that the latest
-        complete RIB dump we can download at 09.00 would be from the 00.00-08.00
-        period and it would be called "0000". h_delta gets us back to 00.00.
+        whole 1 hour interval. AS57355 RIB files are dumped every 1 hours.
+        If it's 09.30 we're half way through the 09.00 to 10.00 time period,
+        which will be available from 10.00 onwards.
+        This means that the latest complete RIB dump we can download at 09.00
+        would be from the 08.00-09.00 period and it would be called "0800".
+        h_delta gets us back to 08.00.
 
         If this machine is in a different timezone to the archive server, an
         additional offset is required, RIB_OFFSET.
@@ -108,9 +109,13 @@ class mrt_archive:
         hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
         mod = hours % (self.RIB_INTERVAL // 60)
         if mod == 0:
-            h_delta = datetime.timedelta(hours=(self.RIB_INTERVAL // 60))
+            h_delta = datetime.timedelta(
+                hours = (self.RIB_INTERVAL // 60) + (self.RIB_OFFSET // 60)
+            )
         else:
-            h_delta = datetime.timedelta(hours=((self.RIB_INTERVAL // 60) + mod))
+            h_delta = datetime.timedelta(
+                hours = (self.RIB_INTERVAL // 60) + mod + (self.RIB_OFFSET // 60)
+            )
 
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta,
@@ -127,11 +132,13 @@ class mrt_archive:
         RIPE RIB dumps are every 8 hours.
 
         When downloading rib dumps from RIPE, calculate the time of the last
-        whole RIB dump interval. AS57355 RIB files are dumped every hour, if
-        it's 09.30 we're half way through the 09.00 to 10.00 time period,
-        which will be available from 10.00 onwards. This means that the latest
-        complete RIB dump we can download at 09.00 would be from the 08.00-09.00
-        period, and it would be called "0800". h_delta gets us back to 08.00.
+        whole RIB dump interval. RIPE RIB files are dumped every 8 hours, on
+        round 8 hour intervals.
+        If it's 09.00 we're part way through the 08.00 to 16.00 time period,
+        which will be available from 16.00 onwards.
+        This means that the latest complete RIB dump we can download at 09.00
+        would be from the 00.00-08.00 period and it would be called "0000".
+        h_delta gets us back to 00.00.
 
         If this machine is in a different timezone to the archive server, an
         additional offset is required, RIB_OFFSET.
@@ -139,9 +146,13 @@ class mrt_archive:
         hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
         mod = hours % (self.RIB_INTERVAL // 60)
         if mod == 0:
-            h_delta = datetime.timedelta(hours=(self.RIB_INTERVAL // 60))
+            h_delta = datetime.timedelta(
+                hours = (self.RIB_INTERVAL // 60) + (self.RIB_OFFSET // 60)
+            )
         else:
-            h_delta = datetime.timedelta(hours=((self.RIB_INTERVAL // 60) + mod))
+            h_delta = datetime.timedelta(
+                hours = (self.RIB_INTERVAL // 60) + mod + (self.RIB_OFFSET // 60)
+            )
 
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta,
@@ -159,21 +170,26 @@ class mrt_archive:
 
         When downloading rib dumps from route-views, we calculate the
         time either 2 or 3 hours ago from now(). RV RIB files are dumped
-        every 2 hours, if it's 09.00 we're half way through the 08.00 to 10.00
-        time period, which will be available from 10.00 onwards. This means
-        that the latest complete RIB dump we can download at 09.00 would be
-        from 08.00. h_delta gets us back to 08.00.
+        every 2 hours on the even hour interval. This means that if it's
+        09.00 we're half way through the 08.00 to 10.00 time period, which
+        will be available from 10.00 onwards.
+        This means that the latest complete RIB dump we can download at 09.00
+        would be from 06.00 to 08.00. h_delta gets us back to 06.00.
 
         If this machine is in a different timezone to the archive server, an
         additional offset is required, RIB_OFFSET.
         """
         hours = int(datetime.datetime.strftime(datetime.datetime.now(), "%H"))
-        if hours % (self.RIB_INTERVAL // 60) != 0:
-            hours = ((self.RIB_INTERVAL // 60) + 1) + self.RIB_OFFSET
+        mod = hours % (self.RIB_INTERVAL // 60)
+        if mod == 0:
+            h_delta = datetime.timedelta(
+                hours = (self.RIB_INTERVAL // 60) + (self.RIB_OFFSET // 60)
+            )
         else:
-            hours = (self.RIB_INTERVAL // 60) + self.RIB_OFFSET
+            h_delta = datetime.timedelta(
+                hours = (self.RIB_INTERVAL // 60) + mod + (self.RIB_OFFSET // 60)
+            )
 
-        h_delta = datetime.timedelta(hours=hours)
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta,
             "%Y%m%d.%H00"
@@ -227,7 +243,7 @@ class mrt_archive:
         else:
             m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
 
-        h_delta = datetime.timedelta(hours=self.UPD_OFFSET)
+        h_delta = datetime.timedelta(minutes=self.UPD_OFFSET)
 
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta - m_delta,
@@ -246,17 +262,18 @@ class mrt_archive:
         When downloading updates from RIPE, we calculate the name of
         the last complete 5 minute update file. At 09.13 the last complete
         update file will be called "0905", it will be for the period
-        09.05-09.10. So the filename can be calculatd as:
+        09.05-09.10. So the filename could be calculatd as:
         "round down to the last 5 minute whole interval - another 5 minutes".
 
         If the current time is 09.15 (a round 15 minute interval) a dump
         should be available called "0910" for 09.10-09.15 period. The archive
-        might be slow to update though.
+        might be slow to update though. To be safe, always generate the time
+        2x the interval period.
 
-        To be safe:
-        At 09.13 this function will download the "0905" file (09.05-09.10).
-        At 09.15 this function will download the "0905" file too.
-        At 09.17 this function will download the "0910" file (09.10-09.15).
+        Example:
+        At 09.13 this function will download the "0900" file (09.00-09.05).
+        At 09.15 this function will download the "0905" file (09.05-09.10)
+        At 09.17 this function will download the "0905" file too.
 
         If this machine is in a different timezone to the archive server, an
         additional offset is required, UPD_OFFSET.
@@ -268,7 +285,7 @@ class mrt_archive:
         else:
             m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
 
-        h_delta = datetime.timedelta(hours=self.UPD_OFFSET)
+        h_delta = datetime.timedelta(minutes=self.UPD_OFFSET)
 
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta - m_delta,
@@ -287,17 +304,18 @@ class mrt_archive:
         When downloading updates from route-views, we calculate the name of
         the last complete 15 minute update file. At 09.13 the last complete
         update file will be called "0845", it will be for the period
-        08.45-09.00. So the filename can be calculatd as:
+        08.45-09.00. So the filename could be calculatd as:
         "round down to the last 15 minute whole interval - another 15 minutes".
 
         If the current time is 09.15 (a round 15 minute interval) a dump
         should be available called "0900" for 09.00-09.15 period. The archive
-        might be slow to update though.
+        might be slow to update though. To be safe, generate the time two
+        intervals ago.
 
         To be safe:
-        At 09.13 this function will download the "0845" file (08.45-09.00).
-        At 09.15 this function will download the "0845" file too.
-        At 09.17 this function will download the "0900" file (09.00-09.15).
+        At 09.13 this function will download the "0830" file (08.30-08.45).
+        At 09.15 this function will download the "0845" file (08.45-09.00)
+        At 09.17 this function will download the "0845" file too.
 
         If this machine is in a different timezone to the archive server, an
         additional offset is required, RV_UPD_OFFSET.
@@ -309,9 +327,11 @@ class mrt_archive:
         else:
             m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
 
-        h_delta = datetime.timedelta(hours=self.UPD_OFFSET)
+        h_delta = datetime.timedelta(minutes=self.UPD_OFFSET)
 
-        ymd_hm = datetime.datetime.strftime(datetime.datetime.now()-h_delta-m_delta, cfg.TIME_FORMAT)
+        ymd_hm = datetime.datetime.strftime(
+            datetime.datetime.now() - h_delta - m_delta, cfg.TIME_FORMAT
+        )
         return self.UPD_PREFIX + ymd_hm + "." + self.MRT_EXT
 
     def gen_rib_fn_date(self, ymd_hm: str = None) -> str:

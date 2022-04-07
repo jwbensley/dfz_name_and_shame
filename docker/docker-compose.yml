@@ -22,6 +22,7 @@ services:
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
+      - /etc/localtime:/etc/localtime
       - /media/usb0/:/media/usb0/
       - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/dnas/redis_auth.py
     restart: always
@@ -41,6 +42,7 @@ services:
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
+      - /etc/localtime:/etc/localtime
       - /media/usb0/:/media/usb0/
       - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/dnas/redis_auth.py
     restart: always
