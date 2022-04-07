@@ -71,7 +71,42 @@ def continuous(args: Dict[str, Any] = None):
                     logging.error(e)
                     pass
 
-        time.sleep(60)
+        time.sleep(300)
+
+def get_day(args: Dict[str, Any] = None):
+    """
+    Download all the MRTs for a specific day.
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    if not args["ymd"]:
+        raise ValueError(
+            f"Missing required arguments: ymd={args['ymd']}"
+        )
+
+    url_list = gen_urls_day(args)
+    if not url_list:
+        logging.info("Nothing to download")
+    else:
+        get_mrts(replace=args["replace"], url_list=url_list)
+
+def get_latest(args: Dict[str, Any] = None):
+    """
+    Get the latest MRT file from each archive.
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    url_list = gen_urls_latest(args)
+    if not url_list:
+        logging.info("Nothing to download")
+    else:
+        get_mrts(replace=args["replace"], url_list=url_list)
 
 def get_mrts(replace: bool = False, url_list: List[str] = None):
     """
@@ -114,26 +149,6 @@ def get_mrts(replace: bool = False, url_list: List[str] = None):
 
     logging.info(f"Finished, downloaded {i}/{len(url_list)}")
 
-def get_day(args: Dict[str, Any] = None):
-    """
-    Download all the MRTs for a specific day.
-    """
-    if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
-
-    if not args["ymd"]:
-        raise ValueError(
-            f"Missing required arguments: ymd={args['ymd']}"
-        )
-
-    url_list = gen_urls_day(args)
-    if not url_list:
-        logging.info("Nothing to download")
-    else:
-        get_mrts(replace=args["replace"], url_list=url_list)
-
 def get_range(args: Dict[str, Any] = None):
     """
     Download all the MRTs for between a specific start and end date inclusive.
@@ -172,6 +187,39 @@ def gen_urls_day(args: Dict[str, Any] = None) -> List[str]:
     args["start"] = args["ymd"] + ".0000"
     args["end"] = args["ymd"] + ".2359"
     return gen_urls_range(args)
+
+def gen_urls_latest(args: Dict[str, Any] = None) -> List[str]:
+    """
+    Return a list of URLs for the latest MRT file for each archive
+    """
+    if not args:
+        raise ValueError(
+            f"Missing required arguments: args={args}"
+        )
+
+    mrt_a = mrt_archives()
+    url_list = []
+
+    for arch in mrt_a.archives:
+        if (args["enabled"] and not arch.ENABLED):
+            continue
+        logging.debug(f"Checking archive {arch.NAME}...")
+
+        if args["rib"]:
+            url_list.append(
+                arch.gen_rib_url(
+                    arch.gen_latest_rib_fn()
+                )
+            )
+
+        if args["update"]:
+            url_list.append(
+                arch.gen_upd_url(
+                    arch.gen_latest_upd_fn()
+                )
+            )
+
+    return url_list
 
 def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
     """
@@ -435,7 +483,10 @@ def main():
         log_path = cfg.LOG_GETTER,
     )
 
-    if (not args["continuous"] and not args["range"] and not args["ymd"] and
+    if (not args["continuous"] and
+        not args["latest"] and
+        not args["range"] and
+        not args["ymd"] and
         not args["yesterday"]
     ):
         raise ValueError(
@@ -450,6 +501,8 @@ def main():
 
     if args["continuous"]:
         continuous(args)
+    if args["latest"]:
+        get_latest(args)
     elif args["range"]:
         get_range(args)
     elif args["ymd"]:
