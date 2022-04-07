@@ -106,8 +106,6 @@ def get_latest(args: Dict[str, Any] = None):
     if not url_list:
         logging.info("Nothing to download")
     else:
-        print(url_list)
-        exit(0)
         get_mrts(replace=args["replace"], url_list=url_list)
 
 def get_mrts(replace: bool = False, url_list: List[str] = None):
