@@ -153,7 +153,7 @@ class config:
             "UPD_INTERVAL": 10,
             "RIB_OFFSET": 0,
             "UPD_OFFSET": 120,
-            "RIB_PREFIX": "",
+            "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "",
         }
     )
