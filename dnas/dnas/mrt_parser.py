@@ -344,7 +344,7 @@ class mrt_parser:
 
                     # COMMUNITY or LARGE_COMMUNITY
                     elif (attr_t == 8 or attr_t == 32):
-                        comm_set = attr["value"]
+                        comm_set.extend(attr["value"])
 
                     # MP_REACH_NLRI
                     elif attr_t == 14:
@@ -359,20 +359,6 @@ class mrt_parser:
                             prefixes.append(
                                 nlri["prefix"] + "/" + str(nlri["prefix_length"])
                             )
-
-                        for prefix in prefixes:
-                            if bogon_ip.is_v6_bogon(prefix):
-                                bogon_prefixes.append(prefix)
-
-                            if prefix not in upd_prefix:
-                                upd_prefix[prefix] = {
-                                    "advt": 1,
-                                    "withdraws": 0,
-                                }
-                                origin_asns_prefix[prefix] = set([origin_asn])
-                            else:
-                                upd_prefix[prefix]["advt"] += 1
-                                origin_asns_prefix[prefix].add(origin_asn)
 
                     # MP_UNREACH_NLRI
                     elif attr_t == 15:
@@ -399,15 +385,31 @@ class mrt_parser:
 
                 """
                 Note that IPv6 prefix advertisements will be encoded as an NLRI 
-                NLRI attribute of a MP_REACH_NLRI update as above.
+                NLRI attribute of a MP_REACH_NLRI update as above...
+                """
+                for prefix in prefixes:
+                    if bogon_ip.is_v6_bogon(prefix):
+                        bogon_prefixes.append(prefix)
+
+                    if prefix not in upd_prefix:
+                        upd_prefix[prefix] = {
+                            "advt": 1,
+                            "withdraws": 0,
+                        }
+                        origin_asns_prefix[prefix] = set([origin_asn])
+                    else:
+                        upd_prefix[prefix]["advt"] += 1
+                        origin_asns_prefix[prefix].add(origin_asn)
+
+                """
                 IPv4 prefix advertisements are encoded in the NLRI field of
-                a BGP UPDATE message, not as multi-protocol attribute.
+                a BGP UPDATE message, not as a multi-protocol attribute.
                 """
                 if mrt_e.data["bgp_message"]["nlri"]:
                     for nlri in mrt_e.data["bgp_message"]["nlri"]:
-                        prefixes.append(nlri["prefix"] + "/" + str(nlri["prefix_length"]))
+                        prefix = nlri["prefix"] + "/" + str(nlri["prefix_length"])
+                        prefixes.append(prefix)
 
-                    for prefix in prefixes:
                         if bogon_ip.is_v4_bogon(prefix):
                             bogon_prefixes.append(prefix)
 
