@@ -293,7 +293,6 @@ class mrt_parser:
             bogon_prefixes = []
             comm_set = []
 
-
             peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
                 upd_peer_asn[peer_asn] = {
@@ -303,30 +302,30 @@ class mrt_parser:
 
             """
             Some RIPE MRTs don't always contain "withdraw_routes" key, whereas
-            all Route-Views MRTs do. Yay!
+            all Route-Views MRTs do. The key may also be present but empty. Yay!
+            These are IPv4 withdraws, IPv6 withdraws are in attrib MP_UNREACH_NLRI
             """
-            if "withdrawn_routes" in mrt_e.data["bgp_message"]:
-                if len(mrt_e.data["bgp_message"]["withdrawn_routes"]) > 0:
-                    upd_peer_asn[peer_asn]["withdraws"] += 1
-                    mrt_s.total_withd += 1
+            if withdrawn_routes := mrt_e.data["bgp_message"].get("withdrawn_routes"):
+                upd_peer_asn[peer_asn]["withdraws"] += 1
+                mrt_s.total_withd += 1
 
-                    for withdrawn_route in mrt_e.data["bgp_message"]["withdrawn_routes"]:
-                        prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
-                        if prefix not in upd_prefix:
-                            upd_prefix[prefix] = {
-                                "advt": 0,
-                                "withdraws": 1,
-                            }
-                            origin_asns_prefix[prefix] = set()
-                        else:
-                            upd_prefix[prefix]["withdraws"] += 1
+                for withdrawn_route in withdrawn_routes:
+                    prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
+                    if prefix not in upd_prefix:
+                        upd_prefix[prefix] = {
+                            "advt": 0,
+                            "withdraws": 1,
+                        }
+                        origin_asns_prefix[prefix] = set()
+                    else:
+                        upd_prefix[prefix]["withdraws"] += 1
 
-            if len(mrt_e.data["bgp_message"]["path_attributes"]) > 1:
+            if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
                 upd_peer_asn[peer_asn]["advt"] += 1
                 mrt_s.total_advt += 1
                 prefixes = []
 
-                for attr in mrt_e.data["bgp_message"]["path_attributes"]:
+                for attr in path_attributes:
                     #attr_t = attr["type"][0]   ##### FIX ME
                     attr_t = next(iter(attr["type"]))
 
@@ -360,9 +359,43 @@ class mrt_parser:
                             prefixes.append(
                                 nlri["prefix"] + "/" + str(nlri["prefix_length"])
                             )
-                            for prefix in prefixes:
-                                if bogon_ip.is_v6_bogon(prefix):
-                                    bogon_prefixes.append(prefix)
+
+                        for prefix in prefixes:
+                            if bogon_ip.is_v6_bogon(prefix):
+                                bogon_prefixes.append(prefix)
+
+                            if prefix not in upd_prefix:
+                                upd_prefix[prefix] = {
+                                    "advt": 1,
+                                    "withdraws": 0,
+                                }
+                                origin_asns_prefix[prefix] = set([origin_asn])
+                            else:
+                                upd_prefix[prefix]["advt"] += 1
+                                origin_asns_prefix[prefix].add(origin_asn)
+
+                    # MP_UNREACH_NLRI
+                    elif attr_t == 15:
+                        """
+                        IPV6_UNICAST:
+                        if 2 in attr["value"]["afi"] and 
+                        1 in attr["value"]["safi"]
+                        ^ This is always the case.
+                        """
+                        if withdrawn_routes := attr["value"].get("withdrawn_routes"):
+                            upd_peer_asn[peer_asn]["withdraws"] += 1
+                            mrt_s.total_withd += 1
+
+                        for withdrawn_route in withdrawn_routes:
+                            prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
+                            if prefix not in upd_prefix:
+                                upd_prefix[prefix] = {
+                                    "advt": 0,
+                                    "withdraws": 1,
+                                }
+                                origin_asns_prefix[prefix] = set()
+                            else:
+                                upd_prefix[prefix]["withdraws"] += 1
 
                 """
                 Note that IPv6 prefix advertisements will be encoded as an NLRI 
@@ -373,21 +406,21 @@ class mrt_parser:
                 if mrt_e.data["bgp_message"]["nlri"]:
                     for nlri in mrt_e.data["bgp_message"]["nlri"]:
                         prefixes.append(nlri["prefix"] + "/" + str(nlri["prefix_length"]))
+
                     for prefix in prefixes:
                         if bogon_ip.is_v4_bogon(prefix):
                             bogon_prefixes.append(prefix)
 
-                for prefix in prefixes:
+                        if prefix not in upd_prefix:
+                            upd_prefix[prefix] = {
+                                "advt": 1,
+                                "withdraws": 0,
+                            }
+                            origin_asns_prefix[prefix] = set([origin_asn])
+                        else:
+                            upd_prefix[prefix]["advt"] += 1
+                            origin_asns_prefix[prefix].add(origin_asn)
 
-                    if prefix not in upd_prefix:
-                        upd_prefix[prefix] = {
-                            "advt": 1,
-                            "withdraws": 0,
-                        }
-                        origin_asns_prefix[prefix] = set([origin_asn])
-                    else:
-                        upd_prefix[prefix]["advt"] += 1
-                        origin_asns_prefix[prefix].add(origin_asn)
 
             """
             Unique prefixes only with additional origin ASNs for thr same
@@ -482,14 +515,12 @@ class mrt_parser:
             elif len(mrt_e.origin_asns) > len(mrt_s.bogon_prefixes[0].origin_asns):
                 mrt_s.bogon_prefixes = [mrt_e]
 
-        ################## FIX ME - REMOVE "if" mrt_s is empty
-        if len(longest_as_path[0].as_path) > len(mrt_s.longest_as_path[0].as_path):
-            mrt_s.longest_as_path = longest_as_path.copy()
+        mrt_s.longest_as_path = longest_as_path.copy()
 
-        ################## FIX ME - REMOVE "if" mrt_s is empty
-        if len(longest_comm_set[0].comm_set) > len(mrt_s.longest_comm_set[0].comm_set):
-            mrt_s.longest_comm_set = longest_comm_set.copy()
+        mrt_s.longest_comm_set = longest_comm_set.copy()
 
+        most_updates = 0
+        most_upd_prefixes = []
         for prefix in upd_prefix:
             if (upd_prefix[prefix]["advt"] == mrt_s.most_advt_prefixes[0].advt and
                 mrt_s.most_advt_prefixes[0].advt > 0):
@@ -512,8 +543,6 @@ class mrt_parser:
                     )
                 ]
 
-
-        for prefix in upd_prefix:
             if (upd_prefix[prefix]["withdraws"] == mrt_s.most_withd_prefixes[0].withdraws and
                 mrt_s.most_withd_prefixes[0].withdraws > 0):
                 mrt_s.most_withd_prefixes.append(
@@ -534,11 +563,8 @@ class mrt_parser:
                     )
                 ]
 
-        most_updates = 0
-        most_upd_prefixes = []
-        for prefix in upd_prefix:
             if (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]) > most_updates:
-                most_updates = (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"])
+                most_updates = upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]
                 most_upd_prefixes = [prefix]
             elif (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]) == most_updates:
                 most_upd_prefixes.append(prefix)
@@ -553,6 +579,8 @@ class mrt_parser:
         ]
 
 
+        most_updates = 0
+        most_upd_asns = []
         for asn in upd_peer_asn:
             if (upd_peer_asn[asn]["advt"] == mrt_s.most_advt_peer_asn[0].advt and
                 mrt_s.most_advt_peer_asn[0].advt > 0):
@@ -574,7 +602,6 @@ class mrt_parser:
                     )
                 ]
 
-        for asn in upd_peer_asn:
             if (upd_peer_asn[asn]["withdraws"] == mrt_s.most_withd_peer_asn[0].withdraws and
                 mrt_s.most_withd_peer_asn[0].withdraws > 0):
                 mrt_s.most_withd_peer_asn.append(
@@ -595,9 +622,6 @@ class mrt_parser:
                     )
                 ]
 
-        most_updates = 0
-        most_upd_asns = []
-        for asn in upd_peer_asn:
             if (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"]) > most_updates:
                 most_updates = (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"])
                 most_upd_asns = [asn]
@@ -613,23 +637,25 @@ class mrt_parser:
             ) for asn in most_upd_asns
         ]
 
-        most_origins = 0
-        most_origin_prefixes = []
         for prefix in origin_asns_prefix:
-            if len(origin_asns_prefix[prefix]) > most_origins:
-                most_origins = len(origin_asns_prefix[prefix])
-                most_origin_prefixes = [prefix]
-            elif len(origin_asns_prefix[prefix]) == most_origins:
-                most_origin_prefixes.append(prefix)
-
-        mrt_s.most_origin_asns = [
-            mrt_entry(
-                filename=orig_filename,
-                origin_asns=origin_asns_prefix[prefix],
-                prefix=prefix,
-                timestamp=file_ts,
-            ) for prefix in most_origin_prefixes
-        ]
+            if len(origin_asns_prefix[prefix]) > len(mrt_s.most_origin_asns[0].origin_asns):
+                mrt_s.most_origin_asns = [
+                    mrt_entry(
+                        filename=orig_filename,
+                        origin_asns=origin_asns_prefix[prefix],
+                        prefix=prefix,
+                        timestamp=file_ts,
+                    )
+                ]
+            elif len(origin_asns_prefix[prefix]) == len(mrt_s.most_origin_asns[0].origin_asns):
+                mrt_s.most_origin_asns.append(
+                    mrt_entry(
+                        filename=orig_filename,
+                        origin_asns=origin_asns_prefix[prefix],
+                        prefix=prefix,
+                        timestamp=file_ts,
+                    )
+                )
 
         advt_per_orig_asn_sorted = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
         mrt_s.most_advt_origin_asn = [

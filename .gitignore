@@ -14,7 +14,8 @@ redis/backups/*
 **/*.bz2
 **/*.gz
 
-# Don't sync other shite to GitHub
-__pycache__/
-venv/
+# Don't sync pycache
+**/__pycache__/
 
+# Don't sync virtualenv
+**/venv/

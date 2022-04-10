@@ -246,6 +246,7 @@ def parse_file(filename: str = None, keep_chunks: bool = False) -> 'mrt_stats':
         mrt_chunks = Pool.map(mrt_parser.parse_rib_dump, file_chunks)
     else:
         mrt_chunks = Pool.map(mrt_parser.parse_upd_dump, file_chunks)
+
     Pool.close()
 
     if not keep_chunks:
