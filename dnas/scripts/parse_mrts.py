@@ -465,10 +465,7 @@ def process_range(args: Dict[str, Any] = None):
                 rib_filenames = arch.gen_rib_fns_day(ymd)
 
                 for filename in rib_filenames[:]:
-                    raw_ts = '.'.join(filename.split(".")[1:3])
-                    timestamp = datetime.datetime.strptime(
-                        raw_ts, cfg.TIME_FORMAT
-                    )
+                    timestamp = arch.ts_from_filename(filename)
                     if (timestamp < start_time or timestamp > end_time):
                         rib_filenames.remove(filename)
 
@@ -488,10 +485,7 @@ def process_range(args: Dict[str, Any] = None):
                 upd_filenames = arch.gen_upd_fns_day(ymd)
 
                 for filename in upd_filenames[:]:
-                    raw_ts = '.'.join(filename.split(".")[1:3])
-                    timestamp = datetime.datetime.strptime(
-                        raw_ts, cfg.TIME_FORMAT
-                    )
+                    timestamp = arch.ts_from_filename(filename)
                     if (timestamp < start_time or timestamp > end_time):
                         upd_filenames.remove(filename)
 
