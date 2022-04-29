@@ -11,28 +11,99 @@ class mrt_archive:
 
     def __init__(
         self,
-        BASE_URL=None,
-        ENABLED=False,
-        MRT_DIR=None,
-        MRT_EXT=None,
-        NAME=None,
-        RIB_GLOB=None,
-        RIB_INTERVAL=None,
-        RIB_KEY=None,
-        RIB_OFFSET=None,
-        RIB_PREFIX=None,
-        RIB_URL=None,
-        TYPE=None,
-        UPD_GLOB=None,
-        UPD_INTERVAL=None,
-        UPD_KEY=None,
-        UPD_OFFSET=None,
-        UPD_PREFIX=None,
-        UPD_URL=None,
-        get_rib_url=None,
-        get_upd_url=None,
+        BASE_URL: str = None,
+        ENABLED: bool = False,
+        MRT_DIR: str = None,
+        MRT_EXT: str = None,
+        NAME: str = None,
+        RIB_GLOB: str = None,
+        RIB_INTERVAL: int = None,
+        RIB_KEY: str = None,
+        RIB_OFFSET: int = None,
+        RIB_PREFIX: str = None,
+        RIB_URL: str = None,
+        TYPE: str = None,
+        UPD_GLOB: str = None,
+        UPD_INTERVAL: int = None,
+        UPD_KEY: str = None,
+        UPD_OFFSET: int = None,
+        UPD_PREFIX: str = None,
+        UPD_URL: str = None,
 
-    ) -> None:
+    ):
+
+        if type(BASE_URL) != str:
+            raise TypeError(
+                f"BASE_URL is not of type str: {type(BASE_URL)}"
+            )
+        if type(ENABLED) != bool:
+            raise TypeError(
+                f"ENABLED is not of type str: {type(ENABLED)}"
+            )
+        if type(MRT_DIR) != str:
+            raise TypeError(
+                f"MRT_DIR is not of type str: {type(MRT_DIR)}"
+            )
+        if type(MRT_EXT) != str:
+            raise TypeError(
+                f"MRT_EXT is not of type str: {type(MRT_EXT)}"
+            )
+        if type(NAME) != str:
+            raise TypeError(
+                f"NAME is not of type str: {type(NAME)}"
+            )
+        if type(RIB_GLOB) != str:
+            raise TypeError(
+                f"RIB_GLOB is not of type str: {type(RIB_GLOB)}"
+            )
+        if type(RIB_INTERVAL) != int:
+            raise TypeError(
+                f"RIB_INTERVAL is not of type str: {type(RIB_INTERVAL)}"
+            )
+        if type(RIB_KEY) != str:
+            raise TypeError(
+                f"RIB_KEY is not of type str: {type(RIB_KEY)}"
+            )
+        if type(RIB_OFFSET) != int:
+            raise TypeError(
+                f"RIB_OFFSET is not of type int: {type(RIB_OFFSET)}"
+            )
+        if type(RIB_PREFIX) != str:
+            raise TypeError(
+                f"RIB_PREFIX is not of type str: {type(RIB_PREFIX)}"
+            )
+        if type(RIB_URL) != str:
+            raise TypeError(
+                f"RIB_URL is not of type str: {type(RIB_URL)}"
+            )
+        if type(TYPE) != str:
+            raise TypeError(
+                f"TYPE is not of type str: {type(TYPE)}"
+            )
+        if type(UPD_GLOB) != str:
+            raise TypeError(
+                f"UPD_GLOB is not of type str: {type(UPD_GLOB)}"
+            )
+        if type(UPD_INTERVAL) != int:
+            raise TypeError(
+                f"UPD_INTERVAL is not of type str: {type(UPD_INTERVAL)}"
+            )
+        if type(UPD_KEY) != str:
+            raise TypeError(
+                f"UPD_KEY is not of type str: {type(UPD_KEY)}"
+            )
+        if type(UPD_OFFSET) != int:
+            raise TypeError(
+                f"UPD_OFFSET is not of type int: {type(UPD_OFFSET)}"
+            )
+        if type(UPD_PREFIX) != str:
+            raise TypeError(
+                f"UPD_PREFIX is not of type str: {type(UPD_PREFIX)}"
+            )
+        if type(UPD_URL) != str:
+            raise TypeError(
+                f"UPD_URL is not of type str: {type(UPD_URL)}"
+            )
 
         self.BASE_URL = BASE_URL
         self.ENABLED = ENABLED
@@ -69,10 +140,17 @@ class mrt_archive:
                 f"List of URL chunks is not of type list: {type(url_chunks)}"
             )
 
-        return reduce(
-            urllib.parse.urljoin,
-            map(lambda x : x.lstrip("/"), url_chunks)
-        )
+        path = ""
+        for chunk in url_chunks[1:]:
+            path += chunk
+        path = path.replace("///", "/")
+        path = path.replace("//", "/")
+        path = path.lstrip("/")
+
+        if url_chunks[0][-1] != "/":
+            return url_chunks[0] + "/" + path
+        else:
+            return url_chunks[0] + path
 
     def gen_latest_rib_fn(self) -> str:
         """
