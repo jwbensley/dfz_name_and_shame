@@ -45,7 +45,7 @@ class bogon_ip:
 
         ip_net = ipaddress.ip_network(subnet)
         if type(ip_net) != ipaddress.IPv4Network:
-            raise TypeError(
+            raise ValueError(
                 f"{subnet} is not a valid IPv4 subnet: {type(ip_net)}"
             )
 
@@ -72,7 +72,7 @@ class bogon_ip:
 
         ip_net = ipaddress.ip_network(subnet)
         if type(ip_net) != ipaddress.IPv6Network:
-            raise TypeError(
+            raise ValueError(
                 f"{subnet} is not a valid IPv6 subnet: {type(ip_net)}"
             )
 

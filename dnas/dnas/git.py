@@ -47,7 +47,7 @@ class git:
         Remove all files currently in the git index for commit.
         """
         ret = subprocess.run(
-            ["git", "restore", "*"],
+            ["git", "restore", "--staged", "*"],
             cwd=cfg.GIT_BASE,
             capture_output=True,
         )
@@ -109,7 +109,7 @@ class git:
                 logging.debug(f"Nothing committed, no changed with remote")
                 return
             raise ChildProcessError(
-                f"Couldn't commit staged changed to git in {cfg.GIT_BASE}\n"
+                f"Couldn't commit staged changes to git in {cfg.GIT_BASE}\n"
                 f"args: {ret.args}\n"
                 f"stdout: {ret.stdout.decode()}\n"
                 f"stderr: {ret.stderr.decode()}"
