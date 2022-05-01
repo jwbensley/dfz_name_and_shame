@@ -364,12 +364,10 @@ class mrt_archive:
             m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
 
         h_delta = datetime.timedelta(minutes=self.UPD_OFFSET)
-
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta - m_delta,
             cfg.TIME_FORMAT
         )
-
         return self.UPD_PREFIX + ymd_hm + "." + self.MRT_EXT
 
     def gen_latest_upd_fn_rv(self) -> str:
@@ -467,12 +465,15 @@ class mrt_archive:
             )
 
         diff = end - start
-        count = int(diff.total_seconds()) // (self.RIB_INTERVAL * 60)
+        mins = int(diff.total_seconds() // 60)
         filenames = []
-        for i in range(0, count + 1):
-            delta = datetime.timedelta(minutes=(i * self.RIB_INTERVAL))
+        for i in range(0, mins + 2):
+            delta = datetime.timedelta(minutes=(i * 1))
             ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_rib_fn_date(ymd_hm))
+            hm = int(ymd_hm.split(".")[1][:2])*60
+            hm += int(ymd_hm.split(".")[1][2:])
+            if (hm % self.RIB_INTERVAL == 0):
+                filenames.append(self.gen_upd_fn_date(ymd_hm))
 
         return filenames
 
@@ -524,8 +525,8 @@ class mrt_archive:
                 f"is not {self.RIB_PREFIX}"
             )
 
-        ym = filename.split(".")[0][0:6]
-        ymd_hm = '.'.join(filename.split(".")[0:2])
+        ym = filename.split(".")[1][0:6]
+        ymd_hm = '.'.join(filename.split(".")[1:3])
 
         mrt_archive.valid_ym(ym)
         mrt_archive.valid_ymd_hm(ymd_hm)
@@ -693,12 +694,15 @@ class mrt_archive:
             )
 
         diff = end - start
-        count = int(diff.total_seconds()) // (self.UPD_INTERVAL * 60)
+        mins = int(diff.total_seconds() // 60)
         filenames = []
-        for i in range(0, count + 1):
-            delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
+        for i in range(0, mins + 2):
+            delta = datetime.timedelta(minutes=(i * 1))
             ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_upd_fn_date(ymd_hm))
+            hm = int(ymd_hm.split(".")[1][:2])*60
+            hm += int(ymd_hm.split(".")[1][2:])
+            if (hm % self.UPD_INTERVAL == 0):
+                filenames.append(self.gen_upd_fn_date(ymd_hm))
 
         return filenames
 

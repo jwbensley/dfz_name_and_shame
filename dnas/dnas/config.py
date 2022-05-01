@@ -147,7 +147,7 @@ class config:
             "MRT_DIR": os.path.join(DL_DIR, "AS57355/"),
             "RIB_GLOB": "*.dump",
             "UPD_GLOB": "*.dump",
-            "RIB_KEY": "AS57355Z_RIB",
+            "RIB_KEY": "AS57355_RIB",
             "UPD_KEY": "AS57355_UPD",
             "RIB_INTERVAL": 60,
             "UPD_INTERVAL": 10,

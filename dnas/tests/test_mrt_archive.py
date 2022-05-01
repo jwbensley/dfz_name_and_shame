@@ -1,4 +1,6 @@
+import datetime
 import os
+import re
 import sys
 import unittest
 
@@ -16,6 +18,46 @@ class test_mrt_archive(unittest.TestCase):
 
     cfg = config()
 
+    AS57355_TYPE = "AS57355"
+    AS57355_NAME = "AS57355-Lukasz"
+    AS57355_ENABLED = True
+    AS57355_BASE_URL = "http://192.168.58.8:8000/lukasz/"
+    AS57355_RIB_URL = "/rib/"
+    AS57355_UPD_URL = "/update/"
+    AS57355_MRT_EXT = "dump"
+    AS57355_MRT_DIR = os.path.join(cfg.DL_DIR, "AS57355/")
+    AS57355_RIB_GLOB = "*.dump"
+    AS57355_UPD_GLOB = "*.dump"
+    AS57355_RIB_KEY = "UNIT_TEST_AS57355_RIB"
+    AS57355_UPD_KEY = "UNIT_TEST_AS57355_UPD"
+    AS57355_RIB_INTERVAL = 60
+    AS57355_UPD_INTERVAL = 10
+    AS57355_RIB_PREFIX = "rib."
+    AS57355_UPD_PREFIX =  ""
+    AS57355_RIB_OFFSET = 0
+    AS57355_UPD_OFFSET = 120
+
+    mrt_as57355 = mrt_archive(
+            TYPE = AS57355_TYPE,
+            NAME = AS57355_NAME,
+            ENABLED = AS57355_ENABLED,
+            BASE_URL = AS57355_BASE_URL,
+            RIB_URL = AS57355_RIB_URL,
+            UPD_URL = AS57355_UPD_URL,
+            MRT_EXT = AS57355_MRT_EXT,
+            MRT_DIR = AS57355_MRT_DIR,
+            RIB_GLOB = AS57355_RIB_GLOB,
+            UPD_GLOB = AS57355_UPD_GLOB,
+            RIB_KEY = AS57355_RIB_KEY,
+            UPD_KEY = AS57355_UPD_KEY,
+            RIB_INTERVAL = AS57355_RIB_INTERVAL,
+            UPD_INTERVAL = AS57355_UPD_INTERVAL,
+            RIB_PREFIX = AS57355_RIB_PREFIX,
+            UPD_PREFIX = AS57355_UPD_PREFIX,
+            RIB_OFFSET = AS57355_RIB_OFFSET,
+            UPD_OFFSET = AS57355_UPD_OFFSET,
+        )
+
     RV_TYPE = "RV"
     RV_NAME = "RV_LINX"
     RV_ENABLED = True
@@ -32,8 +74,8 @@ class test_mrt_archive(unittest.TestCase):
     RV_UPD_INTERVAL = 15
     RV_RIB_PREFIX = "rib."
     RV_UPD_PREFIX = "updates."
-    RV_RIB_OFFSET = 2
-    RV_UPD_OFFSET = 2
+    RV_RIB_OFFSET = 120
+    RV_UPD_OFFSET = 120
 
     mrt_rv = mrt_archive(
             TYPE = RV_TYPE,
@@ -72,8 +114,8 @@ class test_mrt_archive(unittest.TestCase):
     RIPE_UPD_INTERVAL = 5
     RIPE_RIB_PREFIX = "bview."
     RIPE_UPD_PREFIX = "updates."
-    RIPE_RIB_OFFSET = 2
-    RIPE_UPD_OFFSET = 2
+    RIPE_RIB_OFFSET = 0
+    RIPE_UPD_OFFSET = 120
 
     mrt_ripe = mrt_archive(
             TYPE = RIPE_TYPE,
@@ -499,20 +541,174 @@ class test_mrt_archive(unittest.TestCase):
         self.assertEqual(self.mrt_ripe.concat_url(["http://www.example.tld", "path", "/to", "/", "/file.abc"]), url)
 
     """
+    How to generate the file names based on the current time, without
+    using the exact same method as the class? Can't be arsed to work this
+    out. For the following group of function tests, let's just check with
+    regex the return value is a valid multiple of the MRT file offset for
+    either today or yesterady (in case this test is being run somewhere
+    near midnight).
+    """
     def test_gen_latest_rib_fn(self):
-        #print(self.mrt_ripe.gen_latest_rib_fn())
-        #print(self.mrt_rv.gen_latest_rib_fn())
+        """
+        For the parent function test that any string is returned for all known
+        MRT archive types, and that an unknown archive type raises an exception
+        """
+        self.assertEqual(
+            self.mrt_as57355.gen_latest_rib_fn(),
+            self.mrt_as57355.gen_latest_rib_fn_as57355()
+        )
+
+        self.assertEqual(
+            self.mrt_ripe.gen_latest_rib_fn(),
+            self.mrt_ripe.gen_latest_rib_fn_ripe()
+        )
+
+        self.assertEqual(
+            self.mrt_rv.gen_latest_rib_fn(),
+            self.mrt_rv.gen_latest_rib_fn_rv()
+        )
+
+        self.mrt_rv.TYPE = "HcSHqWb3C9i2jZqnzVj1"
+        self.assertRaises(ValueError, self.mrt_rv.gen_latest_rib_fn)
+        self.mrt_rv.TYPE = self.RV_TYPE
+
+    def test_gen_latest_rib_fn_as57355(self):
+        rib_name = self.mrt_as57355.gen_latest_rib_fn_as57355()
+        regex = (
+            f"{self.mrt_as57355.RIB_PREFIX}"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            f"\.{self.mrt_as57355.MRT_EXT}"
+        )
+        self.assertTrue(re.match(regex, rib_name))
+        mins = int(rib_name.split(".")[2][:2]) * 60 + int(rib_name.split(".")[2][2:])
+        self.assertTrue(mins % self.mrt_as57355.RIB_INTERVAL == 0)
+
+    def test_gen_latest_rib_fn_ripe(self):
+        rib_name = self.mrt_ripe.gen_latest_rib_fn_ripe()
+        regex = (
+            f"{self.mrt_ripe.RIB_PREFIX}"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            f"\.{self.mrt_ripe.MRT_EXT}"
+        )
+        self.assertTrue(re.match(regex, rib_name))
+        mins = (int(rib_name.split(".")[2][:2]) * 60) + int(rib_name.split(".")[2][2:])
+        self.assertTrue(mins % self.mrt_ripe.RIB_INTERVAL == 0)
+
+    def test_gen_latest_rib_fn_rv(self):
+        rib_name = self.mrt_rv.gen_latest_rib_fn_rv()
+        regex = (
+            f"{self.mrt_rv.RIB_PREFIX}"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            f"\.{self.mrt_rv.MRT_EXT}"
+        )
+        self.assertTrue(re.match(regex, rib_name))
+        mins = int(rib_name.split(".")[2][:2]) * 60 + int(rib_name.split(".")[2][2:])
+        self.assertTrue(mins % self.mrt_rv.RIB_INTERVAL == 0)
 
     def test_gen_latest_upd_fn(self):
-        #print(self.mrt_ripe.gen_latest_upd_fn())
-        #print(self.mrt_rv.gen_latest_upd_fn())
-    """
+        """
+        For the parent function test that any string is returned for all known
+        MRT archive types, and that an unknown archive type raises an exception
+        """
+        self.assertEqual(
+            self.mrt_as57355.gen_latest_upd_fn(),
+            self.mrt_as57355.gen_latest_upd_fn_as57355()
+        )
+
+        self.assertEqual(
+            self.mrt_ripe.gen_latest_upd_fn(),
+            self.mrt_ripe.gen_latest_upd_fn_ripe()
+        )
+
+        self.assertEqual(
+            self.mrt_rv.gen_latest_upd_fn(),
+            self.mrt_rv.gen_latest_upd_fn_rv()
+        )
+
+        self.mrt_rv.TYPE = "HcSHqWb3C9i2jZqnzVj1"
+        self.assertRaises(ValueError, self.mrt_rv.gen_latest_upd_fn)
+        self.mrt_rv.TYPE = self.RV_TYPE
+
+    def test_gen_latest_upd_fn_as57355(self):
+        upd_name = self.mrt_as57355.gen_latest_upd_fn_as57355()
+        regex = (
+            f"{self.mrt_as57355.UPD_PREFIX}"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            f"\.{self.mrt_as57355.MRT_EXT}"
+        )
+        self.assertTrue(re.match(regex, upd_name))
+        mins = int(upd_name.split(".")[1][:2]) * 60 + int(upd_name.split(".")[1][2:])
+        self.assertTrue(mins % self.mrt_as57355.UPD_INTERVAL == 0)
+
+    def test_gen_latest_upd_fn_ripe(self):
+        upd_name = self.mrt_ripe.gen_latest_upd_fn_ripe()
+        regex = (
+            f"{self.mrt_ripe.UPD_PREFIX}"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            f"\.{self.mrt_ripe.MRT_EXT}"
+        )
+        self.assertTrue(re.match(regex, upd_name))
+        mins = int(upd_name.split(".")[2][:2]) * 60 + int(upd_name.split(".")[2][2:])
+        self.assertTrue(mins % self.mrt_ripe.UPD_INTERVAL == 0)
+
+    def test_gen_latest_upd_fn_rv(self):
+        upd_name = self.mrt_rv.gen_latest_upd_fn_rv()
+        regex = (
+            f"{self.mrt_rv.UPD_PREFIX}"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            f"\.{self.mrt_rv.MRT_EXT}"
+        )
+        self.assertTrue(re.match(regex, upd_name))
+        mins = int(upd_name.split(".")[2][:2]) * 60 + int(upd_name.split(".")[2][2:])
+        self.assertTrue(mins % self.mrt_rv.UPD_INTERVAL == 0)
 
     def test_gen_rib_fn_date(self):
-        self.assertEqual(self.mrt_ripe.gen_rib_fn_date("20220101.0000"), "bview.20220101.0000.gz")
-        self.assertEqual(self.mrt_rv.gen_rib_fn_date("20220101.0000"), "rib.20220101.0000.bz2")
+        self.assertEqual(
+            self.mrt_as57355.gen_rib_fn_date("20220101.0000"),
+            "rib.20220101.0000.dump"
+        )
+        self.assertEqual(
+            self.mrt_ripe.gen_rib_fn_date("20220101.0000"),
+            "bview.20220101.0000.gz"
+        )
+        self.assertEqual(
+            self.mrt_rv.gen_rib_fn_date("20220101.0000"),
+            "rib.20220101.0000.bz2"
+        )
 
     def test_gen_rib_fns_day(self):
+        as57355_20220101 = [
+            'rib.20220101.0000.dump', 'rib.20220101.0100.dump',
+            'rib.20220101.0200.dump', 'rib.20220101.0300.dump',
+            'rib.20220101.0400.dump', 'rib.20220101.0500.dump',
+            'rib.20220101.0600.dump', 'rib.20220101.0700.dump',
+            'rib.20220101.0800.dump', 'rib.20220101.0900.dump',
+            'rib.20220101.1000.dump', 'rib.20220101.1100.dump',
+            'rib.20220101.1200.dump', 'rib.20220101.1300.dump',
+            'rib.20220101.1400.dump', 'rib.20220101.1500.dump',
+            'rib.20220101.1600.dump', 'rib.20220101.1700.dump',
+            'rib.20220101.1800.dump', 'rib.20220101.1900.dump',
+            'rib.20220101.2000.dump', 'rib.20220101.2100.dump',
+            'rib.20220101.2200.dump', 'rib.20220101.2300.dump'
+        ]
         ripe_20220101 = [
             'bview.20220101.0000.gz', 'bview.20220101.0800.gz',
             'bview.20220101.1600.gz'
@@ -525,24 +721,82 @@ class test_mrt_archive(unittest.TestCase):
             'rib.20220101.1600.bz2', 'rib.20220101.1800.bz2',
             'rib.20220101.2000.bz2', 'rib.20220101.2200.bz2'
         ]
-        self.assertEqual(self.mrt_ripe.gen_rib_fns_day("20220101"), ripe_20220101)
-        self.assertEqual(self.mrt_rv.gen_rib_fns_day("20220101"), rv_20220101)
+        self.assertEqual(
+            self.mrt_as57355.gen_rib_fns_day("20220101"),
+            as57355_20220101
+        )
+        self.assertEqual(
+            self.mrt_ripe.gen_rib_fns_day("20220101"),
+            ripe_20220101
+        )
+        self.assertEqual(
+            self.mrt_rv.gen_rib_fns_day("20220101"),
+            rv_20220101
+        )
 
-    """
     def test_gen_rib_fns_range(self):
-        print(self.mrt_ripe.gen_rib_fns_range(start_date="20220101.2300", end_date="20220102.0100"))
-        print(self.mrt_rv.gen_rib_fns_range(start_date="20220101.2300", end_date="20220102.0100"))
-    """
+        as57355_20220101 = [
+            '20220101.2300.dump', '20220102.0000.dump',
+            '20220102.0100.dump'
+        ]
+        ripe_20220101 = [
+            'updates.20220102.0000.gz', 'updates.20220102.0800.gz'
+        ]
+        rv_20220101 = [
+            'updates.20220102.0000.bz2', 'updates.20220102.0200.bz2',
+            'updates.20220102.0400.bz2'
+        ]
+        self.assertEqual(
+            self.mrt_as57355.gen_rib_fns_range(
+                start_date="20220101.2300", end_date="20220102.0100"
+            ),
+            as57355_20220101
+        )
+        self.assertEqual(
+            self.mrt_ripe.gen_rib_fns_range(
+                start_date="20220101.2300", end_date="20220102.0900"
+            ),
+            ripe_20220101
+        )
+        self.assertEqual(
+            self.mrt_rv.gen_rib_fns_range(
+                start_date="20220101.2300", end_date="20220102.0500"
+            ),
+            rv_20220101
+        )
 
     def test_gen_rib_key(self):
-        self.assertEqual(self.mrt_ripe.gen_rib_key("20220101"), "UNIT_TEST_RIPE_RIB:20220101")
-        self.assertEqual(self.mrt_rv.gen_rib_key("20220101"), "UNIT_TEST_RV_RIB:20220101")
+        self.assertEqual(
+            self.mrt_as57355.gen_rib_key("20220101"),
+            "UNIT_TEST_AS57355_RIB:20220101"
+        )
+        self.assertEqual(
+            self.mrt_ripe.gen_rib_key("20220101"),
+            "UNIT_TEST_RIPE_RIB:20220101"
+        )
+        self.assertEqual(
+            self.mrt_rv.gen_rib_key("20220101"),
+            "UNIT_TEST_RV_RIB:20220101"
+        )
 
     def test_gen_rib_url(self):
-        ripe_url = "https://data.ris.ripe.net/rrc23/2022.01/bview.20220101.0000.gz"
-        rv_url = "http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/RIBS/rib.20220101.0000.bz2"
-        self.assertEqual(self.mrt_ripe.gen_rib_url("bview.20220101.0000.gz"), ripe_url)
-        self.assertEqual(self.mrt_rv.gen_rib_url("rib.20220101.0000.bz2"), rv_url)
+        as57355_url = "http://192.168.58.8:8000/lukasz/rib/rib.20220101.0000.dump"
+        ripe_url = (
+            "https://data.ris.ripe.net/rrc23/2022.01/bview.20220101.0000.gz"
+        )
+        rv_url = (
+            "http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/"
+            "RIBS/rib.20220101.0000.bz2"
+        )
+        self.assertEqual(
+            self.mrt_as57355.gen_rib_url("rib.20220101.0000.dump"), as57355_url
+        )
+        self.assertEqual(
+            self.mrt_ripe.gen_rib_url("bview.20220101.0000.gz"), ripe_url
+        )
+        self.assertEqual(
+            self.mrt_rv.gen_rib_url("rib.20220101.0000.bz2"), rv_url
+        )
 
 if __name__ == '__main__':
     unittest.main()
