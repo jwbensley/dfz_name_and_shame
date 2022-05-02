@@ -35,6 +35,13 @@ class test_mrt_stats(unittest.TestCase):
         self.assertTrue(isinstance(self.mtr_d.most_origin_asns, list))
         self.assertTrue(isinstance(self.mtr_d.most_origin_asns[0], mrt_entry))
 
+    def test_equal_to(self):
+        mrt_p = mrt_parser()
+        parsed_stats = mrt_p.parse_upd_dump(self.upd_filename)
+        test_stats = mrt_stats()
+        test_stats.from_file(self.upd_json)
+        self.assertTrue(parsed_stats.equal_to(test_stats))
+
     def test_to_json(self):
         mrt_s = mrt_parser.parse_rib_dump(self.test_rib_dump)
         json_str = mrt_s.to_json()

@@ -240,9 +240,10 @@ class mrt_parser:
         upd_peer_asn: Dict[str, dict] = {}
 
         # If parsing a chunk of an MRT file, try to work out the orig filename
+        orig_filename = ""
         if cfg.SPLIT_DIR:
             orig_filename = '_'.join(filename.split("_")[:-1])
-        else:
+        if not orig_filename:
             # Else, assume parsing a full MRT file
             orig_filename = filename
 
@@ -252,7 +253,7 @@ class mrt_parser:
         mrt_s.timestamp = file_ts
         mrt_s.file_list.append(orig_filename)
 
-        if cfg.SPLIT_DIR:
+        if cfg.SPLIT_DIR and (orig_filename != filename):
             mrt_entries = mrtparse.Reader(
                 os.path.join(cfg.SPLIT_DIR, os.path.basename(filename))
             )
@@ -512,7 +513,8 @@ class mrt_parser:
 
         # Only get the bogons prefixes with the most origin ASNs
         for mrt_e in bogon_prefix_entries:
-            if len(mrt_e.origin_asns) == len(mrt_s.bogon_prefixes[0].origin_asns):
+            if (len(mrt_e.origin_asns) == len(mrt_s.bogon_prefixes[0].origin_asns) and
+                mrt_e.origin_asns):
                 mrt_s.bogon_prefixes.append(mrt_e)
             elif len(mrt_e.origin_asns) > len(mrt_s.bogon_prefixes[0].origin_asns):
                 mrt_s.bogon_prefixes = [mrt_e]
@@ -670,71 +672,6 @@ class mrt_parser:
         ]
 
         return mrt_s
-
-    @staticmethod
-    def test_mrt_rib_dump(filename: str = None) -> int:
-
-        if not filename:
-            raise ValueError("MRT filename missing")
-
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(
-                errno.ENOENT, os.strerror(errno.ENOENT), filename
-            )
-
-        mrt_entries = mrtparse.Reader(filename)
-        for idx, mrt_e in enumerate(mrt_entries):
-            if (mrt_e.data["type"][0] != mrtparse.MRT_T['TABLE_DUMP_V2']):
-                logging.error(
-                    f"Entry {idx} in {filename} is not type TABLE_DUMP_V2"
-                )
-                logging.error(mrt_e.data)
-                return idx
-
-            # RIB dumps can contain both AFIs (v4 and v6)
-            if (mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['PEER_INDEX_TABLE'] and
-                mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV4_UNICAST'] and
-                mrt_e.data["subtype"][0] != mrtparse.TD_V2_ST['RIB_IPV6_UNICAST']):
-                logging.error(
-                    f"Entry {idx} in {filename} is not PEER_INDEX_TABLE or "
-                    f"RIB_IPV4_UNICAST or RIB_IPV6_UNICAST"
-                )
-                logging.error(mrt_e.data)
-                return idx
-
-        return idx
-
-    @staticmethod
-    def test_mrt_update_dump(filename: str = None) -> int:
-
-        if not filename:
-            raise ValueError("MRT filename missing")
-
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(
-                errno.ENOENT, os.strerror(errno.ENOENT), filename
-            )
-
-        mrt_entries = mrtparse.Reader(filename)
-        for idx, mrt_e in enumerate(mrt_entries):
-            if (mrt_e.data["type"][0] != mrtparse.MRT_T['BGP4MP_ET']):
-                logging.error(
-                    f"Entry {idx} in {filename} is not type BGP4MP_ET"
-                )
-                logging.error(mrt_e.data)
-                return idx
-            
-            # UPDATE dumps can contain both AFIs (v4 and v6)
-            if (mrt_e.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE_AS4'] and
-                mrt_e.data["subtype"][0] != mrtparse.BGP4MP_ST['BGP4MP_MESSAGE']):
-                logging.error(
-                    f"Entry {idx} in {filename} is not BGP4MP_MESSAGE or "
-                    f"BGP4MP_MESSAGE_AS4"
-                )
-                logging.error(mrt_e.data)
-                return idx
-
-        return idx
 
     @staticmethod
     def mrt_count(filename: str = None) -> int:
