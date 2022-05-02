@@ -1560,7 +1560,7 @@ class mrt_stats:
             "file_list": self.file_list,
             "timestamp": self.timestamp,
         }
-        return json.dumps(json_data)
+        return json.dumps(json_data, indent=2)
 
     def ts_ymd(self) -> str:
         """

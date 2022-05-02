@@ -1,10 +1,16 @@
-import unittest
 import os
 import sys
-sys.path.append('./')
-from mrt_stats import mrt_stats
-from mrt_entry import mrt_entry
-from mrt_parser import mrt_parser
+import unittest
+
+sys.path.append(
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__))
+        , "../"
+    )
+)
+from dnas.mrt_stats import mrt_stats
+from dnas.mrt_entry import mrt_entry
+from dnas.mrt_parser import mrt_parser
 
 class test_mrt_stats(unittest.TestCase):
 
@@ -34,6 +40,13 @@ class test_mrt_stats(unittest.TestCase):
         self.assertTrue(isinstance(self.mtr_d.most_withd_peer_asn[0], mrt_entry))
         self.assertTrue(isinstance(self.mtr_d.most_origin_asns, list))
         self.assertTrue(isinstance(self.mtr_d.most_origin_asns[0], mrt_entry))
+
+    def test_equal_to(self):
+        mrt_p = mrt_parser()
+        parsed_stats = mrt_p.parse_upd_dump(self.upd_filename)
+        test_stats = mrt_stats()
+        test_stats.from_file(self.upd_json)
+        self.assertTrue(parsed_stats.equal_to(test_stats))
 
     def test_to_json(self):
         mrt_s = mrt_parser.parse_rib_dump(self.test_rib_dump)
