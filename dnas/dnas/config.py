@@ -32,6 +32,8 @@ class config:
     LOG_SPLITTER = os.path.join(LOG_DIR, "split_mrt.log")
     # Logging from script: stats.py
     LOG_STATS = os.path.join(LOG_DIR, "stats.log")
+    # Logging from the script: mrt_test.py
+    LOG_TESTER = os.path.join(LOG_DIR, "mrt_test.log")
     # Logging from script: tweet.py
     LOG_TWITTER = os.path.join(LOG_DIR, "tweet.log")
 
