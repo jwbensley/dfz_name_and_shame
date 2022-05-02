@@ -11,28 +11,99 @@ class mrt_archive:
 
     def __init__(
         self,
-        BASE_URL=None,
-        ENABLED=False,
-        MRT_DIR=None,
-        MRT_EXT=None,
-        NAME=None,
-        RIB_GLOB=None,
-        RIB_INTERVAL=None,
-        RIB_KEY=None,
-        RIB_OFFSET=None,
-        RIB_PREFIX=None,
-        RIB_URL=None,
-        TYPE=None,
-        UPD_GLOB=None,
-        UPD_INTERVAL=None,
-        UPD_KEY=None,
-        UPD_OFFSET=None,
-        UPD_PREFIX=None,
-        UPD_URL=None,
-        get_rib_url=None,
-        get_upd_url=None,
+        BASE_URL: str = None,
+        ENABLED: bool = False,
+        MRT_DIR: str = None,
+        MRT_EXT: str = None,
+        NAME: str = None,
+        RIB_GLOB: str = None,
+        RIB_INTERVAL: int = None,
+        RIB_KEY: str = None,
+        RIB_OFFSET: int = None,
+        RIB_PREFIX: str = None,
+        RIB_URL: str = None,
+        TYPE: str = None,
+        UPD_GLOB: str = None,
+        UPD_INTERVAL: int = None,
+        UPD_KEY: str = None,
+        UPD_OFFSET: int = None,
+        UPD_PREFIX: str = None,
+        UPD_URL: str = None,
 
-    ) -> None:
+    ):
+
+        if type(BASE_URL) != str:
+            raise TypeError(
+                f"BASE_URL is not of type str: {type(BASE_URL)}"
+            )
+        if type(ENABLED) != bool:
+            raise TypeError(
+                f"ENABLED is not of type str: {type(ENABLED)}"
+            )
+        if type(MRT_DIR) != str:
+            raise TypeError(
+                f"MRT_DIR is not of type str: {type(MRT_DIR)}"
+            )
+        if type(MRT_EXT) != str:
+            raise TypeError(
+                f"MRT_EXT is not of type str: {type(MRT_EXT)}"
+            )
+        if type(NAME) != str:
+            raise TypeError(
+                f"NAME is not of type str: {type(NAME)}"
+            )
+        if type(RIB_GLOB) != str:
+            raise TypeError(
+                f"RIB_GLOB is not of type str: {type(RIB_GLOB)}"
+            )
+        if type(RIB_INTERVAL) != int:
+            raise TypeError(
+                f"RIB_INTERVAL is not of type str: {type(RIB_INTERVAL)}"
+            )
+        if type(RIB_KEY) != str:
+            raise TypeError(
+                f"RIB_KEY is not of type str: {type(RIB_KEY)}"
+            )
+        if type(RIB_OFFSET) != int:
+            raise TypeError(
+                f"RIB_OFFSET is not of type int: {type(RIB_OFFSET)}"
+            )
+        if type(RIB_PREFIX) != str:
+            raise TypeError(
+                f"RIB_PREFIX is not of type str: {type(RIB_PREFIX)}"
+            )
+        if type(RIB_URL) != str:
+            raise TypeError(
+                f"RIB_URL is not of type str: {type(RIB_URL)}"
+            )
+        if type(TYPE) != str:
+            raise TypeError(
+                f"TYPE is not of type str: {type(TYPE)}"
+            )
+        if type(UPD_GLOB) != str:
+            raise TypeError(
+                f"UPD_GLOB is not of type str: {type(UPD_GLOB)}"
+            )
+        if type(UPD_INTERVAL) != int:
+            raise TypeError(
+                f"UPD_INTERVAL is not of type str: {type(UPD_INTERVAL)}"
+            )
+        if type(UPD_KEY) != str:
+            raise TypeError(
+                f"UPD_KEY is not of type str: {type(UPD_KEY)}"
+            )
+        if type(UPD_OFFSET) != int:
+            raise TypeError(
+                f"UPD_OFFSET is not of type int: {type(UPD_OFFSET)}"
+            )
+        if type(UPD_PREFIX) != str:
+            raise TypeError(
+                f"UPD_PREFIX is not of type str: {type(UPD_PREFIX)}"
+            )
+        if type(UPD_URL) != str:
+            raise TypeError(
+                f"UPD_URL is not of type str: {type(UPD_URL)}"
+            )
 
         self.BASE_URL = BASE_URL
         self.ENABLED = ENABLED
@@ -69,10 +140,17 @@ class mrt_archive:
                 f"List of URL chunks is not of type list: {type(url_chunks)}"
             )
 
-        return reduce(
-            urllib.parse.urljoin,
-            map(lambda x : x.lstrip("/"), url_chunks)
-        )
+        path = ""
+        for chunk in url_chunks[1:]:
+            path += chunk
+        path = path.replace("///", "/")
+        path = path.replace("//", "/")
+        path = path.lstrip("/")
+
+        if url_chunks[0][-1] != "/":
+            return url_chunks[0] + "/" + path
+        else:
+            return url_chunks[0] + path
 
     def gen_latest_rib_fn(self) -> str:
         """
@@ -286,12 +364,10 @@ class mrt_archive:
             m_delta = datetime.timedelta(minutes=((self.UPD_INTERVAL * 2) + mod))
 
         h_delta = datetime.timedelta(minutes=self.UPD_OFFSET)
-
         ymd_hm = datetime.datetime.strftime(
             datetime.datetime.now() - h_delta - m_delta,
             cfg.TIME_FORMAT
         )
-
         return self.UPD_PREFIX + ymd_hm + "." + self.MRT_EXT
 
     def gen_latest_upd_fn_rv(self) -> str:
@@ -389,12 +465,15 @@ class mrt_archive:
             )
 
         diff = end - start
-        count = int(diff.total_seconds()) // (self.RIB_INTERVAL * 60)
+        mins = int(diff.total_seconds() // 60)
         filenames = []
-        for i in range(0, count + 1):
-            delta = datetime.timedelta(minutes=(i * self.RIB_INTERVAL))
+        for i in range(0, mins + 2):
+            delta = datetime.timedelta(minutes=(i * 1))
             ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_rib_fn_date(ymd_hm))
+            hm = int(ymd_hm.split(".")[1][:2])*60
+            hm += int(ymd_hm.split(".")[1][2:])
+            if (hm % self.RIB_INTERVAL == 0):
+                filenames.append(self.gen_rib_fn_date(ymd_hm))
 
         return filenames
 
@@ -446,8 +525,8 @@ class mrt_archive:
                 f"is not {self.RIB_PREFIX}"
             )
 
-        ym = filename.split(".")[0][0:6]
-        ymd_hm = '.'.join(filename.split(".")[0:2])
+        ym = filename.split(".")[1][0:6]
+        ymd_hm = '.'.join(filename.split(".")[1:3])
 
         mrt_archive.valid_ym(ym)
         mrt_archive.valid_ymd_hm(ymd_hm)
@@ -482,17 +561,15 @@ class mrt_archive:
                 f"End date {end_date} is before start date {start_date}"
             )
 
-        diff = end - start
-        count = int(diff.total_seconds()) // (self.RIB_INTERVAL * 60)
-        url_list = []
-        for i in range(0, count + 1):
-            m_delta = datetime.timedelta(minutes=(i * self.RIB_INTERVAL))
-            ymd_hm = datetime.datetime.strftime(start+m_delta, cfg.TIME_FORMAT)
-            url_list.append(
-                self.gen_rib_url(self.gen_rib_fn_date(ymd_hm))
-            )
+        urls: List[str] = []
+        filenames: List[str] = self.gen_rib_fns_range(end_date=end_date, start_date=start_date)
+        if not filenames:
+            return urls
 
-        return url_list
+        for filename in filenames:
+            urls.append(self.gen_rib_url(filename))
+
+        return urls
 
     def gen_rib_url_ripe(self, filename: str = None) -> str:
         """
@@ -615,12 +692,15 @@ class mrt_archive:
             )
 
         diff = end - start
-        count = int(diff.total_seconds()) // (self.UPD_INTERVAL * 60)
+        mins = int(diff.total_seconds() // 60)
         filenames = []
-        for i in range(0, count + 1):
-            delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
+        for i in range(0, mins + 2):
+            delta = datetime.timedelta(minutes=(i * 1))
             ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
-            filenames.append(self.gen_upd_fn_date(ymd_hm))
+            hm = int(ymd_hm.split(".")[1][:2])*60
+            hm += int(ymd_hm.split(".")[1][2:])
+            if (hm % self.UPD_INTERVAL == 0):
+                filenames.append(self.gen_upd_fn_date(ymd_hm))
 
         return filenames
 
@@ -632,6 +712,11 @@ class mrt_archive:
         if not ymd:
             raise ValueError(
                 f"Missing required arguments: ymd={ymd}"
+            )
+
+        if type(ymd) != str:
+            raise TypeError(
+                f"Year, month and day value is not of type string: {type(ymd)}"
             )
 
         self.valid_ymd(ymd)
@@ -712,26 +797,16 @@ class mrt_archive:
                 f"End date {end_date} is before start date {start_date}"
             )
 
-        diff = end - start
-        count = int(diff.total_seconds()) // (self.UPD_INTERVAL * 60)
-        url_list = []
-        for i in range(0, count + 1):
-            delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
-            ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
+        urls: List[str] = []
+        filenames: List[str] = self.gen_upd_fns_range(end_date=end_date, start_date=start_date)
+        if not filenames:
+            return urls
 
-            if self.TYPE == "RIPE":
-                url_list.append(
-                    self.gen_upd_url_ripe(self.gen_upd_fn_date(ymd_hm))
-                )
-            elif self.TYPE == "RV":
-                url_list.append(
-                    self.gen_upd_url_rv(self.gen_upd_fn_date(ymd_hm))
-                )
-            else:
-                raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+        for filename in filenames:
+            urls.append(self.gen_upd_url(filename))
 
-        return url_list
-
+        return urls
+        
     def gen_upd_url_ripe(self, filename: str = None) -> str:
         """
         Generate the URL from a given UPDATE MRT filename, for a RIPE MRT
@@ -868,12 +943,17 @@ class mrt_archive:
                 f"Missing required arguments: ym={ym}"
             )
 
+        if type(ym) != str:
+            raise TypeError(
+                f"Year and month value is not of type string: {type(ym)}"
+            )
+
         """
         No MRTs available from before 1999, and I assume this conde won't be
         running in 2030, I'm a realist :(
         """
         if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
+            "^(1999|20[0-2][0-9])(0[1-9]|1[0-2])$", ym
         ):
             raise ValueError(
                 f"Invalid year and month format: {ym}. "
@@ -891,12 +971,18 @@ class mrt_archive:
                 f"Missing required arguments: ymd={ymd}"
             )
 
+        if type(ymd) != str:
+            raise TypeError(
+                f"Year, month and day value is not of type string: {type(ymd)}"
+            )
+
         """
         No MRTs available from before 1999, and I assume this code won't be
         running in 2030, I'm a realist :(
         """
         if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])", ymd
+            "^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])$",
+            ymd
         ):
             raise ValueError(
                 f"Invalid year, month, day format: {ymd}. "
@@ -914,13 +1000,20 @@ class mrt_archive:
                 f"Missing required arguments: ymd_hm={ymd_hm}"
             )
 
+        if type(ymd_hm) != str:
+            raise TypeError(
+                f"Year, month, day, hour, minute value is not of type string: "
+                f"{type(ymd_hm)}"
+            )
+
         """
         No MRTs available from before 1999, and I assume this code won't be
         running in 2030, I'm a realist :(
         """
 
         if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
+            ("^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\."
+            "([0-1][0-9]|2[0-3])([0-5][0-9])$"), ymd_hm
         ):
             raise ValueError(
                 f"Invalid year, month, day, hour, minute format: {ymd_hm}. "
@@ -942,8 +1035,11 @@ class mrt_archive:
             )
 
         if (self.TYPE == "RV" or self.TYPE == "RIPE"):
-            return os.path.basename(file_path).split(".")[1]
+            ymd = os.path.basename(file_path).split(".")[1]
         elif self.TYPE == "AS57355":
-            return os.path.basename(file_path).split(".")[0]
+            ymd = os.path.basename(file_path).split(".")[0]
         else:
             raise ValueError(f"Couldn't infer ymd from file {file_path}")
+
+        self.valid_ymd(ymd)
+        return ymd
