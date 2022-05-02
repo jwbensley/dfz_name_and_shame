@@ -1199,7 +1199,7 @@ class test_mrt_archive(unittest.TestCase):
             self.mrt_as57355.gen_upd_url_as57355("20220101.0000.dump"), as57355_url
         )
 
-    def test_gen_rib_url_ripe(self):
+    def test_gen_upd_url_ripe(self):
         ripe_url = (
             "https://data.ris.ripe.net/rrc23/2022.01/updates.20220101.0000.gz"
         )
@@ -1207,7 +1207,7 @@ class test_mrt_archive(unittest.TestCase):
             self.mrt_ripe.gen_upd_url_ripe("updates.20220101.0000.gz"), ripe_url
         )
 
-    def test_gen_rib_url_rv(self):
+    def test_gen_upd_url_rv(self):
         rv_url = (
             "http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/"
             "UPDATES/updates.20220101.0000.bz2"

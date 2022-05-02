@@ -561,8 +561,8 @@ class mrt_archive:
                 f"End date {end_date} is before start date {start_date}"
             )
 
-        urls = []
-        filenames = self.gen_rib_fns_range(end_date=end_date, start_date=start_date)
+        urls: List[str] = []
+        filenames: List[str] = self.gen_rib_fns_range(end_date=end_date, start_date=start_date)
         if not filenames:
             return urls
 
@@ -797,8 +797,8 @@ class mrt_archive:
                 f"End date {end_date} is before start date {start_date}"
             )
 
-        urls = []
-        filenames = self.gen_upd_fns_range(end_date=end_date, start_date=start_date)
+        urls: List[str] = []
+        filenames: List[str] = self.gen_upd_fns_range(end_date=end_date, start_date=start_date)
         if not filenames:
             return urls
 
