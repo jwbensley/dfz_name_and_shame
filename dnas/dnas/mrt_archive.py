@@ -473,7 +473,7 @@ class mrt_archive:
             hm = int(ymd_hm.split(".")[1][:2])*60
             hm += int(ymd_hm.split(".")[1][2:])
             if (hm % self.RIB_INTERVAL == 0):
-                filenames.append(self.gen_upd_fn_date(ymd_hm))
+                filenames.append(self.gen_rib_fn_date(ymd_hm))
 
         return filenames
 
@@ -561,17 +561,15 @@ class mrt_archive:
                 f"End date {end_date} is before start date {start_date}"
             )
 
-        diff = end - start
-        count = int(diff.total_seconds()) // (self.RIB_INTERVAL * 60)
-        url_list = []
-        for i in range(0, count + 1):
-            m_delta = datetime.timedelta(minutes=(i * self.RIB_INTERVAL))
-            ymd_hm = datetime.datetime.strftime(start+m_delta, cfg.TIME_FORMAT)
-            url_list.append(
-                self.gen_rib_url(self.gen_rib_fn_date(ymd_hm))
-            )
+        urls = []
+        filenames = self.gen_rib_fns_range(end_date=end_date, start_date=start_date)
+        if not filenames:
+            return urls
 
-        return url_list
+        for filename in filenames:
+            urls.append(self.gen_rib_url(filename))
+
+        return urls
 
     def gen_rib_url_ripe(self, filename: str = None) -> str:
         """
@@ -716,6 +714,11 @@ class mrt_archive:
                 f"Missing required arguments: ymd={ymd}"
             )
 
+        if type(ymd) != str:
+            raise TypeError(
+                f"Year, month and day value is not of type string: {type(ymd)}"
+            )
+
         self.valid_ymd(ymd)
 
         return self.UPD_KEY + ":" + ymd
@@ -794,26 +797,16 @@ class mrt_archive:
                 f"End date {end_date} is before start date {start_date}"
             )
 
-        diff = end - start
-        count = int(diff.total_seconds()) // (self.UPD_INTERVAL * 60)
-        url_list = []
-        for i in range(0, count + 1):
-            delta = datetime.timedelta(minutes=(i * self.UPD_INTERVAL))
-            ymd_hm = datetime.datetime.strftime(start + delta, cfg.TIME_FORMAT)
+        urls = []
+        filenames = self.gen_upd_fns_range(end_date=end_date, start_date=start_date)
+        if not filenames:
+            return urls
 
-            if self.TYPE == "RIPE":
-                url_list.append(
-                    self.gen_upd_url_ripe(self.gen_upd_fn_date(ymd_hm))
-                )
-            elif self.TYPE == "RV":
-                url_list.append(
-                    self.gen_upd_url_rv(self.gen_upd_fn_date(ymd_hm))
-                )
-            else:
-                raise ValueError(f"Unknown MRT archive type {self.TYPE}")
+        for filename in filenames:
+            urls.append(self.gen_upd_url(filename))
 
-        return url_list
-
+        return urls
+        
     def gen_upd_url_ripe(self, filename: str = None) -> str:
         """
         Generate the URL from a given UPDATE MRT filename, for a RIPE MRT
@@ -950,12 +943,17 @@ class mrt_archive:
                 f"Missing required arguments: ym={ym}"
             )
 
+        if type(ym) != str:
+            raise TypeError(
+                f"Year and month value is not of type string: {type(ym)}"
+            )
+
         """
         No MRTs available from before 1999, and I assume this conde won't be
         running in 2030, I'm a realist :(
         """
         if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])", ym
+            "^(1999|20[0-2][0-9])(0[1-9]|1[0-2])$", ym
         ):
             raise ValueError(
                 f"Invalid year and month format: {ym}. "
@@ -973,12 +971,18 @@ class mrt_archive:
                 f"Missing required arguments: ymd={ymd}"
             )
 
+        if type(ymd) != str:
+            raise TypeError(
+                f"Year, month and day value is not of type string: {type(ymd)}"
+            )
+
         """
         No MRTs available from before 1999, and I assume this code won't be
         running in 2030, I'm a realist :(
         """
         if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])", ymd
+            "^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])$",
+            ymd
         ):
             raise ValueError(
                 f"Invalid year, month, day format: {ymd}. "
@@ -996,13 +1000,20 @@ class mrt_archive:
                 f"Missing required arguments: ymd_hm={ymd_hm}"
             )
 
+        if type(ymd_hm) != str:
+            raise TypeError(
+                f"Year, month, day, hour, minute value is not of type string: "
+                f"{type(ymd_hm)}"
+            )
+
         """
         No MRTs available from before 1999, and I assume this code won't be
         running in 2030, I'm a realist :(
         """
 
         if not re.match(
-            "(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.([0-1][0-9]|2[0-3])([0-5][0-9])", ymd_hm
+            ("^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\."
+            "([0-1][0-9]|2[0-3])([0-5][0-9])$"), ymd_hm
         ):
             raise ValueError(
                 f"Invalid year, month, day, hour, minute format: {ymd_hm}. "
@@ -1024,8 +1035,11 @@ class mrt_archive:
             )
 
         if (self.TYPE == "RV" or self.TYPE == "RIPE"):
-            return os.path.basename(file_path).split(".")[1]
+            ymd = os.path.basename(file_path).split(".")[1]
         elif self.TYPE == "AS57355":
-            return os.path.basename(file_path).split(".")[0]
+            ymd = os.path.basename(file_path).split(".")[0]
         else:
             raise ValueError(f"Couldn't infer ymd from file {file_path}")
+
+        self.valid_ymd(ymd)
+        return ymd
