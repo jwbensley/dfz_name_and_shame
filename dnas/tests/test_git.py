@@ -151,13 +151,21 @@ class test_git(unittest.TestCase):
         # Ensure there are no staged changed to commit
         self.g.clear()
 
-        # If there are no changes to commit, no exception is raised
+        # If there are no changes to commit, an exception is raised
+        self.assertRaises(ChildProcessError, self.g.commit, "unittest")
+
+        # Create the test file
+        p = pathlib.Path(os.path.join(self.cfg.GIT_BASE, self.test_filename))
+        p.touch()
+        self.g.add(self.test_filename)
+        # If there are changes to commit, no exception is raised
         asserted = False
         try:
             self.g.commit("unittest")
         except:
             asserted = True
         self.assertEqual(asserted, False)
+        os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
 
     def test_git_diff(self):
         self.assertFalse(self.g.diff())
@@ -213,7 +221,7 @@ class test_git(unittest.TestCase):
         )
 
     def test_push(self):
-        # With no new commits to push, nothing should hapen
+        # With no new commits to push, nothing should happen
         self.g.clear()
 
         asserted = False
