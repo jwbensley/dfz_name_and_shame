@@ -1,7 +1,14 @@
-import unittest
+import os
 import sys
-sys.path.append('./')
-from mrt_entry import mrt_entry
+import unittest
+
+sys.path.append(
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__))
+        , "../"
+    )
+)
+from dnas.mrt_entry import mrt_entry
 
 class test_mrt_entry(unittest.TestCase):
 
