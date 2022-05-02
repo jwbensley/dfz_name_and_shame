@@ -19,6 +19,7 @@ sys.path.append(
 from dnas.config import config as cfg
 from dnas.log import log
 from dnas.mrt_parser import mrt_parser
+from dnas.mrt_stats import mrt_stats
 
 def check_rib_dump(filename: str = None):
     """
@@ -210,7 +211,7 @@ def to_json_parsed(rib: bool = False, json_file: str = None, mrt_file: str = Non
         )
 
     ######## TODO - Fix this hack so that mrt_parser doesn't car about the path
-    cfg.SPLIT_DIR = None
+    cfg.SPLIT_DIR = ""
 
     if rib:
         stats: 'mrt_stats' = mrt_parser.parse_rib_dump(mrt_file)
