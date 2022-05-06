@@ -1,4 +1,6 @@
+import logging
 import os
+import subprocess
 import typing
 
 class whois:
@@ -16,8 +18,23 @@ class whois:
             )
 
         asn = "AS" + str(as_num)
-        cmd = f"whois {asn}" #" | grep -m 1 as-name:"
-        output = os.popen(cmd).read()
+        cmd = ["whois", f"{asn}"]
+        ret = subprocess.check_output(cmd)
+
+        try:
+            output = ret.decode("utf-8")
+        except UnicodeDecodeError:
+            try:
+                output = ret.decode("utf-16")
+            except UnicodeDecodeError:
+                try:
+                    output = ret.decode("utf-32")
+                except UnicodeDecodeError:
+                    try:
+                        output = ret.decode("ISO-8859-1")
+                    except UnicodeDecodeError:
+                        logging.error("Unable to decode WHOIS output: {cmd}")
+                        return ""
 
         as_name = ""
         for line in output.split("\n"):
