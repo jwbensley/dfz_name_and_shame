@@ -141,7 +141,7 @@ class config:
         {
             "TYPE": "AS57355",
             "NAME": "AS57355-Lukasz",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "http://192.168.58.8:8000/lukasz/",
             "RIB_URL": "/rib/",
             "UPD_URL": "/update/",
@@ -171,7 +171,7 @@ class config:
         {
             "TYPE": "RV",
             "NAME": "RV_LINX",
-            "ENABLED": False,
+            "ENABLED": True,
             "BASE_URL": "http://archive.routeviews.org/route-views.linx/bgpdata/",
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
@@ -201,7 +201,7 @@ class config:
         {
             "TYPE": "RV",
             "NAME": "RV_SYDNEY",
-            "ENABLED": False,
+            "ENABLED": True,
             "BASE_URL": "http://archive.routeviews.org/route-views.sydney/bgpdata/",
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
@@ -231,7 +231,7 @@ class config:
         {
             "TYPE": "RIPE",
             "NAME": "RCC_23",
-            "ENABLED": False,
+            "ENABLED": True,
             "BASE_URL": "https://data.ris.ripe.net/rrc23/",
             "RIB_URL": "/",
             "UPD_URL": "/",
@@ -261,7 +261,7 @@ class config:
         {
             "TYPE": "RIPE",
             "NAME": "RCC_24",
-            "ENABLED": False,
+            "ENABLED": True,
             "BASE_URL": "https://data.ris.ripe.net/rrc24/",
             "RIB_URL": "/",
             "UPD_URL": "/",
