@@ -34,3 +34,4 @@ COPY ./git/gitconfig /root/.gitconfig
 
 # Make sure this is last because the mostly likely part of the image to change is the Git repo
 COPY ./dnas/ /opt/dnas/
+
