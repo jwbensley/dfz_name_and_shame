@@ -21,17 +21,22 @@ cd pypy3.8-v7.3.7-aarch64/bin/ && \
 ./pypy3 -mpip install --no-cache-dir redis && \
 ./pypy3 -mpip install --no-cache-dir tweepy
 
+
 # This is needed to clone the reports repo as the dnasbot user:
+COPY ./secrets/id_ed25519* /root/.ssh/
 RUN mkdir -p /root/.ssh && \
 chmod 0700 /root/.ssh && \
 ssh-keyscan github.com > /root/.ssh/known_hosts && \
-touch /root/.ssh/id_ed25519 && \
-touch /root/.ssh/id_ed25519.pub && \
 chmod 600 /root/.ssh/id_ed25519 && \
 chmod 600 /root/.ssh/id_ed25519.pub
-
+#touch /root/.ssh/id_ed25519 && \
+#touch /root/.ssh/id_ed25519.pub && \
+#chmod 600 /root/.ssh/id_ed25519 && \
+#chmod 600 /root/.ssh/id_ed25519.pub
 COPY ./git/gitconfig /root/.gitconfig
 
 # Make sure this is last because the mostly likely part of the image to change is the Git repo
-COPY ./dnas/ /opt/dnas/
+COPY ./dnas /opt/dnas/
+COPY ./secrets/redis_auth.py /opt/dnas/dnas/
+COPY ./secrets/twitter_auth.py /opt/dnas/dnas/
 
