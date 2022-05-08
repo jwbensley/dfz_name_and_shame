@@ -42,6 +42,14 @@ class test_mrt_stats(unittest.TestCase):
         self.assertTrue(isinstance(self.mtr_d.most_origin_asns[0], mrt_entry))
 
     def test_equal_to(self):
+        upd_filename = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "rcc23.updates.20220501.2305.gz"
+        )
+        upd_json = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "rcc23.updates.20220501.2305.gz.json"
+        )
         mrt_p = mrt_parser()
         parsed_stats = mrt_p.parse_upd_dump(self.upd_filename)
         test_stats = mrt_stats()

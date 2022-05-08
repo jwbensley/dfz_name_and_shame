@@ -234,6 +234,7 @@ class mrt_parser:
         bogon_prefix_entries = [mrt_entry()]
         longest_as_path = [mrt_entry()]
         longest_comm_set = [mrt_entry()]
+        invalid_len_entries = [mrt_entry()]
         origin_asns_prefix: Dict[str, set] = {}
         upd_prefix: Dict[str, dict] = {}
         advt_per_origin_asn: Dict[str, int] = {}
@@ -293,6 +294,7 @@ class mrt_parser:
             as_path = []
             bogon_prefixes = []
             comm_set = []
+            invalid_len = []
 
             peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
@@ -402,6 +404,10 @@ class mrt_parser:
                         upd_prefix[prefix]["advt"] += 1
                         origin_asns_prefix[prefix].add(origin_asn)
 
+                    if (int(prefix.split("/")[1]) > 56 or
+                        int(prefix.split("/")[1]) < 16):
+                        invalid_len.append(prefix)
+
                 """
                 IPv4 prefix advertisements are encoded in the NLRI field of
                 a BGP UPDATE message, not as a multi-protocol attribute.
@@ -424,10 +430,13 @@ class mrt_parser:
                             upd_prefix[prefix]["advt"] += 1
                             origin_asns_prefix[prefix].add(origin_asn)
 
+                        if (int(prefix.split("/")[1]) > 24 or
+                            int(prefix.split("/")[1]) < 8):
+                            invalid_len.append(prefix)
 
             """
-            Unique prefixes only with additional origin ASNs for thr same
-            prefix appended
+            Keep unique prefixes only, with additional origin ASNs for thr same
+            prefix appended to existing matching prefix
             """
             for prefix in bogon_prefixes:
                 for mrt_e in bogon_prefix_entries:
@@ -511,6 +520,30 @@ class mrt_parser:
                     ) for prefix in prefixes
                 ]
 
+            """
+            Keep unique prefixes only, with additional origin ASNs for thr same
+            prefix appended to existing matching prefix:
+            """
+            for prefix in invalid_len:
+                for mrt_e in invalid_len_entries:
+                    if prefix == mrt_e.prefix:
+                        if origin_asn not in mrt_e.origin_asns:
+                            mrt_e.origin_asns.add(origin_asn)
+                        break
+                else:
+                    invalid_len_entries.append(
+                        mrt_entry(
+                            as_path=as_path,
+                            comm_set=comm_set,
+                            filename=orig_filename,
+                            next_hop=next_hop,
+                            origin_asns=set([origin_asn]),
+                            peer_asn=peer_asn,
+                            prefix=prefix,
+                            timestamp=ts,
+                        )
+                    )
+
         # Only get the bogons prefixes with the most origin ASNs
         for mrt_e in bogon_prefix_entries:
             if (len(mrt_e.origin_asns) == len(mrt_s.bogon_prefixes[0].origin_asns) and
@@ -522,6 +555,14 @@ class mrt_parser:
         mrt_s.longest_as_path = longest_as_path.copy()
 
         mrt_s.longest_comm_set = longest_comm_set.copy()
+
+        # Only get the invalid mask lengths with the most origin ASNs
+        for mrt_e in invalid_len_entries:
+            if (len(mrt_e.origin_asns) == len(mrt_s.invalid_len[0].origin_asns) and
+                mrt_e.origin_asns):
+                mrt_s.invalid_len.append(mrt_e)
+            elif len(mrt_e.origin_asns) > len(mrt_s.invalid_len[0].origin_asns):
+                mrt_s.invalid_len = [mrt_e]
 
         most_updates = 0
         most_upd_prefixes = []
