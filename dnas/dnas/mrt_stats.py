@@ -16,6 +16,7 @@ class mrt_stats:
         self.bogon_prefixes = [mrt_entry()]
         self.longest_as_path = [mrt_entry()]
         self.longest_comm_set = [mrt_entry()]
+        self.invalid_len = [mrt_entry()]
         self.most_advt_prefixes = [mrt_entry()]
         self.most_upd_prefixes = [mrt_entry()]
         self.most_withd_prefixes = [mrt_entry()]
@@ -26,9 +27,9 @@ class mrt_stats:
         self.most_origin_asns = [mrt_entry()]
         self.file_list: List[str] = []
         self.timestamp: str = ""
-        self.total_upd: int = 0 # How many update messages were parsed
-        self.total_advt: int = 0 # Updates containing prefix avertisement
-        self.total_withd: int = 0 # Updates containing prefix withdraw
+        self.total_upd: int = 0 # All updates received/parsed
+        self.total_advt: int = 0 # Updates signalling prefix avertisement
+        self.total_withd: int = 0 # Updates signalling prefix withdrawal
 
     def add(self, merge_data: 'mrt_stats' = None) -> bool:
         """
@@ -96,6 +97,7 @@ class mrt_stats:
                     self.bogon_prefixes = merge_data.bogon_prefixes.copy()
                     changed = True
 
+
         # Longest AS path
         if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
             s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
@@ -128,6 +130,47 @@ class mrt_stats:
         elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
             self.longest_comm_set = merge_data.longest_comm_set.copy()
             changed = True
+
+
+        # Invalid prefix length with most origin ASNs
+        tmp = []
+        for idx, u_e in enumerate(merge_data.invalid_len[:]):
+            for res_e in self.invalid_len:
+                if (res_e.prefix == u_e.prefix and
+                    res_e.origin_asns != u_e.origin_asns):
+                    tmp.append(
+                        mrt_entry(
+                            filename=u_e.filename,
+                            origin_asns=res_e.origin_asns.union(u_e.origin_asns),
+                            prefix=res_e.prefix,
+                            timestamp=u_e.timestamp,
+                        )
+                    )
+
+        if tmp:
+            for tmp_e in tmp:
+                if len(tmp_e.origin_asns) == len(self.invalid_len[0].origin_asns):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.invalid_len]
+                    if tmp_e.prefix not in s_prefixes:
+                        self.invalid_len.append(tmp_e)
+                        changed = True
+                elif len(tmp_e.origin_asns) > len(self.invalid_len[0].origin_asns):
+                    self.invalid_len = [tmp_e]
+                    changed = True
+        else:
+            if merge_data.invalid_len:
+                if (
+                    len(merge_data.invalid_len[0].origin_asns) == len(self.invalid_len[0].origin_asns) and
+                    len(self.invalid_len[0].origin_asns) > 0
+                ):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.invalid_len]
+                    for mrt_e in merge_data.invalid_len:
+                        if mrt_e.prefix not in s_prefixes:
+                            self.invalid_len.append(mrt_e)
+                            changed = True
+                elif len(merge_data.invalid_len[0].origin_asns) > len(self.invalid_len[0].origin_asns):
+                    self.invalid_len = merge_data.invalid_len.copy()
+                    changed = True
 
 
         # Most advertisements per prefix
@@ -530,6 +573,17 @@ class mrt_stats:
             return False
 
 
+        if len(self.invalid_len) != len(mrt_s.invalid_len):
+            return False
+
+        for self_e in self.invalid_len:
+            for mrt_e in mrt_s.invalid_len[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.invalid_len.remove(mrt_e)
+        if mrt_s.invalid_len:
+            return False
+
+
         if len(self.most_advt_prefixes) != len(mrt_s.most_advt_prefixes):
             return False
 
@@ -680,6 +734,12 @@ class mrt_stats:
             mrt_e.from_json(json_e)
             self.longest_comm_set.append(mrt_e)
 
+        self.invalid_len = []
+        for json_e in json_dict["invalid_len"]:
+            mrt_e = mrt_entry()
+            mrt_e.from_json(json_e)
+            self.invalid_len.append(mrt_e)
+
         self.most_advt_prefixes = []
         for json_e in json_dict["most_advt_prefixes"]:
             mrt_e = mrt_entry()
@@ -819,6 +879,7 @@ class mrt_stats:
         diff.bogon_prefixes = []
         diff.longest_as_path = []
         diff.longest_comm_set = []
+        diff.invalid_len = []
         diff.most_advt_prefixes = []
         diff.most_upd_prefixes = []
         diff.most_withd_prefixes = []
@@ -854,6 +915,15 @@ class mrt_stats:
                     break
             if not found:
                 diff.longest_comm_set.append(mrt_e)
+
+        for mrt_e in mrt_s.invalid_len:
+            found = False
+            for self_e in self.invalid_len:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.invalid_len.append(mrt_e)
 
         for mrt_e in mrt_s.most_advt_prefixes:
             found = False
@@ -959,6 +1029,7 @@ class mrt_stats:
         diff.bogon_prefixes = []
         diff.longest_as_path = []
         diff.longest_comm_set = []
+        diff.invalid_len = []
         diff.most_advt_prefixes = []
         diff.most_upd_prefixes = []
         diff.most_withd_prefixes = []
@@ -985,6 +1056,12 @@ class mrt_stats:
         if len(mrt_s.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
             diff.longest_comm_set = mrt_s.longest_comm_set.copy()
             updated = True
+
+        # Invalid length prefixes with more origin ASNs
+        if mrt_s.invalid_len[0].prefix and self.invalid_len[0].prefix:
+            if len(mrt_s.invalid_len[0].origin_asns) > len(self.invalid_len[0].origin_asns):
+                diff.invalid_len = mrt_s.invalid_len.copy()
+                updated = True
 
         # More advertisements per prefix
         # If stats from a rib dump are being compared this wont be present:
@@ -1091,6 +1168,7 @@ class mrt_stats:
         if (not self.bogon_prefixes and
             not self.longest_as_path and
             not self.longest_comm_set and
+            not self.invalid_len and
             not self.most_advt_prefixes and
             not self.most_upd_prefixes and
             not self.most_withd_prefixes and
@@ -1170,7 +1248,6 @@ class mrt_stats:
             self.longest_as_path = merge_data.longest_as_path.copy()
             changed = True
 
-
         # Longest community set
         if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
             s_prefixes = [mrt_e.prefix for mrt_e in self.longest_comm_set]
@@ -1186,6 +1263,21 @@ class mrt_stats:
         elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
             self.longest_comm_set = merge_data.longest_comm_set.copy()
             changed = True
+
+        # Invalid length prefixes with most origin ASNs
+        if merge_data.invalid_len:
+            if (
+                len(merge_data.invalid_len[0].origin_asns) == len(self.invalid_len[0].origin_asns) and
+                len(self.invalid_len[0].origin_asns) > 0
+            ):
+                s_prefixes = [mrt_e.prefix for mrt_e in self.invalid_len]
+                for mrt_e in merge_data.invalid_len:
+                    if mrt_e.prefix not in s_prefixes:
+                        self.invalid_len.append(mrt_e)
+                        changed = True
+            elif len(merge_data.invalid_len[0].origin_asns) > len(self.invalid_len[0].origin_asns):
+                self.invalid_len = merge_data.invalid_len.copy()
+                changed = True
 
         """
         Most advertisements per prefix
@@ -1391,6 +1483,19 @@ class mrt_stats:
             print(f"longest_comm_set->withdraws: {mrt_e.withdraws}")
         print("")
 
+        for mrt_e in self.invalid_len:
+            print(f"invalid_len->prefix: {mrt_e.prefix}")
+            print(f"invalid_len->advt: {mrt_e.advt}")
+            print(f"invalid_len->as_path: {mrt_e.as_path}")
+            print(f"invalid_len->comm_set: {mrt_e.comm_set}")
+            print(f"invalid_len->next_hop: {mrt_e.next_hop}")
+            print(f"invalid_len->origin_asns: {mrt_e.origin_asns}")
+            print(f"invalid_len->peer_asn: {mrt_e.peer_asn}")
+            print(f"invalid_len->timestamp: {mrt_e.timestamp}")
+            print(f"invalid_len->updates: {mrt_e.updates}")
+            print(f"invalid_len->withdraws: {mrt_e.withdraws}")
+        print("")
+
         for mrt_e in self.most_advt_prefixes:
             print(f"most_advt_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_advt_prefixes->advt: {mrt_e.advt}")
@@ -1529,6 +1634,9 @@ class mrt_stats:
             ],
             "longest_comm_set": [
                 mrt_e.to_json() for mrt_e in self.longest_comm_set
+            ],
+            "invalid_len": [
+                mrt_e.to_json() for mrt_e in self.invalid_len
             ],
             "most_advt_prefixes": [
                 mrt_e.to_json() for mrt_e in self.most_advt_prefixes
