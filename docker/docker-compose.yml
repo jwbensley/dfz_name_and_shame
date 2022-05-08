@@ -25,14 +25,13 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime
       - /media/usb0/:/media/usb0/
-      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/redis_auth.py
     restart: always
     tty: true
     depends_on:
-      - redis_dnas
+      - dnas_redis
     entrypoint:
       - /opt/pypy3.8-v7.3.7-aarch64/bin/pypy3
-      - /opt/dnas/dnas/scripts/get_mrts.py
+      - /opt/dnas/scripts/get_mrts.py
       - --continuous
       - --update
 
@@ -45,14 +44,13 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime
       - /media/usb0/:/media/usb0/
-      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/redis_auth.py
     restart: always
     tty: true
     depends_on:
-      - redis_dnas
+      - dnas_redis
     entrypoint:
       - /opt/pypy3.8-v7.3.7-aarch64/bin/pypy3
-      - /opt/dnas/dnas/scripts/parse_mrts.py
+      - /opt/dnas/scripts/parse_mrts.py
       - --continuous
       - --update
       - --remove
