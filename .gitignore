@@ -3,6 +3,8 @@
 
 # Dont sync Redis backups
 redis/backups/*
+# Don't sync Redis data
+redis/data/*
 
 # Don't sync secrets to GitHub
 **/redis_auth.py

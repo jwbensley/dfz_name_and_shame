@@ -1,12 +1,13 @@
 version: "3.9"
 
 services:
-  redis_dnas:
-    container_name: redis_dnas
+  dnas_redis:
+    container_name: dnas_redis
     image: redis:6.2.6
     ports:
       - "6379:6379"
     volumes:
+      - /etc/localtime:/etc/localtime
       - /opt/dnas/redis/data:/data
       - /opt/dnas/redis/redis.conf:/usr/local/etc/redis/redis.conf
     restart: always
@@ -24,7 +25,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime
       - /media/usb0/:/media/usb0/
-      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/dnas/redis_auth.py
+      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/redis_auth.py
     restart: always
     tty: true
     depends_on:
@@ -44,7 +45,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime
       - /media/usb0/:/media/usb0/
-      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/dnas/redis_auth.py
+      - /opt/dnas/secrets/redis_auth.py:/opt/dnas/dnas/redis_auth.py
     restart: always
     tty: true
     depends_on:
@@ -55,3 +56,4 @@ services:
       - --continuous
       - --update
       - --remove
+
