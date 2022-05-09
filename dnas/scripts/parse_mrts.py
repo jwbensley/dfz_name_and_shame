@@ -73,7 +73,7 @@ def continuous(args: Dict[str, Any] = None):
 
                 """
                 Only check for new MRTs to parse as frequently as the MRT archive
-                which provides the most frequenty dumps:
+                which provides the most frequent dumps:
                 """
                 if (arch.RIB_INTERVAL * 60) < min_interval:
                     min_interval = (arch.RIB_INTERVAL * 60)
