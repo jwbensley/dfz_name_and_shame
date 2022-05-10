@@ -39,6 +39,7 @@ def continuous(args: Dict[str, Any] = None):
         )
 
     mrt_a = mrt_archives()
+    min_interval = cfg.DFT_INTERVA
 
     while(True):
         for arch in mrt_a.archives:
@@ -61,6 +62,17 @@ def continuous(args: Dict[str, Any] = None):
                     logging.error(e)
                     pass
 
+                """
+                Only check for new MRTs to parse as frequently as the MRT archive
+                which provides the most frequent dumps:
+                """
+                if (arch.RIB_INTERVAL * 60) < min_interval:
+                    min_interval = (arch.RIB_INTERVAL * 60)
+                    logging.debug(
+                        f"Get interval set to {min_interval} by "
+                        f"{arch.NAME} RIB interval"
+                    )
+
             if args["update"]:
                 try:
                     mrt_getter.get_latest_upd(
@@ -71,7 +83,14 @@ def continuous(args: Dict[str, Any] = None):
                     logging.error(e)
                     pass
 
-        time.sleep(300)
+                if (arch.UPD_INTERVAL * 60) < min_interval:
+                    min_interval = (arch.UPD_INTERVAL * 60)
+                    logging.debug(
+                        f"Get interval set to {min_interval} by "
+                        f"{arch.NAME} UPD interval"
+                    )
+
+        time.sleep(min_interval)
 
 def get_day(args: Dict[str, Any] = None):
     """
