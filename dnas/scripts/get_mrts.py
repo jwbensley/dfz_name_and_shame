@@ -39,7 +39,7 @@ def continuous(args: Dict[str, Any] = None):
         )
 
     mrt_a = mrt_archives()
-    min_interval = cfg.DFT_INTERVA
+    min_interval = cfg.DFT_INTERVAL
 
     while(True):
         for arch in mrt_a.archives:

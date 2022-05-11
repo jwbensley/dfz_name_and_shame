@@ -69,7 +69,6 @@ class config:
     TWITTER_USER = "bgp_shamer"
     TWITTER_LEN = 280
 
-
     #####################
     # BOGON IP SETTINGS #
     #####################
@@ -141,7 +140,7 @@ class config:
         {
             "TYPE": "AS57355",
             "NAME": "AS57355-Lukasz",
-            "ENABLED": False,
+            "ENABLED": True,
             "BASE_URL": "http://192.168.58.8:8000/lukasz/",
             "RIB_URL": "/rib/",
             "UPD_URL": "/update/",

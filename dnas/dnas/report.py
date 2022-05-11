@@ -47,6 +47,33 @@ class report:
 
             txt_report.append(text)
 
+        if mrt_s.bogon_origin_asns:
+            text = (
+                f"Prefixes with most bogon origin ASNs per prefix: "
+                f"{len(mrt_s.bogon_origin_asns)} prefix(es) had "
+                f"{len(mrt_s.bogon_origin_asns[0].origin_asns)} bogon origin ASNs.\n"
+            )
+
+            txt_report.append(text)
+
+            if body:
+                text = ""
+                for mrt_e in mrt_s.bogon_origin_asns:
+                    text += f"Prefix {mrt_e.prefix} from origin ASN(s)"
+                    for asn in mrt_e.origin_asns:
+                        if asn not in whois_cache:
+                            whois_cache[asn] = whois.as_lookup(int(asn))
+                        as_name = whois_cache[asn]
+                        if as_name:
+                            text += f" AS{asn} ({as_name})"
+                        else:
+                            text += f" AS{asn}"
+                    text += "\n"
+                text = text[0:-1]
+                text += "\n\n"
+
+                txt_report.append(text)
+
         if mrt_s.bogon_prefixes:
             text = (
                 f"Bogon prefixes with most origin ASNs per prefix: "

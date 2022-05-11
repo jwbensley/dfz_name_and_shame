@@ -4,7 +4,7 @@ import argparse
 import errno
 import json
 import logging
-import mrtparse
+import mrtparse # type: ignore
 import os
 import sys
 
@@ -213,10 +213,11 @@ def to_json_parsed(rib: bool = False, json_file: str = None, mrt_file: str = Non
     ######## TODO - Fix this hack so that mrt_parser doesn't car about the path
     cfg.SPLIT_DIR = ""
 
+    stats: 'mrt_stats'
     if rib:
-        stats: 'mrt_stats' = mrt_parser.parse_rib_dump(mrt_file)
+        stats = mrt_parser.parse_rib_dump(mrt_file)
     else:
-        stats: 'mrt_stats' = mrt_parser.parse_upd_dump(mrt_file)
+        stats = mrt_parser.parse_upd_dump(mrt_file)
 
     if stats:
         stats.to_file(json_file)

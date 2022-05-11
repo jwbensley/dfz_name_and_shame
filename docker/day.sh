@@ -18,7 +18,7 @@ docker run -it --rm \
 -v /media/usb0/:/media/usb0/ \
 --name dnas_tmp \
 dnas:latest \
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --update --enabled --range --start "$1".0000 --end "$1".2359
+/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --backfill --update --enabled --range --start "$1".0000 --end "$1".2359
 
 docker run -it --rm \
 -v /etc/localtime:/etc/localtime \
