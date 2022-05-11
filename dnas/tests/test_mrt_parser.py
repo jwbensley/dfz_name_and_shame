@@ -36,9 +36,35 @@ class test_mrt_parser(unittest.TestCase):
         # Make full path
         upd_filename = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
+            "rcc23.updates.20220421.0200.gz"
+        )
+        stats = mrt_p.parse_upd_dump(upd_filename)
+
+        self.assertEqual(stats.bogon_origin_asns[0].advt, 0)
+        self.assertEqual(stats.bogon_origin_asns[0].as_path, ["137409", "17494", "137491", "58689", "137464", "65551"])
+        self.assertEqual(stats.bogon_origin_asns[0].comm_set, [])
+        self.assertEqual(
+            stats.bogon_origin_asns[0].filename,
+            os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                "rcc23.updates.20220421.0200.gz"
+            )
+        )
+        self.assertEqual(stats.bogon_origin_asns[0].next_hop, "27.111.228.145")
+        self.assertEqual(stats.bogon_origin_asns[0].origin_asns, set(["65551"]))
+        self.assertEqual(stats.bogon_origin_asns[0].peer_asn, "137409")
+        self.assertEqual(stats.bogon_origin_asns[0].prefix, "103.109.236.0/24")
+        self.assertEqual(stats.bogon_origin_asns[0].timestamp, "20220421.0200")
+        self.assertEqual(stats.bogon_origin_asns[0].updates, 0)
+        self.assertEqual(stats.bogon_origin_asns[0].withdraws, 0)
+
+        # Make full path
+        upd_filename = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
             "rcc23.updates.20220501.2305.gz"
         )
         stats = mrt_p.parse_upd_dump(upd_filename)
+
 
         self.assertEqual(stats.bogon_prefixes[0].advt, 0)
         self.assertEqual(stats.bogon_prefixes[0].as_path, ["133210", "6939"])
