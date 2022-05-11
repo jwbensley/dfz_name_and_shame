@@ -166,10 +166,10 @@ class mrt_parser:
                 next(iter(mrt_e.data["timestamp"].items()))[0]
             ) # E.g., 1486801684
 
-            as_path = []
             bogon_prefixes = []
             comm_set = []
             invalid_len = []
+            prefixes = []
 
             peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
@@ -201,8 +201,7 @@ class mrt_parser:
             if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
                 upd_peer_asn[peer_asn]["advt"] += 1
                 mrt_s.total_advt += 1
-                prefixes = []
-
+                
                 for attr in path_attributes:
                     #attr_t = attr["type"][0]   ##### FIX ME
                     attr_t = next(iter(attr["type"]))
@@ -290,7 +289,7 @@ class mrt_parser:
                 IPv4 prefix advertisements are encoded in the NLRI field of
                 a BGP UPDATE message, not as a multi-protocol attribute.
                 """
-                if mrt_e.data["bgp_message"]["nlri"]:
+                if len(mrt_e.data["bgp_message"]["nlri"]) > 0:
                     for nlri in mrt_e.data["bgp_message"]["nlri"]:
                         prefix = (
                             nlri["prefix"] + "/" + str(nlri["prefix_length"])
@@ -313,6 +312,11 @@ class mrt_parser:
                         if (int(prefix.split("/")[1]) > 24 or
                             int(prefix.split("/")[1]) < 8):
                             invalid_len.append(prefix)
+
+
+            # Nothing further to do if this UPDATE was a withdraw
+            if not prefixes:
+                continue
 
             """
             Keep unique prefixes only, with additional origin ASNs for the same

@@ -756,6 +756,8 @@ class mrt_stats:
     def from_json(self, json_str: str = None):
         """
         Parse the JSON string as MRT stats data.
+        To provide backward connectivity with old data in Redis, need to check
+        if some newer keys are present in the JSON dict stored in Redis.
         """
         if not json_str:
             raise ValueError(
@@ -770,16 +772,22 @@ class mrt_stats:
         json_dict = json.loads(json_str)
 
         self.bogon_origin_asns = []
-        for json_e in json_dict["bogon_origin_asns"]:
-            mrt_e = mrt_entry()
-            mrt_e.from_json(json_e)
-            self.bogon_origin_asns.append(mrt_e)
+        if "bogon_origin_asns" in json_dict:
+            for json_e in json_dict["bogon_origin_asns"]:
+                mrt_e = mrt_entry()
+                mrt_e.from_json(json_e)
+                self.bogon_origin_asns.append(mrt_e)
+        else:
+            self.bogon_origin_asns.append(mrt_entry())
 
         self.bogon_prefixes = []
-        for json_e in json_dict["bogon_prefixes"]:
-            mrt_e = mrt_entry()
-            mrt_e.from_json(json_e)
-            self.bogon_prefixes.append(mrt_e)
+        if "bogon_prefixes" in json_dict:
+            for json_e in json_dict["bogon_prefixes"]:
+                mrt_e = mrt_entry()
+                mrt_e.from_json(json_e)
+                self.bogon_prefixes.append(mrt_e)
+        else:
+            self.bogon_prefixes.append(mrt_entry())
 
         self.longest_as_path = []
         for json_e in json_dict["longest_as_path"]:
@@ -794,10 +802,13 @@ class mrt_stats:
             self.longest_comm_set.append(mrt_e)
 
         self.invalid_len = []
-        for json_e in json_dict["invalid_len"]:
-            mrt_e = mrt_entry()
-            mrt_e.from_json(json_e)
-            self.invalid_len.append(mrt_e)
+        if "invalid_len" not in json_dict:
+            for json_e in json_dict["invalid_len"]:
+                mrt_e = mrt_entry()
+                mrt_e.from_json(json_e)
+                self.invalid_len.append(mrt_e)
+        else:
+             self.invalid_len.append(mrt_entry())
 
         self.most_advt_prefixes = []
         for json_e in json_dict["most_advt_prefixes"]:
