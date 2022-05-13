@@ -3,22 +3,26 @@ import os
 import subprocess
 import typing
 
+from dnas.bogon_asn import bogon_asn
+
 class whois:
 
     @staticmethod
-    def as_lookup(as_num: int = -1) -> str:
-        if as_num < 0:
+    def as_lookup(asn: int = -1) -> str:
+        if asn < 0:
             raise ValueError(
-                f"Missing required arguments: as_num={as_num}"
+                f"Missing required arguments: asn={asn}"
             )
 
-        if type(as_num) != int:
+        if type(asn) != int:
             raise TypeError(
-                f"as_num is not string: {type(as_num)}"
+                f"asn is not string: {type(asn)}"
             )
 
-        asn = "AS" + str(as_num)
-        cmd = ["whois", f"{asn}"]
+        if bogon_asn.is_bogon(asn):
+            return ""
+
+        cmd = ["whois", f"AS{str(asn)}"]
         ret = subprocess.check_output(cmd)
 
         try:
