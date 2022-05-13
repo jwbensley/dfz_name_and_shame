@@ -845,7 +845,7 @@ class test_mrt_stats(unittest.TestCase):
         """
         self.assertTrue(
             re.match(
-                "^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.0000$",
+                r"^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\.0000$",
                 ret
             )
         )
@@ -1357,7 +1357,7 @@ class test_mrt_stats(unittest.TestCase):
         stats.from_file(self.upd_1_test)
         self.assertTrue(stats.equal_to(self.upd_1_stats))
 
-        os.unlink(upd_1_test)
+        os.unlink(self.upd_1_test)
 
     """
     def test_to_json(self):
