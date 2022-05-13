@@ -98,6 +98,11 @@ class mrt_parser:
                 f"Missing required arguments: filename={filename}."
             )
 
+        if type(filename) != str:
+            raise TypeError(
+                f"filename is not a string: {type(filename)}"
+            )
+
         """
         Most ASNs won't be a bogon, and we'll see the same ASNs again and again.
         Cache ASNs which aren't a bogon for a faster response time.
