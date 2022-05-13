@@ -106,14 +106,16 @@ class git:
         )
         if ret.returncode != 0:
             if "Your branch is up to date with" in ret.stdout.decode():
-                logging.debug(f"Nothing committed, no changed with remote")
-                return
-            raise ChildProcessError(
-                f"Couldn't commit staged changes to git in {cfg.GIT_BASE}\n"
-                f"args: {ret.args}\n"
-                f"stdout: {ret.stdout.decode()}\n"
-                f"stderr: {ret.stderr.decode()}"
-            )
+                raise ChildProcessError(
+                    "Nothing committed, no changes with remote"
+                )
+            else:
+                raise ChildProcessError(
+                    f"Couldn't commit staged changes to git in {cfg.GIT_BASE}\n"
+                    f"args: {ret.args}\n"
+                    f"stdout: {ret.stdout.decode()}\n"
+                    f"stderr: {ret.stderr.decode()}"
+                )
         logging.debug(f"Committed to git in {cfg.GIT_BASE}: {msg}")
 
     @staticmethod
