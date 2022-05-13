@@ -1341,7 +1341,7 @@ class test_mrt_archive(unittest.TestCase):
         self.assertRaises(
             ValueError, self.mrt_rv.valid_ym, "2022011"
         )
-        # To short
+        # Too short
         self.assertRaises(
             ValueError, self.mrt_rv.valid_ym, "20221"
         )
@@ -1382,7 +1382,7 @@ class test_mrt_archive(unittest.TestCase):
         self.assertRaises(
             ValueError, self.mrt_rv.valid_ymd, "202201011"
         )
-        # To short
+        # Too short
         self.assertRaises(
             ValueError, self.mrt_rv.valid_ymd, "2022010"
         )
@@ -1431,7 +1431,7 @@ class test_mrt_archive(unittest.TestCase):
         self.assertRaises(
             ValueError, self.mrt_rv.valid_ymd_hm, "20220101.00000"
         )
-        # To short
+        # Too short
         self.assertRaises(
             ValueError, self.mrt_rv.valid_ymd_hm, "20220101.000"
         )
