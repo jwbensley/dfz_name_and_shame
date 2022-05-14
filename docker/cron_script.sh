@@ -16,7 +16,7 @@ docker run -t --rm \
 -v /media/usb0/:/media/usb0/ \
 --name dnas_tmp \
 dnas:latest \
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --yesterday --update --enabled
+/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --backfill --yesterday --update --enabled
 
 # Parse any missing MRTs that were downloaded:
 docker run -t --rm \
