@@ -33,6 +33,9 @@ class test_mrt_parser(unittest.TestCase):
     def test_parse_upd_dump(self):
         mrt_p = mrt_parser()
 
+        self.assertRaises(ValueError, mrt_p.parse_upd_dump, None)
+        self.assertRaises(TypeError, mrt_p.parse_upd_dump, 123)
+
         # Make full path
         upd_filename = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),

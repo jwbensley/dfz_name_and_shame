@@ -592,7 +592,6 @@ class mrt_stats:
         if mrt_s.bogon_origin_asns:
             return False
 
-
         if len(self.bogon_prefixes) != len(mrt_s.bogon_prefixes):
             return False
 
@@ -602,7 +601,6 @@ class mrt_stats:
                     mrt_s.bogon_prefixes.remove(mrt_e)
         if mrt_s.bogon_prefixes:
             return False
-
 
         if len(self.longest_as_path) != len(mrt_s.longest_as_path):
             return False
@@ -614,7 +612,6 @@ class mrt_stats:
         if mrt_s.longest_as_path:
             return False
 
-
         if len(self.longest_comm_set) != len(mrt_s.longest_comm_set):
             return False
 
@@ -624,7 +621,6 @@ class mrt_stats:
                     mrt_s.longest_comm_set.remove(mrt_e)
         if mrt_s.longest_comm_set:
             return False
-
 
         if len(self.invalid_len) != len(mrt_s.invalid_len):
             return False
@@ -636,7 +632,6 @@ class mrt_stats:
         if mrt_s.invalid_len:
             return False
 
-
         if len(self.most_advt_prefixes) != len(mrt_s.most_advt_prefixes):
             return False
 
@@ -646,7 +641,6 @@ class mrt_stats:
                     mrt_s.most_advt_prefixes.remove(mrt_e)
         if mrt_s.most_advt_prefixes:
             return False
-
 
         if len(self.most_upd_prefixes) != len(mrt_s.most_upd_prefixes):
             return False
@@ -658,7 +652,6 @@ class mrt_stats:
         if mrt_s.most_upd_prefixes:
             return False
 
-
         if len(self.most_withd_prefixes) != len(mrt_s.most_withd_prefixes):
             return False
 
@@ -668,7 +661,6 @@ class mrt_stats:
                     mrt_s.most_withd_prefixes.remove(mrt_e)
         if mrt_s.most_withd_prefixes:
             return False
-
 
         if len(self.most_advt_origin_asn) != len(mrt_s.most_advt_origin_asn):
             return False
@@ -680,7 +672,6 @@ class mrt_stats:
         if mrt_s.most_advt_origin_asn:
             return False
 
-
         if len(self.most_advt_peer_asn) != len(mrt_s.most_advt_peer_asn):
             return False
 
@@ -690,7 +681,6 @@ class mrt_stats:
                     mrt_s.most_advt_peer_asn.remove(mrt_e)
         if mrt_s.most_advt_peer_asn:
             return False
-
 
         if len(self.most_upd_peer_asn) != len(mrt_s.most_upd_peer_asn):
             return False
@@ -702,7 +692,6 @@ class mrt_stats:
         if mrt_s.most_upd_peer_asn:
             return False
 
-
         if len(self.most_withd_peer_asn) != len(mrt_s.most_withd_peer_asn):
             return False
 
@@ -712,7 +701,6 @@ class mrt_stats:
                     mrt_s.most_withd_peer_asn.remove(mrt_e)
         if mrt_s.most_withd_peer_asn:
             return False
-
 
         if len(self.most_origin_asns) != len(mrt_s.most_origin_asns):
             return False
@@ -802,7 +790,7 @@ class mrt_stats:
             self.longest_comm_set.append(mrt_e)
 
         self.invalid_len = []
-        if "invalid_len" not in json_dict:
+        if "invalid_len" in json_dict:
             for json_e in json_dict["invalid_len"]:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
@@ -886,6 +874,11 @@ class mrt_stats:
                 f"Missing required arguments: ymd={ymd}"
             )
 
+        if type(ymd) != str:
+            raise TypeError(
+                f"ymd is not a string: {type(ymd)}"
+            )
+
         mrt_archive.valid_ymd(ymd)
 
         return datetime.datetime.strftime(
@@ -904,6 +897,11 @@ class mrt_stats:
                 f"Missing required arguments: ymd={ymd}"
             )
 
+        if type(ymd) != str:
+            raise TypeError(
+                f"ymd is not a string: {type(ymd)}"
+            )
+
         mrt_archive.valid_ymd(ymd)
 
         return "DAILY:" + ymd
@@ -917,6 +915,11 @@ class mrt_stats:
         if not ymd:
             raise ValueError(
                 f"Missing required arguments: ymd={ymd}"
+            )
+
+        if type(ymd) != str:
+            raise TypeError(
+                f"ymd is not a string: {type(ymd)}"
             )
 
         mrt_archive.valid_ymd(ymd)
@@ -1552,6 +1555,7 @@ class mrt_stats:
             print(f"bogon_origin_asns->advt: {mrt_e.advt}")
             print(f"bogon_origin_asns->as_path: {mrt_e.as_path}")
             print(f"bogon_origin_asns->comm_set: {mrt_e.comm_set}")
+            print(f"bogon_origin_asns->filename: {mrt_e.filename}")
             print(f"bogon_origin_asns->next_hop: {mrt_e.next_hop}")
             print(f"bogon_origin_asns->origin_asns: {mrt_e.origin_asns}")
             print(f"bogon_origin_asns->peer_asn: {mrt_e.peer_asn}")
@@ -1565,6 +1569,7 @@ class mrt_stats:
             print(f"bogon_prefixes->advt: {mrt_e.advt}")
             print(f"bogon_prefixes->as_path: {mrt_e.as_path}")
             print(f"bogon_prefixes->comm_set: {mrt_e.comm_set}")
+            print(f"bogon_prefixes->filename: {mrt_e.filename}")
             print(f"bogon_prefixes->next_hop: {mrt_e.next_hop}")
             print(f"bogon_prefixes->origin_asns: {mrt_e.origin_asns}")
             print(f"bogon_prefixes->peer_asn: {mrt_e.peer_asn}")
@@ -1578,6 +1583,7 @@ class mrt_stats:
             print(f"longest_as_path->advt: {mrt_e.advt}")
             print(f"longest_as_path->as_path: {mrt_e.as_path}")
             print(f"longest_as_path->comm_set: {mrt_e.comm_set}")
+            print(f"longest_as_path->filename: {mrt_e.filename}")
             print(f"longest_as_path->next_hop: {mrt_e.next_hop}")
             print(f"longest_as_path->origin_asns: {mrt_e.origin_asns}")
             print(f"longest_as_path->peer_asn: {mrt_e.peer_asn}")
@@ -1591,6 +1597,7 @@ class mrt_stats:
             print(f"longest_comm_set->advt: {mrt_e.advt}")
             print(f"longest_comm_set->as_path: {mrt_e.as_path}")
             print(f"longest_comm_set->comm_set: {mrt_e.comm_set}")
+            print(f"longest_comm_set->filename: {mrt_e.filename}")
             print(f"longest_comm_set->next_hop: {mrt_e.next_hop}")
             print(f"longest_comm_set->origin_asns: {mrt_e.origin_asns}")
             print(f"longest_comm_set->peer_asn: {mrt_e.peer_asn}")
@@ -1604,6 +1611,7 @@ class mrt_stats:
             print(f"invalid_len->advt: {mrt_e.advt}")
             print(f"invalid_len->as_path: {mrt_e.as_path}")
             print(f"invalid_len->comm_set: {mrt_e.comm_set}")
+            print(f"invalid_len->filename: {mrt_e.filename}")
             print(f"invalid_len->next_hop: {mrt_e.next_hop}")
             print(f"invalid_len->origin_asns: {mrt_e.origin_asns}")
             print(f"invalid_len->peer_asn: {mrt_e.peer_asn}")
@@ -1617,6 +1625,7 @@ class mrt_stats:
             print(f"most_advt_prefixes->advt: {mrt_e.advt}")
             print(f"most_advt_prefixes->as_path: {mrt_e.as_path}")
             print(f"most_advt_prefixes->comm_set: {mrt_e.comm_set}")
+            print(f"most_advt_prefixes->filename: {mrt_e.filename}")
             print(f"most_advt_prefixes->next_hop: {mrt_e.next_hop}")
             print(f"most_advt_prefixes->origin_asns: {mrt_e.origin_asns}")
             print(f"most_advt_prefixes->peer_asn: {mrt_e.peer_asn}")
@@ -1630,6 +1639,7 @@ class mrt_stats:
             print(f"most_upd_prefixes->advt: {mrt_e.advt}")
             print(f"most_upd_prefixes->as_path: {mrt_e.as_path}")
             print(f"most_upd_prefixes->comm_set: {mrt_e.comm_set}")
+            print(f"most_upd_prefixes->filename: {mrt_e.filename}")
             print(f"most_upd_prefixes->next_hop: {mrt_e.next_hop}")
             print(f"most_upd_prefixes->origin_asns: {mrt_e.origin_asns}")
             print(f"most_upd_prefixes->peer_asn: {mrt_e.peer_asn}")
@@ -1643,6 +1653,7 @@ class mrt_stats:
             print(f"most_withd_prefixes->advt: {mrt_e.advt}")
             print(f"most_withd_prefixes->as_path: {mrt_e.as_path}")
             print(f"most_withd_prefixes->comm_set: {mrt_e.comm_set}")
+            print(f"most_withd_prefixes->filename: {mrt_e.filename}")
             print(f"most_withd_prefixes->next_hop: {mrt_e.next_hop}")
             print(f"most_withd_prefixes->origin_asns: {mrt_e.origin_asns}")
             print(f"most_withd_prefixes->peer_asn: {mrt_e.peer_asn}")
@@ -1656,6 +1667,7 @@ class mrt_stats:
             print(f"most_advt_origin_asn->advt: {mrt_e.advt}")
             print(f"most_advt_origin_asn->as_path: {mrt_e.as_path}")
             print(f"most_advt_origin_asn->comm_set: {mrt_e.comm_set}")
+            print(f"most_advt_origin_asn->filename: {mrt_e.filename}")
             print(f"most_advt_origin_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_advt_origin_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_advt_origin_asn->peer_asn: {mrt_e.peer_asn}")
@@ -1669,6 +1681,7 @@ class mrt_stats:
             print(f"most_advt_peer_asn->advt: {mrt_e.advt}")
             print(f"most_advt_peer_asn->as_path: {mrt_e.as_path}")
             print(f"most_advt_peer_asn->comm_set: {mrt_e.comm_set}")
+            print(f"most_advt_peer_asn->filename: {mrt_e.filename}")
             print(f"most_advt_peer_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_advt_peer_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_advt_peer_asn->peer_asn: {mrt_e.peer_asn}")
@@ -1682,6 +1695,7 @@ class mrt_stats:
             print(f"most_upd_peer_asn->advt: {mrt_e.advt}")
             print(f"most_upd_peer_asn->as_path: {mrt_e.as_path}")
             print(f"most_upd_peer_asn->comm_set: {mrt_e.comm_set}")
+            print(f"most_upd_peer_asn->filename: {mrt_e.filename}")
             print(f"most_upd_peer_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_upd_peer_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_upd_peer_asn->peer_asn: {mrt_e.peer_asn}")
@@ -1695,6 +1709,7 @@ class mrt_stats:
             print(f"most_withd_peer_asn->advt: {mrt_e.advt}")
             print(f"most_withd_peer_asn->as_path: {mrt_e.as_path}")
             print(f"most_withd_peer_asn->comm_set: {mrt_e.comm_set}")
+            print(f"most_withd_peer_asn->filename: {mrt_e.filename}")
             print(f"most_withd_peer_asn->next_hop: {mrt_e.next_hop}")
             print(f"most_withd_peer_asn->origin_asns: {mrt_e.origin_asns}")
             print(f"most_withd_peer_asn->peer_asn: {mrt_e.peer_asn}")
@@ -1708,6 +1723,7 @@ class mrt_stats:
             print(f"most_origin_asns->advt: {mrt_e.advt}")
             print(f"most_origin_asns->as_path: {mrt_e.as_path}")
             print(f"most_origin_asns->comm_set: {mrt_e.comm_set}")
+            print(f"most_origin_asns->filename: {mrt_e.filename}")
             print(f"most_origin_asns->next_hop: {mrt_e.next_hop}")
             print(f"most_origin_asns->origin_asns: {mrt_e.origin_asns}")
             print(f"most_origin_asns->peer_asn: {mrt_e.peer_asn}")
@@ -1732,6 +1748,11 @@ class mrt_stats:
         if not filename:
             raise ValueError(
                 f"Missing required options: filename={filename}"
+            )
+
+        if type(filename) != str:
+            raise TypeError(
+                f"filename is not a string: {type(filename)}"
             )
 
         with open(filename, "w") as f:
