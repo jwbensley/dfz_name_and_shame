@@ -13,19 +13,19 @@ class mrt_stats:
     """
 
     def __init__(self) -> None:
-        self.bogon_origin_asns = [mrt_entry()]
-        self.bogon_prefixes = [mrt_entry()]
-        self.longest_as_path = [mrt_entry()]
-        self.longest_comm_set = [mrt_entry()]
-        self.invalid_len = [mrt_entry()]
-        self.most_advt_prefixes = [mrt_entry()]
-        self.most_upd_prefixes = [mrt_entry()]
-        self.most_withd_prefixes = [mrt_entry()]
-        self.most_advt_origin_asn = [mrt_entry()]
-        self.most_advt_peer_asn = [mrt_entry()]
-        self.most_upd_peer_asn = [mrt_entry()]
-        self.most_withd_peer_asn = [mrt_entry()]
-        self.most_origin_asns = [mrt_entry()]
+        self.bogon_origin_asns: List[mrt_entry] = []
+        self.bogon_prefixes: List[mrt_entry] = []
+        self.longest_as_path: List[mrt_entry] = []
+        self.longest_comm_set: List[mrt_entry] = []
+        self.invalid_len: List[mrt_entry] = []
+        self.most_advt_prefixes: List[mrt_entry] = []
+        self.most_upd_prefixes: List[mrt_entry] = []
+        self.most_withd_prefixes: List[mrt_entry] = []
+        self.most_advt_origin_asn: List[mrt_entry] = []
+        self.most_advt_peer_asn: List[mrt_entry] = []
+        self.most_upd_peer_asn: List[mrt_entry] = []
+        self.most_withd_peer_asn: List[mrt_entry] = []
+        self.most_origin_asns: List[mrt_entry] = []
         self.file_list: List[str] = []
         self.timestamp: str = ""
         self.total_upd: int = 0 # All updates received/parsed
@@ -1126,85 +1126,173 @@ class mrt_stats:
         updated = False
 
         # Pefixes with most bogon origin ASNs
-        if mrt_s.bogon_origin_asns[0].prefix and self.bogon_origin_asns[0].prefix:
-            if len(mrt_s.bogon_origin_asns[0].origin_asns) > len(self.bogon_origin_asns[0].origin_asns):
+        if mrt_s.bogon_origin_asns:
+            if self.bogon_origin_asns:
+                if (mrt_s.bogon_origin_asns[0].prefix and
+                    self.bogon_origin_asns[0].prefix):
+                    if (len(mrt_s.bogon_origin_asns[0].origin_asns) >
+                        len(self.bogon_origin_asns[0].origin_asns)):
+                        diff.bogon_origin_asns = mrt_s.bogon_origin_asns.copy()
+                        updated = True
+            else:
                 diff.bogon_origin_asns = mrt_s.bogon_origin_asns.copy()
                 updated = True
 
         # Bogons prefixes with more origin ASNs
-        if mrt_s.bogon_prefixes[0].prefix and self.bogon_prefixes[0].prefix:
-            if len(mrt_s.bogon_prefixes[0].origin_asns) > len(self.bogon_prefixes[0].origin_asns):
-                diff.bogon_prefixes = mrt_s.bogon_prefixes.copy()
-                updated = True
+        if mrt_s.bogon_prefixes:
+            if self.bogon_prefixes:
+                if (mrt_s.bogon_prefixes[0].prefix and
+                    self.bogon_prefixes[0].prefix):
+                    if (len(mrt_s.bogon_prefixes[0].origin_asns) >
+                        len(self.bogon_prefixes[0].origin_asns)):
+                        diff.bogon_prefixes = mrt_s.bogon_prefixes.copy()
+                        updated = True
+            else:
+                    diff.bogon_prefixes = mrt_s.bogon_prefixes.copy()
+                    updated = True
 
         # Longer AS path
-        if len(mrt_s.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
-            diff.longest_as_path = mrt_s.longest_as_path.copy()
-            updated = True
+        if mrt_s.longest_as_path:
+            if self.longest_as_path:
+                if (len(mrt_s.longest_as_path[0].as_path) >
+                    len(self.longest_as_path[0].as_path)):
+                    diff.longest_as_path = mrt_s.longest_as_path.copy()
+                    updated = True
+            else:
+                diff.longest_as_path = mrt_s.longest_as_path.copy()
+                updated = True
 
         # Longer community set
-        if len(mrt_s.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
-            diff.longest_comm_set = mrt_s.longest_comm_set.copy()
-            updated = True
+        if mrt_s.longest_comm_set:
+            if self.longest_comm_set:
+                if (len(mrt_s.longest_comm_set[0].comm_set) >
+                    len(self.longest_comm_set[0].comm_set)):
+                    diff.longest_comm_set = mrt_s.longest_comm_set.copy()
+                    updated = True
+            else:
+                diff.longest_comm_set = mrt_s.longest_comm_set.copy()
+                updated = True
 
         # Invalid length prefixes with more origin ASNs
-        if mrt_s.invalid_len[0].prefix and self.invalid_len[0].prefix:
-            if len(mrt_s.invalid_len[0].origin_asns) > len(self.invalid_len[0].origin_asns):
+        if mrt_s.invalid_len:
+            if self.invalid_len:
+                if mrt_s.invalid_len[0].prefix and self.invalid_len[0].prefix:
+                    if (len(mrt_s.invalid_len[0].origin_asns) >
+                        len(self.invalid_len[0].origin_asns)):
+                        diff.invalid_len = mrt_s.invalid_len.copy()
+                        updated = True
+            else:
                 diff.invalid_len = mrt_s.invalid_len.copy()
                 updated = True
 
         # More advertisements per prefix
         # If stats from a rib dump are being compared this wont be present:
-        if mrt_s.most_advt_prefixes[0].prefix and self.most_advt_prefixes[0].prefix:
-            if mrt_s.most_advt_prefixes[0].advt > self.most_advt_prefixes[0].advt:
+        if mrt_s.most_advt_prefixes:
+            if self.most_advt_prefixes:
+                if (mrt_s.most_advt_prefixes[0].prefix and
+                    self.most_advt_prefixes[0].prefix):
+                    if (mrt_s.most_advt_prefixes[0].advt >
+                        self.most_advt_prefixes[0].advt):
+                        diff.most_advt_prefixes = mrt_s.most_advt_prefixes.copy()
+                        updated = True
+            else:
                 diff.most_advt_prefixes = mrt_s.most_advt_prefixes.copy()
                 updated = True
 
         # More updates per prefix
         # If stats from a rib dump are being compared this wont be present:
-        if mrt_s.most_upd_prefixes[0].prefix and self.most_upd_prefixes[0].prefix:
-            if mrt_s.most_upd_prefixes[0].updates > self.most_upd_prefixes[0].updates:
+        if mrt_s.most_upd_prefixes:
+            if self.most_upd_prefixes:
+                if (mrt_s.most_upd_prefixes[0].prefix and
+                    self.most_upd_prefixes[0].prefix):
+                    if (mrt_s.most_upd_prefixes[0].updates >
+                        self.most_upd_prefixes[0].updates):
+                        diff.most_upd_prefixes = mrt_s.most_upd_prefixes.copy()
+                        updated = True
+            else:
                 diff.most_upd_prefixes = mrt_s.most_upd_prefixes.copy()
                 updated = True
 
         # More withdraws per prefix
         # If stats from a rib dump are being compared this wont be present:
-        if mrt_s.most_withd_prefixes[0].prefix and self.most_withd_prefixes[0].prefix:
-            if mrt_s.most_withd_prefixes[0].withdraws > self.most_withd_prefixes[0].withdraws:
+        if mrt_s.most_withd_prefixes:
+            if self.most_withd_prefixes:
+                if (mrt_s.most_withd_prefixes[0].prefix and
+                    self.most_withd_prefixes[0].prefix):
+                    if (mrt_s.most_withd_prefixes[0].withdraws >
+                        self.most_withd_prefixes[0].withdraws):
+                        diff.most_withd_prefixes = mrt_s.most_withd_prefixes.copy()
+                        updated = True
+            else:
                 diff.most_withd_prefixes = mrt_s.most_withd_prefixes.copy()
                 updated = True
 
         # More advertisement per origin ASN
         # If stats from a rib dump are being compare this wont be present:
-        if mrt_s.most_advt_origin_asn[0].origin_asns and self.most_advt_origin_asn[0].origin_asns:
-            if mrt_s.most_advt_origin_asn[0].advt > self.most_advt_origin_asn[0].advt:
+        if mrt_s.most_advt_origin_asn:
+            if self.most_advt_origin_asn:
+                if (mrt_s.most_advt_origin_asn[0].origin_asns and
+                    self.most_advt_origin_asn[0].origin_asns):
+                    if (mrt_s.most_advt_origin_asn[0].advt >
+                        self.most_advt_origin_asn[0].advt):
+                        diff.most_advt_origin_asn = mrt_s.most_advt_origin_asn.copy()
+                        updated = True
+            else:
                 diff.most_advt_origin_asn = mrt_s.most_advt_origin_asn.copy()
                 updated = True
 
         # More advertisement per peer ASN
         # If stats from a rib dump are being compared this wont be present:
-        if mrt_s.most_advt_peer_asn[0].peer_asn and self.most_advt_peer_asn[0].peer_asn:
-            if mrt_s.most_advt_peer_asn[0].advt > self.most_advt_peer_asn[0].advt:
+        if mrt_s.most_advt_peer_asn:
+            if self.most_advt_peer_asn:
+                if (mrt_s.most_advt_peer_asn[0].peer_asn and
+                    self.most_advt_peer_asn[0].peer_asn):
+                    if (mrt_s.most_advt_peer_asn[0].advt >
+                        self.most_advt_peer_asn[0].advt):
+                        diff.most_advt_peer_asn = mrt_s.most_advt_peer_asn.copy()
+                        updated = True
+            else:
                 diff.most_advt_peer_asn = mrt_s.most_advt_peer_asn.copy()
                 updated = True
 
         # More updates per peer ASN
         # If stats from a rib dump are being compared this wont be present:
-        if mrt_s.most_upd_peer_asn[0].peer_asn and self.most_upd_peer_asn[0].peer_asn:
-            if mrt_s.most_upd_peer_asn[0].updates > self.most_upd_peer_asn[0].updates:
+        if mrt_s.most_upd_peer_asn:
+            if self.most_upd_peer_asn:
+                if (mrt_s.most_upd_peer_asn[0].peer_asn and
+                    self.most_upd_peer_asn[0].peer_asn):
+                    if (mrt_s.most_upd_peer_asn[0].updates >
+                        self.most_upd_peer_asn[0].updates):
+                        diff.most_upd_peer_asn = mrt_s.most_upd_peer_asn.copy()
+                        updated = True
+            else:
                 diff.most_upd_peer_asn = mrt_s.most_upd_peer_asn.copy()
                 updated = True
 
         # More withdraws per peer ASN
         # If stats from a rib dump are being compared this wont be present:
-        if mrt_s.most_withd_peer_asn[0].peer_asn and self.most_withd_peer_asn[0].peer_asn:
-            if mrt_s.most_withd_peer_asn[0].withdraws > self.most_withd_peer_asn[0].withdraws:
+        if mrt_s.most_withd_peer_asn:
+            if self.most_withd_peer_asn:
+                if (mrt_s.most_withd_peer_asn[0].peer_asn and 
+                    self.most_withd_peer_asn[0].peer_asn):
+                    if (mrt_s.most_withd_peer_asn[0].withdraws >
+                        self.most_withd_peer_asn[0].withdraws):
+                        diff.most_withd_peer_asn = mrt_s.most_withd_peer_asn.copy()
+                        updated = True
+            else:
                 diff.most_withd_peer_asn = mrt_s.most_withd_peer_asn.copy()
                 updated = True
 
         # More origin ASNs per prefix
-        if mrt_s.most_origin_asns[0].prefix and self.most_origin_asns[0].prefix:
-            if len(mrt_s.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
+        if mrt_s.most_origin_asns:
+            if self.most_origin_asns:
+                if (mrt_s.most_origin_asns[0].prefix and
+                    self.most_origin_asns[0].prefix):
+                    if (len(mrt_s.most_origin_asns[0].origin_asns) >
+                        len(self.most_origin_asns[0].origin_asns)):
+                        diff.most_origin_asns = mrt_s.most_origin_asns.copy()
+                        updated = True
+            else:
                 diff.most_origin_asns = mrt_s.most_origin_asns.copy()
                 updated = True
 
@@ -1243,6 +1331,11 @@ class mrt_stats:
                 f"Missing required arguments: ymd={ymd}"
             )
 
+        if type(ymd) != str:
+            raise TypeError(
+                f"ymd is not a string: {type(ymd)}"
+            )
+
         mrt_archive.valid_ymd(ymd)
 
         return "DAILY:" + datetime.datetime.strftime(
@@ -1268,6 +1361,8 @@ class mrt_stats:
             not self.most_upd_peer_asn and
             not self.most_withd_peer_asn and
             not self.most_origin_asns and
+            not self.file_list and
+            not self.timestamp and
             not self.total_upd and
             not self.total_advt and
             not self.total_withd
@@ -1562,7 +1657,8 @@ class mrt_stats:
             print(f"bogon_origin_asns->timestamp: {mrt_e.timestamp}")
             print(f"bogon_origin_asns->updates: {mrt_e.updates}")
             print(f"bogon_origin_asns->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.bogon_origin_asns:
+            print("")
 
         for mrt_e in self.bogon_prefixes:
             print(f"bogon_prefixes->prefix: {mrt_e.prefix}")
@@ -1576,7 +1672,8 @@ class mrt_stats:
             print(f"bogon_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"bogon_prefixes->updates: {mrt_e.updates}")
             print(f"bogon_prefixes->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.bogon_prefixes:
+            print("")
 
         for mrt_e in self.longest_as_path:
             print(f"longest_as_path->prefix: {mrt_e.prefix}")
@@ -1590,7 +1687,8 @@ class mrt_stats:
             print(f"longest_as_path->timestamp: {mrt_e.timestamp}")
             print(f"longest_as_path->updates: {mrt_e.updates}")
             print(f"longest_as_path->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.longest_as_path:
+            print("")
 
         for mrt_e in self.longest_comm_set:
             print(f"longest_comm_set->prefix: {mrt_e.prefix}")
@@ -1604,7 +1702,8 @@ class mrt_stats:
             print(f"longest_comm_set->timestamp: {mrt_e.timestamp}")
             print(f"longest_comm_set->updates: {mrt_e.updates}")
             print(f"longest_comm_set->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.longest_comm_set:
+            print("")
 
         for mrt_e in self.invalid_len:
             print(f"invalid_len->prefix: {mrt_e.prefix}")
@@ -1618,7 +1717,8 @@ class mrt_stats:
             print(f"invalid_len->timestamp: {mrt_e.timestamp}")
             print(f"invalid_len->updates: {mrt_e.updates}")
             print(f"invalid_len->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.invalid_len:
+            print("")
 
         for mrt_e in self.most_advt_prefixes:
             print(f"most_advt_prefixes->prefix: {mrt_e.prefix}")
@@ -1632,7 +1732,8 @@ class mrt_stats:
             print(f"most_advt_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"most_advt_prefixes->updates: {mrt_e.updates}")
             print(f"most_advt_prefixes->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_advt_prefixes:
+            print("")
 
         for mrt_e in self.most_upd_prefixes:
             print(f"most_upd_prefixes->prefix: {mrt_e.prefix}")
@@ -1646,7 +1747,8 @@ class mrt_stats:
             print(f"most_upd_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"most_upd_prefixes->updates: {mrt_e.updates}")
             print(f"most_upd_prefixes->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_upd_prefixes:
+            print("")
 
         for mrt_e in self.most_withd_prefixes:
             print(f"most_withd_prefixes->prefix: {mrt_e.prefix}")
@@ -1660,7 +1762,8 @@ class mrt_stats:
             print(f"most_withd_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"most_withd_prefixes->updates: {mrt_e.updates}")
             print(f"most_withd_prefixes->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_withd_prefixes:
+            print("")
 
         for mrt_e in self.most_advt_origin_asn:
             print(f"most_advt_origin_asn->prefix: {mrt_e.prefix}")
@@ -1674,7 +1777,8 @@ class mrt_stats:
             print(f"most_advt_origin_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_advt_origin_asn->updates: {mrt_e.updates}")
             print(f"most_advt_origin_asn->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_advt_origin_asn:
+            print("")
 
         for mrt_e in self.most_advt_peer_asn:
             print(f"most_advt_peer_asn->prefix: {mrt_e.prefix}")
@@ -1688,7 +1792,8 @@ class mrt_stats:
             print(f"most_advt_peer_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_advt_peer_asn->updates: {mrt_e.updates}")
             print(f"most_advt_peer_asn->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_advt_peer_asn:
+            print("")
 
         for mrt_e in self.most_upd_peer_asn:
             print(f"most_upd_peer_asn->prefix: {mrt_e.prefix}")
@@ -1702,7 +1807,8 @@ class mrt_stats:
             print(f"most_upd_peer_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_upd_peer_asn->updates: {mrt_e.updates}")
             print(f"most_upd_peer_asn->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_upd_peer_asn:
+            print("")
 
         for mrt_e in self.most_withd_peer_asn:
             print(f"most_withd_peer_asn->prefix: {mrt_e.prefix}")
@@ -1716,7 +1822,8 @@ class mrt_stats:
             print(f"most_withd_peer_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_withd_peer_asn->updates: {mrt_e.updates}")
             print(f"most_withd_peer_asn->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_withd_peer_asn:
+            print("")
 
         for mrt_e in self.most_origin_asns:
             print(f"most_origin_asns->prefix: {mrt_e.prefix}")
@@ -1730,16 +1837,19 @@ class mrt_stats:
             print(f"most_origin_asns->timestamp: {mrt_e.timestamp}")
             print(f"most_origin_asns->updates: {mrt_e.updates}")
             print(f"most_origin_asns->withdraws: {mrt_e.withdraws}")
-        print("")
+        if self.most_origin_asns:
+            print("")
 
-        print(f"total_upd: {self.total_upd}")
-        print(f"total_advt: {self.total_advt}")
-        print(f"total_withd: {self.total_withd}")
-        print("")
-
-        print(f"file_list: {self.file_list}")
-
-        print(f"timestamp: {self.timestamp}")
+        if self.total_upd:
+            print(f"total_upd: {self.total_upd}")
+        if self.total_advt:
+            print(f"total_advt: {self.total_advt}")
+        if self.total_withd:
+            print(f"total_withd: {self.total_withd}")
+        if self.file_list:
+            print(f"file_list: {self.file_list}")
+        if self.timestamp:
+            print(f"timestamp: {self.timestamp}")
 
     def to_file(self, filename: str = None):
         """

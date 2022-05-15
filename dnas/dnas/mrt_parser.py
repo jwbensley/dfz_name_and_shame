@@ -108,11 +108,11 @@ class mrt_parser:
         Cache ASNs which aren't a bogon for a faster response time.
         """
         non_bogon_asns: Dict[str, None] = {}
-        bogon_origin_asns: List[mrt_entry] = [mrt_entry()]
-        bogon_prefix_entries: List[mrt_entry] = [mrt_entry()]
-        longest_as_path: List[mrt_entry] = [mrt_entry()]
-        longest_comm_set: List[mrt_entry] = [mrt_entry()]
-        invalid_len_entries: List[mrt_entry] = [mrt_entry()]
+        bogon_origin_asns: List[mrt_entry] = []
+        bogon_prefix_entries: List[mrt_entry] = []
+        longest_as_path: List[mrt_entry] = []
+        longest_comm_set: List[mrt_entry] = []
+        invalid_len_entries: List[mrt_entry] = []
         origin_asns_prefix: Dict[str, set] = {}
         upd_prefix: Dict[str, dict] = {}
         advt_per_origin_asn: Dict[str, int] = {}
@@ -375,24 +375,7 @@ class mrt_parser:
                         )
                     )
 
-            if len(as_path) == len(longest_as_path[0].as_path):
-                known_prefixes = [mrt_e.prefix for mrt_e in longest_as_path]
-                for prefix in prefixes:
-                    if prefix not in known_prefixes:
-                        longest_as_path.append(
-                            mrt_entry(
-                                as_path=as_path,
-                                comm_set=comm_set,
-                                filename=orig_filename,
-                                next_hop=next_hop,
-                                origin_asns=set([origin_asn]),
-                                peer_asn=peer_asn,
-                                prefix=prefix,
-                                timestamp=ts,
-                            )
-                        )
-
-            elif len(as_path) > len(longest_as_path[0].as_path):
+            if not longest_as_path:
                 longest_as_path = [
                     mrt_entry(
                         as_path=as_path,
@@ -405,25 +388,39 @@ class mrt_parser:
                         timestamp=ts,
                     ) for prefix in prefixes
                 ]
-
-            if len(comm_set) == len(longest_comm_set[0].comm_set):
-                known_prefixes = [mrt_e.prefix for mrt_e in longest_comm_set]
-                for prefix in prefixes:
-                    if prefix not in known_prefixes:
-                        longest_comm_set.append(
-                            mrt_entry(
-                                as_path=as_path,
-                                comm_set=comm_set,
-                                filename=orig_filename,
-                                next_hop=next_hop,
-                                origin_asns=set([origin_asn]),
-                                peer_asn=peer_asn,
-                                prefix=prefix,
-                                timestamp=ts,
+            else:
+                if len(as_path) == len(longest_as_path[0].as_path):
+                    known_prefixes = [mrt_e.prefix for mrt_e in longest_as_path]
+                    for prefix in prefixes:
+                        if prefix not in known_prefixes:
+                            longest_as_path.append(
+                                mrt_entry(
+                                    as_path=as_path,
+                                    comm_set=comm_set,
+                                    filename=orig_filename,
+                                    next_hop=next_hop,
+                                    origin_asns=set([origin_asn]),
+                                    peer_asn=peer_asn,
+                                    prefix=prefix,
+                                    timestamp=ts,
+                                )
                             )
-                        )
 
-            elif len(comm_set) > len(longest_comm_set[0].comm_set):
+                elif len(as_path) > len(longest_as_path[0].as_path):
+                    longest_as_path = [
+                        mrt_entry(
+                            as_path=as_path,
+                            comm_set=comm_set,
+                            filename=orig_filename,
+                            next_hop=next_hop,
+                            origin_asns=set([origin_asn]),
+                            peer_asn=peer_asn,
+                            prefix=prefix,
+                            timestamp=ts,
+                        ) for prefix in prefixes
+                    ]
+
+            if not longest_comm_set:
                 longest_comm_set = [
                     mrt_entry(
                         as_path=as_path,
@@ -436,6 +433,37 @@ class mrt_parser:
                         timestamp=ts,
                     ) for prefix in prefixes
                 ]
+            else:
+                if len(comm_set) == len(longest_comm_set[0].comm_set):
+                    known_prefixes = [mrt_e.prefix for mrt_e in longest_comm_set]
+                    for prefix in prefixes:
+                        if prefix not in known_prefixes:
+                            longest_comm_set.append(
+                                mrt_entry(
+                                    as_path=as_path,
+                                    comm_set=comm_set,
+                                    filename=orig_filename,
+                                    next_hop=next_hop,
+                                    origin_asns=set([origin_asn]),
+                                    peer_asn=peer_asn,
+                                    prefix=prefix,
+                                    timestamp=ts,
+                                )
+                            )
+
+                elif len(comm_set) > len(longest_comm_set[0].comm_set):
+                    longest_comm_set = [
+                        mrt_entry(
+                            as_path=as_path,
+                            comm_set=comm_set,
+                            filename=orig_filename,
+                            next_hop=next_hop,
+                            origin_asns=set([origin_asn]),
+                            peer_asn=peer_asn,
+                            prefix=prefix,
+                            timestamp=ts,
+                        ) for prefix in prefixes
+                    ]
 
 
             """
@@ -464,19 +492,25 @@ class mrt_parser:
 
         # Only get the prefixes with the most bogon origin ASNs
         for mrt_e in bogon_origin_asns:
-            if (len(mrt_e.origin_asns) == len(mrt_s.bogon_origin_asns[0].origin_asns) and
-                mrt_e.origin_asns):
-                mrt_s.bogon_origin_asns.append(mrt_e)
-            elif len(mrt_e.origin_asns) > len(mrt_s.bogon_origin_asns[0].origin_asns):
+            if not mrt_s.bogon_origin_asns:
                 mrt_s.bogon_origin_asns = [mrt_e]
+            else:
+                if (len(mrt_e.origin_asns) == len(mrt_s.bogon_origin_asns[0].origin_asns) and
+                    mrt_e.origin_asns):
+                    mrt_s.bogon_origin_asns.append(mrt_e)
+                elif len(mrt_e.origin_asns) > len(mrt_s.bogon_origin_asns[0].origin_asns):
+                    mrt_s.bogon_origin_asns = [mrt_e]
 
         # Only get the bogons prefixes with the most origin ASNs
         for mrt_e in bogon_prefix_entries:
-            if (len(mrt_e.origin_asns) == len(mrt_s.bogon_prefixes[0].origin_asns) and
-                mrt_e.origin_asns):
-                mrt_s.bogon_prefixes.append(mrt_e)
-            elif len(mrt_e.origin_asns) > len(mrt_s.bogon_prefixes[0].origin_asns):
+            if not mrt_s.bogon_prefixes:
                 mrt_s.bogon_prefixes = [mrt_e]
+            else:
+                if (len(mrt_e.origin_asns) == len(mrt_s.bogon_prefixes[0].origin_asns) and
+                    mrt_e.origin_asns):
+                    mrt_s.bogon_prefixes.append(mrt_e)
+                elif len(mrt_e.origin_asns) > len(mrt_s.bogon_prefixes[0].origin_asns):
+                    mrt_s.bogon_prefixes = [mrt_e]
 
         mrt_s.longest_as_path = longest_as_path.copy()
 
@@ -484,27 +518,19 @@ class mrt_parser:
 
         # Only get the invalid mask lengths with the most origin ASNs
         for mrt_e in invalid_len_entries:
-            if (len(mrt_e.origin_asns) == len(mrt_s.invalid_len[0].origin_asns) and
-                mrt_e.origin_asns):
-                mrt_s.invalid_len.append(mrt_e)
-            elif len(mrt_e.origin_asns) > len(mrt_s.invalid_len[0].origin_asns):
+            if not mrt_s.invalid_len:
                 mrt_s.invalid_len = [mrt_e]
+            else:
+                if (len(mrt_e.origin_asns) == len(mrt_s.invalid_len[0].origin_asns) and
+                    mrt_e.origin_asns):
+                    mrt_s.invalid_len.append(mrt_e)
+                elif len(mrt_e.origin_asns) > len(mrt_s.invalid_len[0].origin_asns):
+                    mrt_s.invalid_len = [mrt_e]
 
         most_updates = 0
         most_upd_prefixes = []
         for prefix in upd_prefix:
-            if (upd_prefix[prefix]["advt"] == mrt_s.most_advt_prefixes[0].advt and
-                mrt_s.most_advt_prefixes[0].advt > 0):
-                mrt_s.most_advt_prefixes.append(
-                    mrt_entry(
-                        advt=upd_prefix[prefix]["advt"],
-                        filename=orig_filename,
-                        prefix=prefix,
-                        timestamp=file_ts,
-
-                    )
-                )
-            elif upd_prefix[prefix]["advt"] > mrt_s.most_advt_prefixes[0].advt:
+            if not mrt_s.most_advt_prefixes:
                 mrt_s.most_advt_prefixes = [
                     mrt_entry(
                         advt=upd_prefix[prefix]["advt"],
@@ -513,18 +539,29 @@ class mrt_parser:
                         timestamp=file_ts,
                     )
                 ]
+            else:
+                if (upd_prefix[prefix]["advt"] == mrt_s.most_advt_prefixes[0].advt and
+                    mrt_s.most_advt_prefixes[0].advt > 0):
+                    mrt_s.most_advt_prefixes.append(
+                        mrt_entry(
+                            advt=upd_prefix[prefix]["advt"],
+                            filename=orig_filename,
+                            prefix=prefix,
+                            timestamp=file_ts,
 
-            if (upd_prefix[prefix]["withdraws"] == mrt_s.most_withd_prefixes[0].withdraws and
-                mrt_s.most_withd_prefixes[0].withdraws > 0):
-                mrt_s.most_withd_prefixes.append(
-                    mrt_entry(
-                        filename=orig_filename,
-                        prefix=prefix,
-                        timestamp=file_ts,
-                        withdraws=upd_prefix[prefix]["withdraws"],
+                        )
                     )
-                )
-            elif upd_prefix[prefix]["withdraws"] > mrt_s.most_withd_prefixes[0].withdraws:
+                elif upd_prefix[prefix]["advt"] > mrt_s.most_advt_prefixes[0].advt:
+                    mrt_s.most_advt_prefixes = [
+                        mrt_entry(
+                            advt=upd_prefix[prefix]["advt"],
+                            filename=orig_filename,
+                            prefix=prefix,
+                            timestamp=file_ts,
+                        )
+                    ]
+
+            if not mrt_s.most_withd_prefixes:
                 mrt_s.most_withd_prefixes = [
                     mrt_entry(
                         filename=orig_filename,
@@ -533,6 +570,26 @@ class mrt_parser:
                         withdraws=upd_prefix[prefix]["withdraws"],
                     )
                 ]
+            else:
+                if (upd_prefix[prefix]["withdraws"] == mrt_s.most_withd_prefixes[0].withdraws and
+                    mrt_s.most_withd_prefixes[0].withdraws > 0):
+                    mrt_s.most_withd_prefixes.append(
+                        mrt_entry(
+                            filename=orig_filename,
+                            prefix=prefix,
+                            timestamp=file_ts,
+                            withdraws=upd_prefix[prefix]["withdraws"],
+                        )
+                    )
+                elif upd_prefix[prefix]["withdraws"] > mrt_s.most_withd_prefixes[0].withdraws:
+                    mrt_s.most_withd_prefixes = [
+                        mrt_entry(
+                            filename=orig_filename,
+                            prefix=prefix,
+                            timestamp=file_ts,
+                            withdraws=upd_prefix[prefix]["withdraws"],
+                        )
+                    ]
 
             if (upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]) > most_updates:
                 most_updates = upd_prefix[prefix]["advt"] + upd_prefix[prefix]["withdraws"]
@@ -553,17 +610,7 @@ class mrt_parser:
         most_updates = 0
         most_upd_asns = []
         for asn in upd_peer_asn:
-            if (upd_peer_asn[asn]["advt"] == mrt_s.most_advt_peer_asn[0].advt and
-                mrt_s.most_advt_peer_asn[0].advt > 0):
-                mrt_s.most_advt_peer_asn.append(
-                    mrt_entry(
-                        advt=upd_peer_asn[asn]["advt"],
-                        filename=orig_filename,
-                        peer_asn=asn,
-                        timestamp=file_ts,
-                    )
-                )
-            elif upd_peer_asn[asn]["advt"] > mrt_s.most_advt_peer_asn[0].advt:
+            if not mrt_s.most_advt_peer_asn:
                 mrt_s.most_advt_peer_asn = [
                     mrt_entry(
                         advt=upd_peer_asn[asn]["advt"],
@@ -572,18 +619,28 @@ class mrt_parser:
                         timestamp=file_ts,
                     )
                 ]
-
-            if (upd_peer_asn[asn]["withdraws"] == mrt_s.most_withd_peer_asn[0].withdraws and
-                mrt_s.most_withd_peer_asn[0].withdraws > 0):
-                mrt_s.most_withd_peer_asn.append(
-                    mrt_entry(
-                        filename=orig_filename,
-                        peer_asn=asn,
-                        timestamp=file_ts,
-                        withdraws=upd_peer_asn[asn]["withdraws"],
+            else:
+                if (upd_peer_asn[asn]["advt"] == mrt_s.most_advt_peer_asn[0].advt and
+                    mrt_s.most_advt_peer_asn[0].advt > 0):
+                    mrt_s.most_advt_peer_asn.append(
+                        mrt_entry(
+                            advt=upd_peer_asn[asn]["advt"],
+                            filename=orig_filename,
+                            peer_asn=asn,
+                            timestamp=file_ts,
+                        )
                     )
-                )
-            elif upd_peer_asn[asn]["withdraws"] > mrt_s.most_withd_peer_asn[0].withdraws:
+                elif upd_peer_asn[asn]["advt"] > mrt_s.most_advt_peer_asn[0].advt:
+                    mrt_s.most_advt_peer_asn = [
+                        mrt_entry(
+                            advt=upd_peer_asn[asn]["advt"],
+                            filename=orig_filename,
+                            peer_asn=asn,
+                            timestamp=file_ts,
+                        )
+                    ]
+
+            if not mrt_s.most_withd_peer_asn:
                 mrt_s.most_withd_peer_asn = [
                     mrt_entry(
                         filename=orig_filename,
@@ -592,6 +649,26 @@ class mrt_parser:
                         withdraws=upd_peer_asn[asn]["withdraws"],
                     )
                 ]
+            else:
+                if (upd_peer_asn[asn]["withdraws"] == mrt_s.most_withd_peer_asn[0].withdraws and
+                    mrt_s.most_withd_peer_asn[0].withdraws > 0):
+                    mrt_s.most_withd_peer_asn.append(
+                        mrt_entry(
+                            filename=orig_filename,
+                            peer_asn=asn,
+                            timestamp=file_ts,
+                            withdraws=upd_peer_asn[asn]["withdraws"],
+                        )
+                    )
+                elif upd_peer_asn[asn]["withdraws"] > mrt_s.most_withd_peer_asn[0].withdraws:
+                    mrt_s.most_withd_peer_asn = [
+                        mrt_entry(
+                            filename=orig_filename,
+                            peer_asn=asn,
+                            timestamp=file_ts,
+                            withdraws=upd_peer_asn[asn]["withdraws"],
+                        )
+                    ]
 
             if (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"]) > most_updates:
                 most_updates = (upd_peer_asn[asn]["advt"] + upd_peer_asn[asn]["withdraws"])
@@ -609,16 +686,7 @@ class mrt_parser:
         ]
 
         for prefix in origin_asns_prefix:
-            if len(origin_asns_prefix[prefix]) > len(mrt_s.most_origin_asns[0].origin_asns):
-                mrt_s.most_origin_asns = [
-                    mrt_entry(
-                        filename=orig_filename,
-                        origin_asns=origin_asns_prefix[prefix],
-                        prefix=prefix,
-                        timestamp=file_ts,
-                    )
-                ]
-            elif len(origin_asns_prefix[prefix]) == len(mrt_s.most_origin_asns[0].origin_asns):
+            if not mrt_s.most_origin_asns:
                 mrt_s.most_origin_asns.append(
                     mrt_entry(
                         filename=orig_filename,
@@ -627,6 +695,25 @@ class mrt_parser:
                         timestamp=file_ts,
                     )
                 )
+            else:
+                if len(origin_asns_prefix[prefix]) > len(mrt_s.most_origin_asns[0].origin_asns):
+                    mrt_s.most_origin_asns = [
+                        mrt_entry(
+                            filename=orig_filename,
+                            origin_asns=origin_asns_prefix[prefix],
+                            prefix=prefix,
+                            timestamp=file_ts,
+                        )
+                    ]
+                elif len(origin_asns_prefix[prefix]) == len(mrt_s.most_origin_asns[0].origin_asns):
+                    mrt_s.most_origin_asns.append(
+                        mrt_entry(
+                            filename=orig_filename,
+                            origin_asns=origin_asns_prefix[prefix],
+                            prefix=prefix,
+                            timestamp=file_ts,
+                        )
+                    )
 
         advt_per_orig_asn_sorted = sorted(advt_per_origin_asn.items(), key=operator.itemgetter(1))
         mrt_s.most_advt_origin_asn = [
