@@ -11,6 +11,7 @@ sys.path.append(
 from dnas.config import config
 from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
+from dnas.mrt_entry import mrt_entry
 
 
 class test_mrt_parser(unittest.TestCase):
@@ -43,6 +44,11 @@ class test_mrt_parser(unittest.TestCase):
         )
         stats = mrt_p.parse_upd_dump(upd_filename)
 
+        self.assertIsInstance(stats, mrt_stats)
+
+        self.assertIsInstance(stats.bogon_origin_asns, list)
+        self.assertEqual(len(stats.bogon_origin_asns), 1)
+        self.assertIsInstance(stats.bogon_origin_asns[0], mrt_entry)
         self.assertEqual(stats.bogon_origin_asns[0].advt, 0)
         self.assertEqual(stats.bogon_origin_asns[0].as_path, ["137409", "17494", "137491", "58689", "137464", "65551"])
         self.assertEqual(stats.bogon_origin_asns[0].comm_set, [])
@@ -68,7 +74,9 @@ class test_mrt_parser(unittest.TestCase):
         )
         stats = mrt_p.parse_upd_dump(upd_filename)
 
-
+        self.assertIsInstance(stats.bogon_prefixes, list)
+        self.assertEqual(len(stats.bogon_prefixes), 1)
+        self.assertIsInstance(stats.bogon_prefixes[0], mrt_entry)
         self.assertEqual(stats.bogon_prefixes[0].advt, 0)
         self.assertEqual(stats.bogon_prefixes[0].as_path, ["133210", "6939"])
         self.assertEqual(
@@ -94,6 +102,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.bogon_prefixes[0].updates, 0)
         self.assertEqual(stats.bogon_prefixes[0].withdraws, 0)
 
+        self.assertIsInstance(stats.longest_as_path, list)
+        self.assertEqual(len(stats.longest_as_path), 1)
+        self.assertIsInstance(stats.longest_as_path[0], mrt_entry)
         self.assertEqual(stats.longest_as_path[0].advt, 0)
         self.assertEqual(
             stats.longest_as_path[0].as_path,
@@ -124,6 +135,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.longest_as_path[0].updates, 0)
         self.assertEqual(stats.longest_as_path[0].withdraws, 0)
 
+        self.assertIsInstance(stats.longest_comm_set, list)
+        self.assertEqual(len(stats.longest_comm_set), 1)
+        self.assertIsInstance(stats.longest_comm_set[0], mrt_entry)
         self.assertEqual(stats.longest_comm_set[0].advt, 0)
         self.assertEqual(
             stats.longest_comm_set[0].as_path,
@@ -194,6 +208,9 @@ class test_mrt_parser(unittest.TestCase):
         )
         stats = mrt_p.parse_upd_dump(upd_filename)
 
+        self.assertIsInstance(stats.invalid_len, list)
+        self.assertEqual(len(stats.invalid_len), 6)
+        self.assertIsInstance(stats.invalid_len[0], mrt_entry)
         self.assertEqual(stats.invalid_len[0].advt, 0)
         self.assertEqual(stats.invalid_len[0].as_path, ["199524", "38082"])
         self.assertEqual(stats.invalid_len[0].comm_set, [])
@@ -309,6 +326,9 @@ class test_mrt_parser(unittest.TestCase):
         )
         stats = mrt_p.parse_upd_dump(upd_filename)
 
+        self.assertIsInstance(stats.most_advt_prefixes, list)
+        self.assertEqual(len(stats.most_advt_prefixes), 1)
+        self.assertIsInstance(stats.most_advt_prefixes[0], mrt_entry)
         self.assertEqual(stats.most_advt_prefixes[0].advt, 884)
         self.assertEqual(stats.most_advt_prefixes[0].as_path, [[]])
         self.assertEqual(stats.most_advt_prefixes[0].comm_set, [[]])
@@ -327,6 +347,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_advt_prefixes[0].updates, 0)
         self.assertEqual(stats.most_advt_prefixes[0].withdraws, 0)
 
+        self.assertIsInstance(stats.most_upd_prefixes, list)
+        self.assertEqual(len(stats.most_upd_prefixes), 1)
+        self.assertIsInstance(stats.most_upd_prefixes[0], mrt_entry)
         self.assertEqual(stats.most_upd_prefixes[0].advt, 0)
         self.assertEqual(stats.most_upd_prefixes[0].as_path, [[]])
         self.assertEqual(stats.most_upd_prefixes[0].comm_set, [[]])
@@ -345,6 +368,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_upd_prefixes[0].updates, 898)
         self.assertEqual(stats.most_upd_prefixes[0].withdraws, 0)
 
+        self.assertIsInstance(stats.most_withd_prefixes, list)
+        self.assertEqual(len(stats.most_withd_prefixes), 1)
+        self.assertIsInstance(stats.most_withd_prefixes[0], mrt_entry)
         self.assertEqual(stats.most_withd_prefixes[0].advt, 0)
         self.assertEqual(stats.most_withd_prefixes[0].as_path, [[]])
         self.assertEqual(stats.most_withd_prefixes[0].comm_set, [[]])
@@ -367,6 +393,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_withd_prefixes[0].updates, 0)
         self.assertEqual(stats.most_withd_prefixes[0].withdraws, 89)
 
+        self.assertIsInstance(stats.most_advt_origin_asn, list)
+        self.assertEqual(len(stats.most_advt_origin_asn), 1)
+        self.assertIsInstance(stats.most_advt_origin_asn[0], mrt_entry)
         self.assertEqual(stats.most_advt_origin_asn[0].advt, 2628)
         self.assertEqual(stats.most_advt_origin_asn[0].as_path, [[]])
         self.assertEqual(stats.most_advt_origin_asn[0].comm_set, [[]])
@@ -389,6 +418,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_advt_origin_asn[0].updates, 0)
         self.assertEqual(stats.most_advt_origin_asn[0].withdraws, 0)
 
+        self.assertIsInstance(stats.most_advt_peer_asn, list)
+        self.assertEqual(len(stats.most_advt_peer_asn), 1)
+        self.assertIsInstance(stats.most_advt_peer_asn[0], mrt_entry)
         self.assertEqual(stats.most_advt_peer_asn[0].advt, 11595)
         self.assertEqual(stats.most_advt_peer_asn[0].as_path, [[]])
         self.assertEqual(stats.most_advt_peer_asn[0].comm_set, [[]])
@@ -407,6 +439,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_advt_peer_asn[0].updates, 0)
         self.assertEqual(stats.most_advt_peer_asn[0].withdraws, 0)
 
+        self.assertIsInstance(stats.most_upd_peer_asn, list)
+        self.assertEqual(len(stats.most_upd_peer_asn), 1)
+        self.assertIsInstance(stats.most_upd_peer_asn[0], mrt_entry)
         self.assertEqual(stats.most_upd_peer_asn[0].advt, 0)
         self.assertEqual(stats.most_upd_peer_asn[0].as_path, [[]])
         self.assertEqual(stats.most_upd_peer_asn[0].comm_set, [[]])
@@ -425,6 +460,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_upd_peer_asn[0].updates, 11781)
         self.assertEqual(stats.most_upd_peer_asn[0].withdraws, 0)
 
+        self.assertIsInstance(stats.most_withd_peer_asn, list)
+        self.assertEqual(len(stats.most_withd_peer_asn), 1)
+        self.assertIsInstance(stats.most_withd_peer_asn[0], mrt_entry)
         self.assertEqual(stats.most_withd_peer_asn[0].advt, 0)
         self.assertEqual(stats.most_withd_peer_asn[0].as_path, [[]])
         self.assertEqual(stats.most_withd_peer_asn[0].comm_set, [[]])
@@ -445,6 +483,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_withd_peer_asn[0].updates, 0)
         self.assertEqual(stats.most_withd_peer_asn[0].withdraws, 186)
 
+        self.assertIsInstance(stats.most_origin_asns, list)
+        self.assertEqual(len(stats.most_origin_asns), 9)
+        self.assertIsInstance(stats.most_origin_asns[0], mrt_entry)
         self.assertEqual(stats.most_origin_asns[0].advt, 0)
         self.assertEqual(stats.most_origin_asns[0].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[0].comm_set, [[]])
@@ -625,9 +666,13 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[8].updates, 0)
         self.assertEqual(stats.most_origin_asns[8].withdraws, 0)
 
+        self.assertIsInstance(stats.total_upd, int)
         self.assertEqual(stats.total_upd, 29688)
+        self.assertIsInstance(stats.total_advt, int)
         self.assertEqual(stats.total_advt, 29396)
+        self.assertIsInstance(stats.total_withd, int)
         self.assertEqual(stats.total_withd, 950)
+        self.assertIsInstance(stats.file_list, list)
         self.assertEqual(
             stats.file_list,
             [
@@ -637,6 +682,7 @@ class test_mrt_parser(unittest.TestCase):
                 )
             ]
         )
+        self.assertIsInstance(stats.timestamp, str)
         self.assertEqual(stats.timestamp, "20220501.2305")
 
 if __name__ == '__main__':

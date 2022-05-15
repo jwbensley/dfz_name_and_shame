@@ -210,7 +210,7 @@ def to_json_parsed(rib: bool = False, json_file: str = None, mrt_file: str = Non
             f"json_file={json_file}"
         )
 
-    ######## TODO - Fix this hack so that mrt_parser doesn't car about the path
+    ######## TODO - Fix this hack so that mrt_parser doesn't care about the path
     cfg.SPLIT_DIR = ""
 
     stats: 'mrt_stats'
@@ -236,6 +236,8 @@ def main():
         raise FileNotFoundError(
             errno.ENOENT, os.strerror(errno.ENOENT), args["mrt"]
         )
+
+    args["mrt"] = os.path.abspath(args["mrt"])
 
     if args["check_rib"]:
         check_rib_dump(args["mrt"])
