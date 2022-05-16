@@ -27,4 +27,5 @@ jobs:
       - name: Run the Python unit tests
         #working-directory: ./dnas/
         run: |
-          sudo pytest
+          sudo pwd
+          sudo ls -l
