@@ -27,4 +27,4 @@ jobs:
       - name: Run the Python unit tests
         #working-directory: ./dnas/
         run: |
-          which pytest
+          sudo /opt/hostedtoolcache/Python/3.8.12/x64/bin/pytest
