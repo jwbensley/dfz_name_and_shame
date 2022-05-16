@@ -28,4 +28,12 @@ jobs:
         working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/
         #sudo /opt/hostedtoolcache/Python/3.8.12/x64/bin/pytest
         run: |
-          sudo python3 dnas/tests/test_bogon_asn.py
+          python3 dnas/tests/test_bogon_asn.py -v
+          python3 dnas/tests/test_bogon_ip.py -v
+          sudo python3 dnas/tests/test_git.py -v
+          python3 dnas/tests/test_mrt_archive.py -v
+          python3 dnas/tests/test_mrt_entry.py -v
+          python3 dnas/tests/test_mrt_getter.py -v
+          python3 dnas/tests/test_mrt_parser.py -v
+          python3 dnas/tests/test_mrt_splitter.py -v
+          python3 dnas/tests/test_mrt_stats.py -v
