@@ -22,8 +22,7 @@ jobs:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.github_action_1 }}"
-
+        #  ssh-add - <<< "${{ secrets.github_action_1 }}"
       - name: Install up Python 3.8
         uses: actions/setup-python@v3
         with:
