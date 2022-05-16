@@ -23,6 +23,7 @@ jobs:
         run: |
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
       - name: Install up Python 3.8
         uses: actions/setup-python@v3
         with:
