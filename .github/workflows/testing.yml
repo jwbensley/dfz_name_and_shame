@@ -25,6 +25,8 @@ jobs:
           ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
           mkdir ~/.ssh/
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+      - name: Setup git
+        run: |
           git config --global user.email "github_actions@example.com"
           git config --global user.name "Github Actions"
       - name: Install up Python 3.8

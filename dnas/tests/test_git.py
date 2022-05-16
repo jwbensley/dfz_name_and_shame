@@ -160,11 +160,10 @@ class test_git(unittest.TestCase):
         self.g.add(self.test_filename)
         # If there are changes to commit, no exception is raised
         asserted = False
-        self.g.commit("unittest")
-        #try:
-        #    self.g.commit("unittest")
-        #except:
-        #    asserted = True
+        try:
+            self.g.commit("unittest")
+        except:
+            asserted = True
         self.assertEqual(asserted, False)
         os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
 
@@ -226,10 +225,11 @@ class test_git(unittest.TestCase):
         self.g.clear()
 
         asserted = False
-        try:
-            self.g.push()
-        except:
-            asserted = True
+        self.g.push()
+        #try:
+        #    self.g.push()
+        #except:
+        #    asserted = True
         self.assertEqual(asserted, False)
 
 if __name__ == '__main__':
