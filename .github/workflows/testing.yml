@@ -21,9 +21,10 @@ jobs:
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
-          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          sudo ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          sudo ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+          sudo mkdir ~/.ssh/
+          sudo ssh-keyscan -H github.com >> ~/.ssh/known_hosts
       - name: Install up Python 3.8
         uses: actions/setup-python@v3
         with:
