@@ -16,6 +16,14 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
+
+      - name: Setup SSH Keys and known_hosts
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.github_action_1 }}"
+
       - name: Install up Python 3.8
         uses: actions/setup-python@v3
         with:
@@ -26,14 +34,15 @@ jobs:
           pip install -r dnas/requirements.txt
       - name: Run the Python unit tests
         working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/
-        #sudo /opt/hostedtoolcache/Python/3.8.12/x64/bin/pytest
+        env:
+            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          python3 dnas/tests/test_bogon_asn.py -v
-          python3 dnas/tests/test_bogon_ip.py -v
           sudo python3 dnas/tests/test_git.py -v
-          python3 dnas/tests/test_mrt_archive.py -v
-          python3 dnas/tests/test_mrt_entry.py -v
-          python3 dnas/tests/test_mrt_getter.py -v
-          python3 dnas/tests/test_mrt_parser.py -v
-          python3 dnas/tests/test_mrt_splitter.py -v
-          python3 dnas/tests/test_mrt_stats.py -v
+        #  python3 dnas/tests/test_bogon_asn.py -v
+        #  python3 dnas/tests/test_bogon_ip.py -v
+        #  python3 dnas/tests/test_mrt_archive.py -v
+        #  python3 dnas/tests/test_mrt_entry.py -v
+        #  python3 dnas/tests/test_mrt_getter.py -v
+        #  python3 dnas/tests/test_mrt_parser.py -v
+        #  python3 dnas/tests/test_mrt_splitter.py -v
+        #  python3 dnas/tests/test_mrt_stats.py -v
