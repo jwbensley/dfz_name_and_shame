@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dnas/requirements.txt
       - name: Run the Python unit tests
-        working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/dnas/
+        working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/
+        #sudo /opt/hostedtoolcache/Python/3.8.12/x64/bin/pytest
         run: |
-          sudo /opt/hostedtoolcache/Python/3.8.12/x64/bin/pytest
+          sudo python3 dnas/tests/test_bogon_asn.py
