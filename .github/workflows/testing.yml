@@ -21,10 +21,10 @@ jobs:
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          sudo ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          sudo ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
-          sudo mkdir ~/.ssh/
-          sudo ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+          mkdir ~/.ssh/
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
       - name: Install up Python 3.8
         uses: actions/setup-python@v3
         with:
@@ -38,7 +38,9 @@ jobs:
         env:
             SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          sudo python3 dnas/tests/test_git.py -v
+           sudo mkdir /media/usb0
+           sudo chmod 777 /media/usb0
+           python3 dnas/tests/test_git.py -v
         #  python3 dnas/tests/test_bogon_asn.py -v
         #  python3 dnas/tests/test_bogon_ip.py -v
         #  python3 dnas/tests/test_mrt_archive.py -v
