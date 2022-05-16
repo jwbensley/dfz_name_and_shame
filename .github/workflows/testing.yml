@@ -27,5 +27,4 @@ jobs:
       - name: Run the Python unit tests
         working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/dnas/
         run: |
-          sudo ls -l
           sudo /opt/hostedtoolcache/Python/3.8.12/x64/bin/pytest dnas/
