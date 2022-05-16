@@ -225,11 +225,10 @@ class test_git(unittest.TestCase):
         self.g.clear()
 
         asserted = False
-        self.g.push()
-        #try:
-        #    self.g.push()
-        #except:
-        #    asserted = True
+        try:
+            self.g.push()
+        except:
+            asserted = True
         self.assertEqual(asserted, False)
 
 if __name__ == '__main__':
