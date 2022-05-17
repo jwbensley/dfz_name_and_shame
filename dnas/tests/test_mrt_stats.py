@@ -827,7 +827,10 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(stats_1.total_upd, 57245)
         self.assertEqual(stats_1.total_advt, 56752)
         self.assertEqual(stats_1.total_withd, 1837)
-        self.assertEqual(stats_1.file_list, [self.upd_1_mrt, self.upd_2_mrt])
+        self.assertEqual(
+            stats_1.file_list,
+            [os.path.basename(self.upd_1_mrt), os.path.basename(self.upd_2_mrt)]
+        )
         self.assertEqual(stats_1.timestamp, "20220501.2305")
 
     def test_equal_to(self):
@@ -2376,7 +2379,10 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(stats.total_upd, 29688)
         self.assertEqual(stats.total_advt, 29396)
         self.assertEqual(stats.total_withd, 950)
-        self.assertEqual(stats.file_list, [self.upd_1_mrt, self.upd_2_mrt])
+        self.assertEqual(
+            stats.file_list,
+            [os.path.basename(self.upd_1_mrt), os.path.basename(self.upd_2_mrt)]
+        )
         self.assertEqual(stats.timestamp, "20220501.2305")
 
     def test_to_file(self):
