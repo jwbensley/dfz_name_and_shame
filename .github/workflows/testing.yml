@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
+        with:
+          ref: issue-22
 
       - name: Setup SSH Keys and known_hosts
         env:
