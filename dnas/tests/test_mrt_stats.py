@@ -828,8 +828,8 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(stats_1.total_advt, 56752)
         self.assertEqual(stats_1.total_withd, 1837)
         self.assertEqual(
-            stats_1.file_list,
-            [os.path.basename(self.upd_1_mrt), os.path.basename(self.upd_2_mrt)]
+            sorted([os.path.basename(file) for file in stats_1.file_list]),
+            sorted([os.path.basename(self.upd_1_mrt), os.path.basename(self.upd_2_mrt)])
         )
         self.assertEqual(stats_1.timestamp, "20220501.2305")
 
@@ -1627,8 +1627,6 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff.file_list, [])
         self.assertEqual(diff.timestamp, "20220501.2305")
 
-        ##diff.print()
-
     def test_gen_prev_daily_key(self):
         self.assertRaises(ValueError, self.upd_1_stats.gen_prev_daily_key, None)
         self.assertRaises(TypeError, self.upd_1_stats.gen_prev_daily_key, 123)
@@ -2380,8 +2378,8 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(stats.total_advt, 29396)
         self.assertEqual(stats.total_withd, 950)
         self.assertEqual(
-            stats.file_list,
-            [os.path.basename(self.upd_1_mrt), os.path.basename(self.upd_2_mrt)]
+            sorted([os.path.basename(file) for file in stats.file_list]),
+            sorted([os.path.basename(self.upd_1_mrt), os.path.basename(self.upd_2_mrt)])
         )
         self.assertEqual(stats.timestamp, "20220501.2305")
 
