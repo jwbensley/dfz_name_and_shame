@@ -575,12 +575,12 @@ class test_mrt_archive(unittest.TestCase):
     def test_gen_latest_rib_fn_as57355(self):
         rib_name = self.mrt_as57355.gen_latest_rib_fn_as57355()
         regex = (
-            f"{self.mrt_as57355.RIB_PREFIX}"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
-            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
-            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
-            f"\.{self.mrt_as57355.MRT_EXT}"
+            rf"{self.mrt_as57355.RIB_PREFIX}"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            rf"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            rf"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            rf"\.{self.mrt_as57355.MRT_EXT}"
         )
         self.assertTrue(re.match(regex, rib_name))
         mins = int(rib_name.split(".")[2][:2]) * 60 + int(rib_name.split(".")[2][2:])
@@ -589,12 +589,12 @@ class test_mrt_archive(unittest.TestCase):
     def test_gen_latest_rib_fn_ripe(self):
         rib_name = self.mrt_ripe.gen_latest_rib_fn_ripe()
         regex = (
-            f"{self.mrt_ripe.RIB_PREFIX}"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
-            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
-            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
-            f"\.{self.mrt_ripe.MRT_EXT}"
+            rf"{self.mrt_ripe.RIB_PREFIX}"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            rf"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            rf"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            rf"\.{self.mrt_ripe.MRT_EXT}"
         )
         self.assertTrue(re.match(regex, rib_name))
         mins = (int(rib_name.split(".")[2][:2]) * 60) + int(rib_name.split(".")[2][2:])
@@ -603,12 +603,12 @@ class test_mrt_archive(unittest.TestCase):
     def test_gen_latest_rib_fn_rv(self):
         rib_name = self.mrt_rv.gen_latest_rib_fn_rv()
         regex = (
-            f"{self.mrt_rv.RIB_PREFIX}"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
-            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
-            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
-            f"\.{self.mrt_rv.MRT_EXT}"
+            rf"{self.mrt_rv.RIB_PREFIX}"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            rf"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            rf"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            rf"\.{self.mrt_rv.MRT_EXT}"
         )
         self.assertTrue(re.match(regex, rib_name))
         mins = int(rib_name.split(".")[2][:2]) * 60 + int(rib_name.split(".")[2][2:])
@@ -641,12 +641,12 @@ class test_mrt_archive(unittest.TestCase):
     def test_gen_latest_upd_fn_as57355(self):
         upd_name = self.mrt_as57355.gen_latest_upd_fn_as57355()
         regex = (
-            f"{self.mrt_as57355.UPD_PREFIX}"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
-            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
-            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
-            f"\.{self.mrt_as57355.MRT_EXT}"
+            rf"{self.mrt_as57355.UPD_PREFIX}"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            rf"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            rf"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            rf"\.{self.mrt_as57355.MRT_EXT}"
         )
         self.assertTrue(re.match(regex, upd_name))
         mins = int(upd_name.split(".")[1][:2]) * 60 + int(upd_name.split(".")[1][2:])
@@ -655,12 +655,12 @@ class test_mrt_archive(unittest.TestCase):
     def test_gen_latest_upd_fn_ripe(self):
         upd_name = self.mrt_ripe.gen_latest_upd_fn_ripe()
         regex = (
-            f"{self.mrt_ripe.UPD_PREFIX}"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
-            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
-            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
-            f"\.{self.mrt_ripe.MRT_EXT}"
+            rf"{self.mrt_ripe.UPD_PREFIX}"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            rf"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            rf"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            rf"\.{self.mrt_ripe.MRT_EXT}"
         )
         self.assertTrue(re.match(regex, upd_name))
         mins = int(upd_name.split(".")[2][:2]) * 60 + int(upd_name.split(".")[2][2:])
@@ -669,12 +669,12 @@ class test_mrt_archive(unittest.TestCase):
     def test_gen_latest_upd_fn_rv(self):
         upd_name = self.mrt_rv.gen_latest_upd_fn_rv()
         regex = (
-            f"{self.mrt_rv.UPD_PREFIX}"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
-            f"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
-            f"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
-            f"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
-            f"\.{self.mrt_rv.MRT_EXT}"
+            rf"{self.mrt_rv.UPD_PREFIX}"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%Y')}"
+            rf"({datetime.datetime.strftime(datetime.datetime.now()-datetime.timedelta(days=1), '%m%d')}|"
+            rf"{datetime.datetime.strftime(datetime.datetime.now(), '%m%d')})"
+            rf"\.([0-1][0-9]|2[0-3])[0-5][0-9]"
+            rf"\.{self.mrt_rv.MRT_EXT}"
         )
         self.assertTrue(re.match(regex, upd_name))
         mins = int(upd_name.split(".")[2][:2]) * 60 + int(upd_name.split(".")[2][2:])

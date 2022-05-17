@@ -953,7 +953,7 @@ class mrt_archive:
         running in 2030, I'm a realist :(
         """
         if not re.match(
-            "^(1999|20[0-2][0-9])(0[1-9]|1[0-2])$", ym
+            r"^(1999|20[0-2][0-9])(0[1-9]|1[0-2])$", ym
         ):
             raise ValueError(
                 f"Invalid year and month format: {ym}. "
@@ -981,7 +981,7 @@ class mrt_archive:
         running in 2030, I'm a realist :(
         """
         if not re.match(
-            "^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])$",
+            r"^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])$",
             ymd
         ):
             raise ValueError(
@@ -1012,8 +1012,8 @@ class mrt_archive:
         """
 
         if not re.match(
-            ("^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\."
-            "([0-1][0-9]|2[0-3])([0-5][0-9])$"), ymd_hm
+            (r"^(1999|20[0-2][0-9])(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])\."
+            r"([0-1][0-9]|2[0-3])([0-5][0-9])$"), ymd_hm
         ):
             raise ValueError(
                 f"Invalid year, month, day, hour, minute format: {ymd_hm}. "

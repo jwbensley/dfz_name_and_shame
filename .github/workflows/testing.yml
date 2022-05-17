@@ -16,6 +16,19 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
+
+      - name: Setup SSH Keys and known_hosts
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+          mkdir ~/.ssh/
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+      - name: Setup git
+        run: |
+          git config --global user.email "github_actions@example.com"
+          git config --global user.name "Github Actions"
       - name: Install up Python 3.8
         uses: actions/setup-python@v3
         with:
@@ -25,6 +38,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dnas/requirements.txt
       - name: Run the Python unit tests
-        #working-directory: ./dnas/
+        working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/
+        env:
+            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          pytest
+          sudo mkdir /media/usb0
+          sudo chmod 777 /media/usb0
+          python3 dnas/tests/test_git.py -v
+          python3 dnas/tests/test_bogon_asn.py -v
+          python3 dnas/tests/test_bogon_ip.py -v
+          python3 dnas/tests/test_mrt_archive.py -v
+          python3 dnas/tests/test_mrt_entry.py -v
+          python3 dnas/tests/test_mrt_getter.py -v
+          python3 dnas/tests/test_mrt_parser.py -v
+          python3 dnas/tests/test_mrt_splitter.py -v
+          python3 dnas/tests/test_mrt_stats.py -v

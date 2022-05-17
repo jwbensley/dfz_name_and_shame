@@ -27,6 +27,11 @@ class mrt_splitter():
         if not filename:
             raise ValueError("MRT filename missing")
 
+        if type(filename) != str:
+            raise TypeError(
+                f"filename is not a string: {type(filename)}"
+            )
+
         if not os.path.isfile(filename):
             raise FileNotFoundError(
                 errno.ENOENT, os.strerror(errno.ENOENT), filename

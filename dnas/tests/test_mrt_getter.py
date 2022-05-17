@@ -13,8 +13,9 @@ from dnas.mrt_getter import mrt_getter
 from dnas.mrt_parser import mrt_parser
 
 
-class test_mrt_splitter(unittest.TestCase):
+class test_mrt_getter(unittest.TestCase):
 
+    """
     linx_update_url = "http://archive.routeviews.org/route-views.linx/bgpdata/2022.01/UPDATES/updates.20220103.1345.bz2"
     no_records = 243007
     output_file = "/tmp/mQFk79SrBI29HPUg0EgxFC17nkyZP4"
@@ -52,6 +53,7 @@ class test_mrt_splitter(unittest.TestCase):
         )
         self.assertTrue(os.path.isfile(self.output_file))
         self.assertEqual(self.no_records, mrt_parser.mrt_count(self.output_file))
+    """
 
 if __name__ == '__main__':
     unittest.main()
