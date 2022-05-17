@@ -14,7 +14,7 @@ redis/data/*
 
 # Don't sync test MRT files to GitHub
 **/*.bz2
-**/*.gz
+#**/*.gz
 
 # Don't sync pycache
 **/__pycache__/
