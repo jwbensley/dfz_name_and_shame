@@ -41,8 +41,6 @@ jobs:
         env:
             SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          ls -l /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/
-          ls -l /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/dnas/
           ls -l /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/dnas/tests/
           sudo mkdir /media/usb0
           sudo chmod 777 /media/usb0
