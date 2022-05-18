@@ -141,37 +141,47 @@ class mrt_stats:
 
 
         # Longest AS path
-        if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
-            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
-            s_paths = [mrt_e.as_path for mrt_e in self.longest_as_path]
-            for mrt_e in merge_data.longest_as_path:
-                if mrt_e.prefix in s_prefixes:
-                    if mrt_e.as_path not in s_paths:
-                        self.longest_as_path.append(mrt_e)
-                        changed = True
-                else:
-                    self.longest_as_path.append(mrt_e)
+        if merge_data.longest_as_path:
+            if self.longest_as_path:
+                if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
+                    s_paths = [mrt_e.as_path for mrt_e in self.longest_as_path]
+                    for mrt_e in merge_data.longest_as_path:
+                        if mrt_e.prefix in s_prefixes:
+                            if mrt_e.as_path not in s_paths:
+                                self.longest_as_path.append(mrt_e)
+                                changed = True
+                        else:
+                            self.longest_as_path.append(mrt_e)
+                            changed = True
+                elif len(merge_data.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
+                    self.longest_as_path = merge_data.longest_as_path.copy()
                     changed = True
-        elif len(merge_data.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
-            self.longest_as_path = merge_data.longest_as_path.copy()
-            changed = True
+            else:
+                self.longest_as_path = merge_data.longest_as_path.copy()
+                changed = True
 
 
         # Longest community set
-        if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
-            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_comm_set]
-            s_comms = [mrt_e.comm_set for mrt_e in self.longest_comm_set]
-            for mrt_e in merge_data.longest_comm_set:
-                if mrt_e.prefix in s_prefixes:
-                    if mrt_e.comm_set not in s_comms:
-                        self.longest_comm_set.append(mrt_e)
-                        changed = True
-                else:
-                    self.longest_comm_set.append(mrt_e)
+        if merge_data.longest_comm_set:
+            if self.longest_comm_set:
+                if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.longest_comm_set]
+                    s_comms = [mrt_e.comm_set for mrt_e in self.longest_comm_set]
+                    for mrt_e in merge_data.longest_comm_set:
+                        if mrt_e.prefix in s_prefixes:
+                            if mrt_e.comm_set not in s_comms:
+                                self.longest_comm_set.append(mrt_e)
+                                changed = True
+                        else:
+                            self.longest_comm_set.append(mrt_e)
+                            changed = True
+                elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
+                    self.longest_comm_set = merge_data.longest_comm_set.copy()
                     changed = True
-        elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
-            self.longest_comm_set = merge_data.longest_comm_set.copy()
-            changed = True
+            else:
+                self.longest_comm_set = merge_data.longest_comm_set.copy()
+                changed = True
 
 
         # Invalid prefix length with most origin ASNs
