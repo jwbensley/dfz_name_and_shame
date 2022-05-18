@@ -85,7 +85,6 @@ def continuous(args: Dict[str, Any] = None):
             if args["update"]:
                 glob_str = str(arch.MRT_DIR + "/").replace("///", "/").replace("//", "/")
                 glob_str += arch.UPD_PREFIX + "*" + glob_ymd + "*"
-                print(glob_str)
                 filelist.extend(glob.glob(glob_str))
 
                 if (arch.UPD_INTERVAL * 60) < min_interval:
@@ -142,6 +141,14 @@ def parse_args():
         type=str,
         required=False,
         default=None,
+    )
+    parser.add_argument(
+        "--no-multi",
+        help="Run in single process mode only, don't use all CPU cores which is"
+        " the default behaviour.",
+        default=False,
+        action="store_true",
+        required=False,
     )
     parser.add_argument(
         "--overwrite",
@@ -212,7 +219,10 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def parse_file(filename: str = None, keep_chunks: bool = False) -> 'mrt_stats':
+def parse_file(
+    filename: str = None, keep_chunks: bool = False,
+    multi: bool = True,
+    ) -> 'mrt_stats':
     """
     Split and parse an individual MRT file, return the mrt_stats.
     """
@@ -299,7 +309,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
                     os.remove(file)
                 continue
 
-            mrt_s = parse_file(file)
+            mrt_s = parse_file(filename=file, multi=args["multi"])
             if day_stats.add(mrt_s):
                 logging.info(f"Added {file} to {day_key}")
             else:
@@ -308,7 +318,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
             rdb.set_stats(day_key, day_stats)
 
         if not day_stats:
-            mrt_s = parse_file(file)
+            mrt_s = parse_file(filename=file, multi=args["multi"])
             rdb.set_stats(day_key, mrt_s)
             logging.info(f"Created new entry {day_key} from {file}")
 
@@ -358,14 +368,16 @@ def process_day(args: Dict[str, Any] = None):
 
     parse_files(filelist=filelist, args=args)
 
-def process_mrt_file(filename: str = None, args: Dict[str, Any] = None):
+def process_mrt_file(args: Dict[str, Any] = None):
     """
     Pass a single filename to the parser function.
     """
-    if not filename or not args:
+    if not args:
         raise ValueError(
-            f"Missing required arguments: filename={filename}, args={args}"
+            f"Missing required arguments: args={args}"
         )
+
+    filename = args["single"]
 
     if type(filename) != str:
         raise TypeError(
@@ -529,10 +541,12 @@ def main():
             "using --single!"
         )
 
+    args["multi"] = not args["no_mult"]
+
     if args["continuous"]:
         continuous(args)
     elif args["single"]:
-        process_mrt_file(filename=args["single"], args=args)
+        process_mrt_file(args)
     elif args["yesterday"]:
         delta = datetime.timedelta(days=1)
         yesterday = datetime.datetime.strftime(
