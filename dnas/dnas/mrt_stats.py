@@ -1466,78 +1466,101 @@ class mrt_stats:
 
         # Prefixes with most bogon origin ASNs
         if merge_data.bogon_origin_asns:
-            if (
-                len(merge_data.bogon_origin_asns[0].origin_asns) == len(self.bogon_origin_asns[0].origin_asns) and
-                len(self.bogon_origin_asns[0].origin_asns) > 0
-            ):
-                s_prefixes = [mrt_e.prefix for mrt_e in self.bogon_origin_asns]
-                for mrt_e in merge_data.bogon_origin_asns:
-                    if mrt_e.prefix not in s_prefixes:
-                        self.bogon_origin_asns.append(mrt_e)
-                        changed = True
-            elif len(merge_data.bogon_origin_asns[0].origin_asns) > len(self.bogon_origin_asns[0].origin_asns):
+            if self.bogon_origin_asns:
+                if (
+                    len(merge_data.bogon_origin_asns[0].origin_asns) == len(self.bogon_origin_asns[0].origin_asns) and
+                    len(self.bogon_origin_asns[0].origin_asns) > 0
+                ):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.bogon_origin_asns]
+                    for mrt_e in merge_data.bogon_origin_asns:
+                        if mrt_e.prefix not in s_prefixes:
+                            self.bogon_origin_asns.append(mrt_e)
+                            changed = True
+                elif len(merge_data.bogon_origin_asns[0].origin_asns) > len(self.bogon_origin_asns[0].origin_asns):
+                    self.bogon_origin_asns = merge_data.bogon_origin_asns.copy()
+                    changed = True
+            else:
                 self.bogon_origin_asns = merge_data.bogon_origin_asns.copy()
                 changed = True
 
         # Bogons prefixes with most origin ASNs
         if merge_data.bogon_prefixes:
-            if (
-                len(merge_data.bogon_prefixes[0].origin_asns) == len(self.bogon_prefixes[0].origin_asns) and
-                len(self.bogon_prefixes[0].origin_asns) > 0
-            ):
-                s_prefixes = [mrt_e.prefix for mrt_e in self.bogon_prefixes]
-                for mrt_e in merge_data.bogon_prefixes:
-                    if mrt_e.prefix not in s_prefixes:
-                        self.bogon_prefixes.append(mrt_e)
-                        changed = True
-            elif len(merge_data.bogon_prefixes[0].origin_asns) > len(self.bogon_prefixes[0].origin_asns):
+            if self.bogon_prefixes:
+                if (
+                    len(merge_data.bogon_prefixes[0].origin_asns) == len(self.bogon_prefixes[0].origin_asns) and
+                    len(self.bogon_prefixes[0].origin_asns) > 0
+                ):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.bogon_prefixes]
+                    for mrt_e in merge_data.bogon_prefixes:
+                        if mrt_e.prefix not in s_prefixes:
+                            self.bogon_prefixes.append(mrt_e)
+                            changed = True
+                elif len(merge_data.bogon_prefixes[0].origin_asns) > len(self.bogon_prefixes[0].origin_asns):
+                    self.bogon_prefixes = merge_data.bogon_prefixes.copy()
+                    changed = True
+            else:
                 self.bogon_prefixes = merge_data.bogon_prefixes.copy()
                 changed = True
 
+
         # Longest AS path
-        if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
-            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
-            s_paths = [mrt_e.as_path for mrt_e in self.longest_as_path]
-            for mrt_e in merge_data.longest_as_path:
-                if mrt_e.prefix in s_prefixes:
-                    if mrt_e.as_path not in s_paths:
-                        self.longest_as_path.append(mrt_e)
-                        changed = True
-                else:
-                    self.longest_as_path.append(mrt_e)
+        if merge_data.longest_as_path:
+            if self.longest_as_path:
+                if len(merge_data.longest_as_path[0].as_path) == len(self.longest_as_path[0].as_path):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.longest_as_path]
+                    s_paths = [mrt_e.as_path for mrt_e in self.longest_as_path]
+                    for mrt_e in merge_data.longest_as_path:
+                        if mrt_e.prefix in s_prefixes:
+                            if mrt_e.as_path not in s_paths:
+                                self.longest_as_path.append(mrt_e)
+                                changed = True
+                        else:
+                            self.longest_as_path.append(mrt_e)
+                            changed = True
+                elif len(merge_data.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
+                    self.longest_as_path = merge_data.longest_as_path.copy()
                     changed = True
-        elif len(merge_data.longest_as_path[0].as_path) > len(self.longest_as_path[0].as_path):
-            self.longest_as_path = merge_data.longest_as_path.copy()
-            changed = True
+            else:
+                self.longest_as_path = merge_data.longest_as_path.copy()
+                changed = True
 
         # Longest community set
-        if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
-            s_prefixes = [mrt_e.prefix for mrt_e in self.longest_comm_set]
-            s_comms = [mrt_e.comm_set for mrt_e in self.longest_comm_set]
-            for mrt_e in merge_data.longest_comm_set:
-                if mrt_e.prefix in s_prefixes:
-                    if mrt_e.comm_set not in s_comms:
-                        self.longest_comm_set.append(mrt_e)
-                        changed = True
-                else:
-                    self.longest_comm_set.append(mrt_e)
+        if merge_data.longest_comm_set:
+            if self.longest_comm_set:
+                if len(merge_data.longest_comm_set[0].comm_set) == len(self.longest_comm_set[0].comm_set):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.longest_comm_set]
+                    s_comms = [mrt_e.comm_set for mrt_e in self.longest_comm_set]
+                    for mrt_e in merge_data.longest_comm_set:
+                        if mrt_e.prefix in s_prefixes:
+                            if mrt_e.comm_set not in s_comms:
+                                self.longest_comm_set.append(mrt_e)
+                                changed = True
+                        else:
+                            self.longest_comm_set.append(mrt_e)
+                            changed = True
+                elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
+                    self.longest_comm_set = merge_data.longest_comm_set.copy()
                     changed = True
-        elif len(merge_data.longest_comm_set[0].comm_set) > len(self.longest_comm_set[0].comm_set):
-            self.longest_comm_set = merge_data.longest_comm_set.copy()
-            changed = True
+            else:
+                self.longest_comm_set = merge_data.longest_comm_set.copy()
+                changed = True
 
         # Invalid length prefixes with most origin ASNs
         if merge_data.invalid_len:
-            if (
-                len(merge_data.invalid_len[0].origin_asns) == len(self.invalid_len[0].origin_asns) and
-                len(self.invalid_len[0].origin_asns) > 0
-            ):
-                s_prefixes = [mrt_e.prefix for mrt_e in self.invalid_len]
-                for mrt_e in merge_data.invalid_len:
-                    if mrt_e.prefix not in s_prefixes:
-                        self.invalid_len.append(mrt_e)
-                        changed = True
-            elif len(merge_data.invalid_len[0].origin_asns) > len(self.invalid_len[0].origin_asns):
+            if self.invalid_len:
+                if (
+                    len(merge_data.invalid_len[0].origin_asns) == len(self.invalid_len[0].origin_asns) and
+                    len(self.invalid_len[0].origin_asns) > 0
+                ):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.invalid_len]
+                    for mrt_e in merge_data.invalid_len:
+                        if mrt_e.prefix not in s_prefixes:
+                            self.invalid_len.append(mrt_e)
+                            changed = True
+                elif len(merge_data.invalid_len[0].origin_asns) > len(self.invalid_len[0].origin_asns):
+                    self.invalid_len = merge_data.invalid_len.copy()
+                    changed = True
+            else:
                 self.invalid_len = merge_data.invalid_len.copy()
                 changed = True
 
@@ -1545,15 +1568,19 @@ class mrt_stats:
         Most advertisements per prefix
         If stats from a rib dump are being merged this wont be present:
         """
-        if merge_data.most_advt_prefixes[0].prefix:
-            if (merge_data.most_advt_prefixes[0].advt == self.most_advt_prefixes[0].advt and
-                self.most_advt_prefixes[0].advt > 0):
-                    s_prefixes = [mrt_e.prefix for mrt_e in self.most_advt_prefixes]
-                    for mrt_e in merge_data.most_advt_prefixes:
-                        if mrt_e.prefix not in s_prefixes:            
-                            self.most_advt_prefixes.append(mrt_e)
-                            changed = True
-            elif merge_data.most_advt_prefixes[0].advt > self.most_advt_prefixes[0].advt:
+        if merge_data.most_advt_prefixes:
+            if self.most_advt_prefixes:
+                if (merge_data.most_advt_prefixes[0].advt == self.most_advt_prefixes[0].advt and
+                    self.most_advt_prefixes[0].advt > 0):
+                        s_prefixes = [mrt_e.prefix for mrt_e in self.most_advt_prefixes]
+                        for mrt_e in merge_data.most_advt_prefixes:
+                            if mrt_e.prefix not in s_prefixes:            
+                                self.most_advt_prefixes.append(mrt_e)
+                                changed = True
+                elif merge_data.most_advt_prefixes[0].advt > self.most_advt_prefixes[0].advt:
+                    self.most_advt_prefixes = merge_data.most_advt_prefixes.copy()
+                    changed = True
+            else:
                 self.most_advt_prefixes = merge_data.most_advt_prefixes.copy()
                 changed = True
 
@@ -1561,15 +1588,19 @@ class mrt_stats:
         Most updates per prefix
         If stats from a rib dump are being merged this wont be present:
         """
-        if merge_data.most_upd_prefixes[0].prefix:
-            if (merge_data.most_upd_prefixes[0].updates == self.most_upd_prefixes[0].updates and
-                self.most_upd_prefixes[0].updates > 0):
-                    s_prefixes = [mrt_e.prefix for mrt_e in self.most_upd_prefixes]
-                    for mrt_e in merge_data.most_upd_prefixes:
-                        if mrt_e.prefix not in s_prefixes:            
-                            self.most_upd_prefixes.append(mrt_e)
-                            changed = True
-            elif merge_data.most_upd_prefixes[0].updates > self.most_upd_prefixes[0].updates:
+        if merge_data.most_upd_prefixes:
+            if self.most_upd_prefixes:
+                if (merge_data.most_upd_prefixes[0].updates == self.most_upd_prefixes[0].updates and
+                    self.most_upd_prefixes[0].updates > 0):
+                        s_prefixes = [mrt_e.prefix for mrt_e in self.most_upd_prefixes]
+                        for mrt_e in merge_data.most_upd_prefixes:
+                            if mrt_e.prefix not in s_prefixes:            
+                                self.most_upd_prefixes.append(mrt_e)
+                                changed = True
+                elif merge_data.most_upd_prefixes[0].updates > self.most_upd_prefixes[0].updates:
+                    self.most_upd_prefixes = merge_data.most_upd_prefixes.copy()
+                    changed = True
+            else:
                 self.most_upd_prefixes = merge_data.most_upd_prefixes.copy()
                 changed = True
 
@@ -1577,15 +1608,19 @@ class mrt_stats:
         Most withdraws per prefix
         If stats from a rib dump are being merged this wont be present:
         """
-        if merge_data.most_withd_prefixes[0].prefix:
-            if (merge_data.most_withd_prefixes[0].withdraws == self.most_withd_prefixes[0].withdraws and
-                self.most_withd_prefixes[0].withdraws > 0):
-                    s_prefixes = [mrt_e.prefix for mrt_e in self.most_withd_prefixes]
-                    for mrt_e in merge_data.most_withd_prefixes:
-                        if mrt_e.prefix not in s_prefixes:            
-                            self.most_withd_prefixes.append(mrt_e)
-                            changed = True
-            elif merge_data.most_withd_prefixes[0].withdraws > self.most_withd_prefixes[0].withdraws:
+        if merge_data.most_withd_prefixes:
+            if self.most_withd_prefixes:
+                if (merge_data.most_withd_prefixes[0].withdraws == self.most_withd_prefixes[0].withdraws and
+                    self.most_withd_prefixes[0].withdraws > 0):
+                        s_prefixes = [mrt_e.prefix for mrt_e in self.most_withd_prefixes]
+                        for mrt_e in merge_data.most_withd_prefixes:
+                            if mrt_e.prefix not in s_prefixes:            
+                                self.most_withd_prefixes.append(mrt_e)
+                                changed = True
+                elif merge_data.most_withd_prefixes[0].withdraws > self.most_withd_prefixes[0].withdraws:
+                    self.most_withd_prefixes = merge_data.most_withd_prefixes.copy()
+                    changed = True
+            else:
                 self.most_withd_prefixes = merge_data.most_withd_prefixes.copy()
                 changed = True
 
@@ -1593,15 +1628,19 @@ class mrt_stats:
         Most advertisement per origin ASN
         If stats from a rib dump are being merged this wont be present:
         """
-        if merge_data.most_advt_origin_asn[0].origin_asns:
-            if (merge_data.most_advt_origin_asn[0].advt == self.most_advt_origin_asn[0].advt and
-                self.most_advt_origin_asn[0].advt > 0):
-                s_origin_asns = [mrt_e.origin_asns for mrt_e in self.most_advt_origin_asn]
-                for mrt_e in merge_data.most_advt_origin_asn:
-                    if mrt_e.origin_asns not in s_origin_asns:
-                        self.most_advt_origin_asn.append(mrt_e)
-                        changed = True
-            elif merge_data.most_advt_origin_asn[0].advt > self.most_advt_origin_asn[0].advt:
+        if merge_data.most_advt_origin_asn:
+            if self.most_advt_origin_asn:
+                if (merge_data.most_advt_origin_asn[0].advt == self.most_advt_origin_asn[0].advt and
+                    self.most_advt_origin_asn[0].advt > 0):
+                    s_origin_asns = [mrt_e.origin_asns for mrt_e in self.most_advt_origin_asn]
+                    for mrt_e in merge_data.most_advt_origin_asn:
+                        if mrt_e.origin_asns not in s_origin_asns:
+                            self.most_advt_origin_asn.append(mrt_e)
+                            changed = True
+                elif merge_data.most_advt_origin_asn[0].advt > self.most_advt_origin_asn[0].advt:
+                    self.most_advt_origin_asn = merge_data.most_advt_origin_asn.copy()
+                    changed = True
+            else:
                 self.most_advt_origin_asn = merge_data.most_advt_origin_asn.copy()
                 changed = True
 
@@ -1609,15 +1648,19 @@ class mrt_stats:
         Most advertisement per peer ASN
         If stats from a rib dump are being merged this wont be present:
         """
-        if merge_data.most_advt_peer_asn[0].peer_asn:
-            if (merge_data.most_advt_peer_asn[0].advt == self.most_advt_peer_asn[0].advt and
-                self.most_advt_peer_asn[0].advt > 0):
-                s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_advt_peer_asn]
-                for mrt_e in merge_data.most_advt_peer_asn:
-                    if mrt_e.peer_asn not in s_peer_asns:
-                        self.most_advt_peer_asn.append(mrt_e)
-                        changed = True
-            elif merge_data.most_advt_peer_asn[0].advt > self.most_advt_peer_asn[0].advt:
+        if merge_data.most_advt_peer_asn:
+            if self.most_advt_peer_asn:
+                if (merge_data.most_advt_peer_asn[0].advt == self.most_advt_peer_asn[0].advt and
+                    self.most_advt_peer_asn[0].advt > 0):
+                    s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_advt_peer_asn]
+                    for mrt_e in merge_data.most_advt_peer_asn:
+                        if mrt_e.peer_asn not in s_peer_asns:
+                            self.most_advt_peer_asn.append(mrt_e)
+                            changed = True
+                elif merge_data.most_advt_peer_asn[0].advt > self.most_advt_peer_asn[0].advt:
+                    self.most_advt_peer_asn = merge_data.most_advt_peer_asn.copy()
+                    changed = True
+            else:
                 self.most_advt_peer_asn = merge_data.most_advt_peer_asn.copy()
                 changed = True
 
@@ -1625,51 +1668,63 @@ class mrt_stats:
         Most updates per peer ASN
         If stats from a rib dump are being merged this wont be present:
         """
-        if merge_data.most_upd_peer_asn[0].peer_asn:
-            if (merge_data.most_upd_peer_asn[0].updates == self.most_upd_peer_asn[0].updates and
-                self.most_upd_peer_asn[0].updates > 0):
-                s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_upd_peer_asn]
-                for mrt_e in merge_data.most_upd_peer_asn:
-                    if mrt_e.peer_asn not in s_peer_asns:
-                        self.most_upd_peer_asn.append(mrt_e)
-                        changed = True
-            elif merge_data.most_upd_peer_asn[0].updates > self.most_upd_peer_asn[0].updates:
+        if merge_data.most_upd_peer_asn:
+            if self.most_upd_peer_asn:
+                if (merge_data.most_upd_peer_asn[0].updates == self.most_upd_peer_asn[0].updates and
+                    self.most_upd_peer_asn[0].updates > 0):
+                    s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_upd_peer_asn]
+                    for mrt_e in merge_data.most_upd_peer_asn:
+                        if mrt_e.peer_asn not in s_peer_asns:
+                            self.most_upd_peer_asn.append(mrt_e)
+                            changed = True
+                elif merge_data.most_upd_peer_asn[0].updates > self.most_upd_peer_asn[0].updates:
+                    self.most_upd_peer_asn = merge_data.most_upd_peer_asn.copy()
+                    changed = True
+            else:
                 self.most_upd_peer_asn = merge_data.most_upd_peer_asn.copy()
                 changed = True
 
 
         # Most withdraws per peer ASN
         # If stats from a rib dump are being merged this wont be present:
-        if merge_data.most_withd_peer_asn[0].peer_asn:
-            if (merge_data.most_withd_peer_asn[0].withdraws == self.most_withd_peer_asn[0].withdraws and
-                self.most_withd_peer_asn[0].withdraws > 0):
-                s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_withd_peer_asn]
-                for mrt_e in merge_data.most_withd_peer_asn:
-                    if mrt_e.peer_asn not in s_peer_asns:
-                        self.most_withd_peer_asn.append(mrt_e)
-                        changed = True
-            elif merge_data.most_withd_peer_asn[0].withdraws > self.most_withd_peer_asn[0].withdraws:
+        if merge_data.most_withd_peer_asn:
+            if self.most_withd_peer_asn:
+                if (merge_data.most_withd_peer_asn[0].withdraws == self.most_withd_peer_asn[0].withdraws and
+                    self.most_withd_peer_asn[0].withdraws > 0):
+                    s_peer_asns = [mrt_e.peer_asn for mrt_e in self.most_withd_peer_asn]
+                    for mrt_e in merge_data.most_withd_peer_asn:
+                        if mrt_e.peer_asn not in s_peer_asns:
+                            self.most_withd_peer_asn.append(mrt_e)
+                            changed = True
+                elif merge_data.most_withd_peer_asn[0].withdraws > self.most_withd_peer_asn[0].withdraws:
+                    self.most_withd_peer_asn = merge_data.most_withd_peer_asn.copy()
+                    changed = True
+            else:
                 self.most_withd_peer_asn = merge_data.most_withd_peer_asn.copy()
                 changed = True
 
 
         # Most origin ASNs per prefix
         if merge_data.most_origin_asns:
-            if (
-                len(merge_data.most_origin_asns[0].origin_asns) == len(self.most_origin_asns[0].origin_asns) and
-                len(self.most_origin_asns[0].origin_asns) > 0
-            ):
-                for mrt_e in merge_data.most_origin_asns:
-                    for s_e in self.most_origin_asns:
-                        if mrt_e.prefix == s_e.prefix:
-                            if mrt_e.origin_asns != s_e.origin_asns:
-                                s_e.origin_asns = s_e.origin_asns.union(mrt_e.origin_asns)
-                                changed = True
-                            break
-                    else:
-                        self.most_origin_asns.append(mrt_e)
-                        changed = True
-            elif len(merge_data.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
+            if self.most_origin_asns:
+                if (
+                    len(merge_data.most_origin_asns[0].origin_asns) == len(self.most_origin_asns[0].origin_asns) and
+                    len(self.most_origin_asns[0].origin_asns) > 0
+                ):
+                    for mrt_e in merge_data.most_origin_asns:
+                        for s_e in self.most_origin_asns:
+                            if mrt_e.prefix == s_e.prefix:
+                                if mrt_e.origin_asns != s_e.origin_asns:
+                                    s_e.origin_asns = s_e.origin_asns.union(mrt_e.origin_asns)
+                                    changed = True
+                                break
+                        else:
+                            self.most_origin_asns.append(mrt_e)
+                            changed = True
+                elif len(merge_data.most_origin_asns[0].origin_asns) > len(self.most_origin_asns[0].origin_asns):
+                    self.most_origin_asns = merge_data.most_origin_asns.copy()
+                    changed = True
+            else:
                 self.most_origin_asns = merge_data.most_origin_asns.copy()
                 changed = True
 
