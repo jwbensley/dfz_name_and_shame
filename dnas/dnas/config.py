@@ -12,6 +12,13 @@ class config:
     # Application root for everything (logging, downloads, tmp files, etc.)
     BASE_DIR = "/media/usb0/"
 
+    """
+    The time format used for generating new timestamps and parsing existing
+    timestamps. The format below is the same format used by the MRT archives.
+    """
+    TIME_FORMAT = "%Y%m%d.%H%M"
+    DAY_FORMAT = "%Y%m%d"
+
     # Log mode, 'a'ppend or over'w'rite
     LOG_MODE = "a"
     # Standard logging format
@@ -37,14 +44,12 @@ class config:
     # Logging from script: tweet.py
     LOG_TWITTER = os.path.join(LOG_DIR, "tweet.log")
 
-
     """
-    The time format used for generating new timestamps and parsing existing
-    timestamps. The format below is the same format used by the MRT archives.
+    Max MRT file size to parse using multiple Python processes, files larger
+    than this value (in MBs) will be parsed without using multiprocessing
+    (a single Python process / on a single core).
     """
-    TIME_FORMAT = "%Y%m%d.%H%M"
-    DAY_FORMAT = "%Y%m%d"
-
+    MAX_MRT_SIZE = 10
 
     ################
     # GIT SETTINGS #
