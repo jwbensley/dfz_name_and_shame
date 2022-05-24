@@ -307,6 +307,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
 
         day_key = mrt_a.get_day_key(file)
         day_stats = rdb.get_stats(day_key)
+        fs = os.path.getsize(file) / 1000 / 1000
 
         if day_stats:
             if file in day_stats.file_list and not args["overwrite"]:
@@ -316,7 +317,15 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
                     os.remove(file)
                 continue
 
-            mrt_s = parse_file(filename=file, multi=args["multi"])
+            if fs > cfg.MAX_MRT_SIZE:
+                logging.warning(
+                    f"File size of {file} ({fs:0.4}MBs) is greater than max "
+                    f"size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
+                    "parsing"
+                )
+                mrt_s = parse_file(filename=file, multi=False)
+            else:
+                mrt_s = parse_file(filename=file, multi=args["multi"])
             if day_stats.add(mrt_s):
                 logging.info(f"Added {file} to {day_key}")
             else:
@@ -325,7 +334,15 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
             rdb.set_stats(day_key, day_stats)
 
         if not day_stats:
-            mrt_s = parse_file(filename=file, multi=args["multi"])
+            if fs > cfg.MAX_MRT_SIZE:
+                logging.warning(
+                    f"File size of {file} ({fs:0.4}MBs) is greater than max "
+                    f"size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
+                    "parsing"
+                )
+                mrt_s = parse_file(filename=file, multi=False)
+            else:
+                mrt_s = parse_file(filename=file, multi=args["multi"])
             rdb.set_stats(day_key, mrt_s)
             logging.info(f"Created new entry {day_key} from {file}")
 
