@@ -52,7 +52,7 @@ class config:
     than this value (in MBs) will be parsed without using multiprocessing
     (a single Python process / on a single core).
     """
-    MAX_MRT_SIZE = 10
+    MAX_MRT_SIZE = 30
 
     ################
     # GIT SETTINGS #
@@ -149,21 +149,21 @@ class config:
             "TYPE": "AS57355",
             "NAME": "AS57355-Lukasz",
             "ENABLED": True,
-            "BASE_URL": "http://192.168.58.8:8000/lukasz/",
+            "BASE_URL": "http://172.17.0.1:8000/as57355/",
             "RIB_URL": "/rib/",
-            "UPD_URL": "/update/",
-            "MRT_EXT": "dump",
+            "UPD_URL": "/updates/",
+            "MRT_EXT": "mrt",
             "MRT_DIR": os.path.join(DL_DIR, "AS57355/"),
-            "RIB_GLOB": "*.dump",
-            "UPD_GLOB": "*.dump",
+            "RIB_GLOB": "*.mrt",
+            "UPD_GLOB": "*.mrt",
             "RIB_KEY": "AS57355_RIB",
             "UPD_KEY": "AS57355_UPD",
             "RIB_INTERVAL": 60,
-            "UPD_INTERVAL": 10,
+            "UPD_INTERVAL": 5,
             "RIB_OFFSET": 0,
-            "UPD_OFFSET": 120,
+            "UPD_OFFSET": 0,
             "RIB_PREFIX": "rib.",
-            "UPD_PREFIX": "",
+            "UPD_PREFIX": "updates.",
         }
     )
 
@@ -190,8 +190,8 @@ class config:
             "UPD_KEY": "RV_LINX_UPD",
             "RIB_INTERVAL": 120,
             "UPD_INTERVAL": 15,
-            "RIB_OFFSET": 120,
-            "UPD_OFFSET": 120,
+            "RIB_OFFSET": 0,
+            "UPD_OFFSET": 0,
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
         }
@@ -220,8 +220,8 @@ class config:
             "UPD_KEY": "RV_SYDNEY_UPD",
             "RIB_INTERVAL": 120,
             "UPD_INTERVAL": 15,
-            "RIB_OFFSET": 120,
-            "UPD_OFFSET": 120,            
+            "RIB_OFFSET": 0,
+            "UPD_OFFSET": 0,            
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
         }
@@ -251,7 +251,7 @@ class config:
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 0,
-            "UPD_OFFSET": 120,
+            "UPD_OFFSET": 0,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
         }
@@ -281,7 +281,7 @@ class config:
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 0,
-            "UPD_OFFSET": 120,
+            "UPD_OFFSET": 0,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
         }
