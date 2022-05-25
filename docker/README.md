@@ -65,12 +65,14 @@ Redis uses authentication so you won't be able to access the redis CLI without a
 
 #### Continuous MRT Getter
 
+Note: the local time configuration file from the host is shared into the container because the host is not in UTC0/GMT time, but most MRT dumps use UTC0 timestamps.
+
 Run as a container in the background:
 
 ```bash
 docker run -td \
 -v /etc/localtime:/etc/localtime \
--v /media/usb0/:/media/usb0/ \
+-v /opt/dnas_data/;/opt/dnas_data/ \
 --restart always \
 --name dnas_getter \
 dnas:latest \
@@ -82,7 +84,7 @@ Run in interactive mode with debugging:
 ```bash
 docker run -it --rm \
 -v /etc/localtime:/etc/localtime \
--v /media/usb0/:/media/usb0/ \
+-v /opt/dnas_data/:/opt/dnas_data/ \
 --name dnas_getter \
 dnas:latest \
 /opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --continuous --update --debug
@@ -96,7 +98,7 @@ Run as a container in the background:
 ```bash
 docker run -dt \
 -v /etc/localtime:/etc/localtime \
--v /media/usb0/:/media/usb0/ \
+-v /opt/dnas_data/:/opt/dnas_data/ \
 --restart always \
 --name dnas_parser \
 dnas:latest \
@@ -108,7 +110,7 @@ Run in interactive mode with debugging:
 ```bash
 docker run -it --rm \
 -v /etc/localtime:/etc/localtime \
--v /media/usb0/:/media/usb0/ \
+-v /opt/dnas_data/:/opt/dnas_data/ \
 --restart always \
 --name dnas_parser \
 dnas:latest \
