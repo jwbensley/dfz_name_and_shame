@@ -18,16 +18,53 @@ The each stage can also be run individually in a retrospective mode, in which st
 
 There is a single DNAS container that is built and used for all stages of the pipeline. In addition a Redis container is required.
 
-* Install git: `sudo apt-get install -y git`
-* Install Docker: https://docs.docker.com/engine/install/
-* Install virtualenv: `sudo apt-get install -y virtualenv`
-* Set up base directory: `sudo mkdir /opt/dnas/ && sudo chown $USER:$USER /opt/dnas/`
-* Install docker-compose `cd /opt/dnas/ && virtualenv venv && source venv/bin/activate && pip3 install docker-compose`
-* Clone this repo: `git clone git@github.com:jwbensley/dfz_name_and_shame.git /opt/dnas`
+```bash
+sudo apt-get update
 
-## Running
+# Install Docker (from: https://docs.docker.com/engine/install/ubuntu/):
+sudo apt-get install -y curl
 
-See details in [docker/](docker/)
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+| sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) \
+signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+| sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl enable docker.service
+sudo systemctl enable containerd.service
+sudo groupadd docker
+sudo usermod -aG docker $USER
+# ^ Log out and in again for this to take effect
+
+# Set up base directory:
+sudo mkdir /opt/dnas/ && sudo chown $USER:$USER /opt/dnas/
+
+# Install git:
+sudo apt-get install -y git
+
+# Clone this repo (first add read-only key to Deploy Keys under https://github.com/jwbensley/dfz_name_and_shame/settings/keys):
+git clone git@github.com:jwbensley/dfz_name_and_shame.git /opt/dnas
+
+# Install virtualenv:
+sudo apt-get install -y virtualenv
+
+# Install docker-compose and build containers
+cd /opt/dnas/ && virtualenv venv && source venv/bin/activate && pip3 install docker-compose
+cd docker/
+docker-compose build
+
+# Create the base directory: /dnas/dnas/config.py#L13
+sudo mkdir /opt/dnas_data/ && sudo chmod a+rwx /opt/dnas_data/
+```
+
+After the steps above DNAS is s ready to run inside the containers. See documentation under [docker/](docker/) for more details.  
+
+To run DNAS "natively", not in a container, see documentation under [dnas/](dnas/).  
+
 
 ## Credits
 

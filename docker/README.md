@@ -22,6 +22,8 @@ cd docker/
 docker-compose up -d
 ```
 
+To start an individual container from the pipeline use: `docker-compose up -d dnas_redis`
+
 To shut the pipeline down simply run: `docker-compose down`  
 &nbsp;
 
