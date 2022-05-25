@@ -1,4 +1,4 @@
-ARG ARCH="x64"
+ARG ARCH="arm64"
 ARG OS="linux"
 FROM ubuntu:22.04
 LABEL description="DNAS"
@@ -10,10 +10,10 @@ DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install ca-cer
 apt-get clean && \
 rm -rf /var/lib/apt/lists/* && \
 cd /opt && \
-wget https://downloads.python.org/pypy/pypy3.8-v7.3.7-linux64.tar.bz2 && \
-tar -xf pypy3.8-v7.3.7-linux64.tar.bz2 && \
-rm pypy3.8-v7.3.7-linux64.tar.bz2 && \
-cd pypy3.8-v7.3.7-linux64/bin/ && \
+wget https://downloads.python.org/pypy/pypy3.8-v7.3.7-aarch64.tar.bz2 && \
+tar -xvf pypy3.8-v7.3.7-aarch64.tar.bz2 && \
+rm pypy3.8-v7.3.7-aarch64.tar.bz2 && \
+cd pypy3.8-v7.3.7-aarch64/bin/ && \
 ./pypy3 -m ensurepip && \
 ./pypy3 -mpip install --no-cache-dir --upgrade pip && \
 ./pypy3 -mpip install --no-cache-dir mrtparse && \

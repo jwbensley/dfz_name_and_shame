@@ -9,8 +9,11 @@ class config:
     # BASE SETTINGS #
     #################
 
-    # Application root for everything (logging, downloads, tmp files, etc.)
-    BASE_DIR = "/media/usb0/"
+    """
+    Application root for everything (logging, downloads, tmp files, etc.)
+    with trailing slash:
+    """
+    BASE_DIR = "/opt/dnas_data/"
 
     """
     The time format used for generating new timestamps and parsing existing
