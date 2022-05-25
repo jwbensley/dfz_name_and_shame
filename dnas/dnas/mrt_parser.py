@@ -193,7 +193,7 @@ class mrt_parser:
                 mrt_s.total_withd += 1
 
                 for withdrawn_route in withdrawn_routes:
-                    prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["prefix_length"])
+                    prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["length"])
                     if prefix not in upd_prefix:
                         upd_prefix[prefix] = {
                             "advt": 0,
@@ -239,7 +239,7 @@ class mrt_parser:
                         next_hop = attr["value"]["next_hop"]
                         for nlri in attr["value"]["nlri"]:
                             prefixes.append(
-                                nlri["prefix"] + "/" + str(nlri["prefix_length"])
+                                nlri["prefix"] + "/" + str(nlri["length"])
                             )
 
                     # MP_UNREACH_NLRI
@@ -257,7 +257,7 @@ class mrt_parser:
                         for withdrawn_route in withdrawn_routes:
                             prefix = (
                                 withdrawn_route["prefix"] + "/"
-                                + str(withdrawn_route["prefix_length"])
+                                + str(withdrawn_route["length"])
                             )
                             if prefix not in upd_prefix:
                                 upd_prefix[prefix] = {
@@ -297,7 +297,7 @@ class mrt_parser:
                 if len(mrt_e.data["bgp_message"]["nlri"]) > 0:
                     for nlri in mrt_e.data["bgp_message"]["nlri"]:
                         prefix = (
-                            nlri["prefix"] + "/" + str(nlri["prefix_length"])
+                            nlri["prefix"] + "/" + str(nlri["length"])
                         )
                         prefixes.append(prefix)
 
