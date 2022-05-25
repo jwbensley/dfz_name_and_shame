@@ -15,7 +15,7 @@ $ docker exec -it redis_dnas redis-cli
 
 ### Python & PyPy
 
-Install the required Python modules:
+To run the DNAS code natively in Python3 outside of the container, install the required Python modules:
 
 ```
 cd /opt/dnas/
@@ -24,22 +24,26 @@ cd ./dnas/
 pip install -r requirements.txt
 ```
 
-The code is developed in Python3 but the DNAS container actually uses PyPy3 to run faster. The following commands manually install PyPy and the required modules in PyPy:
+The code is developed in Python3 but the DNAS container actually uses PyPy3 to run faster. The following commands manually install PyPy3 and the required modules in PyPy, to manually run the code outside of a container:
 
 ```bash
-cd /tmp
-wget https://downloads.python.org/pypy/pypy3.8-v7.3.7-aarch64.tar.bz2
-tar -xvf pypy3.8-v7.3.7-aarch64.tar.bz2
-rm pypy3.8-v7.3.7-aarch64.tar.bz2
-sudo mv pypy3.8-v7.3.7-aarch64/ /opt/
+cd /opt/dnas/
+source venv/bin/activate
+cd ./dnas/
 
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 -mpip ensurepip
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 -mpip install --upgrade pip
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 -mpip install mrtparse
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 -mpip install requests
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 -mpip install redis
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 -mpip install tweepy
-````
+#pypy="https://downloads.python.org/pypy/pypy3.8-v7.3.7-aarch64.tar.bz2"
+pypy_url="https://downloads.python.org/pypy/pypy3.8-v7.3.7-linux64.tar.bz2"
+pypy_tar="$(basename $pypy_url)"
+pypy_dir="${pypy_tar/.tar.bz2/}/"
+wget "$pypy_url"
+tar -xf $(basename "$pypy_tar")
+rm $(basename "$pypy_tar")
+sudo mv "$pypy_dir" /opt/
+
+/opt/"$pypy_dir"/bin/pypy3 -m ensurepip
+/opt/"$pypy_dir"/bin/pypy3 -mpip install --upgrade pip
+/opt/"$pypy_dir"/bin/pypy3 -mpip install -r requirements.txt
+```
 
 ### Testing
 
@@ -55,20 +59,6 @@ pip install types-requests
 mypy dnas/*.py
 mypy scripts/*.py
 ```
-
-
-### Download MRT files
-
-```bash
-$./scripts/get_mrts.py --range --start 20220103.0000 --end 20220103.2359 --debug --update
-```
-
-### Parse MRT files
-
-```bash
-
-```
-
 
 ### Coding Style
 

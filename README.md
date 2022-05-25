@@ -68,7 +68,8 @@ To run DNAS "natively", not in a container, see documentation under [dnas/](dnas
 
 ## Credits
 
-Thanks to the following people for their help:
+Thanks to the following people/organisations/groups for their help:
 
-* Łukasz Bromirski - for a full table feed
-
+* The authors of [mrtparse](https://github.com/t2mune/mrtparse) - I'm too lazy to write my own MRT parser for a spare time project, so this wouldn't be possible without them
+* [Mythic Beasts](https://www.mythic-beasts.com/) for the server hosting - I was hitting the Linux OOM killer on a weekly basis before they stepped in
+* [Łukasz Bromirski](https://twitter.com/LukaszBromirski) - for a [full table feed](https://lukasz.bromirski.net/post/bgp-w-labie-3/)
