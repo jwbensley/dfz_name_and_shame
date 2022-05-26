@@ -52,7 +52,7 @@ class config:
     than this value (in MBs) will be parsed without using multiprocessing
     (a single Python process / on a single core).
     """
-    MAX_MRT_SIZE = 30
+    MAX_MRT_SIZE = 60
 
     ################
     # GIT SETTINGS #
@@ -163,7 +163,7 @@ class config:
             "RIB_OFFSET": 0,
             "UPD_OFFSET": 0,
             "RIB_PREFIX": "rib.",
-            "UPD_PREFIX": "updates.",
+            "UPD_PREFIX": "",
         }
     )
 
