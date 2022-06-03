@@ -9,6 +9,7 @@ from typing import Dict, List
 from dnas.config import config as cfg
 from dnas.bogon_asn import bogon_asn
 from dnas.bogon_ip import bogon_ip
+from dnas.mrt_archives import mrt_archives
 from dnas.mrt_entry import mrt_entry
 from dnas.mrt_stats import mrt_stats
 
@@ -141,6 +142,9 @@ class mrt_parser:
         else:
             mrt_entries = mrtparse.Reader(filename)
 
+        mrt_a = mrt_archives()
+        strip_comm = mrt_a.get_arch_option(orig_filename, "STRIP_COMM")
+
         for idx, mrt_e in enumerate(mrt_entries):
 
             """
@@ -154,7 +158,7 @@ class mrt_parser:
 
             """
             I'm not sure why but some MRT files contain a BGP message with no
-            UPDATE.
+            actual UPDATE, but they are an UPDATE, i.e. not a KEEPALIVE. Yay!
             """
             if "bgp_message" not in mrt_e.data:
                 continue
@@ -226,7 +230,12 @@ class mrt_parser:
 
                     # COMMUNITY or LARGE_COMMUNITY
                     elif (attr_t == 8 or attr_t == 32):
-                        comm_set.extend(attr["value"])
+                        if strip_comm:
+                            comm_set.extend(
+                                [c for c in attr["value"] if strip_comm not in c]
+                            )
+                        else:
+                            comm_set.extend(attr["value"])
 
                     # MP_REACH_NLRI
                     elif attr_t == 14:

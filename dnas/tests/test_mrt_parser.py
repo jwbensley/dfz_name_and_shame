@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import unittest
 
@@ -9,6 +10,7 @@ sys.path.append(
     )
 )
 from dnas.config import config
+from dnas.mrt_archives import mrt_archives
 from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
 from dnas.mrt_entry import mrt_entry
@@ -17,6 +19,37 @@ from dnas.mrt_entry import mrt_entry
 class test_mrt_parser(unittest.TestCase):
 
     cfg = config()
+
+    def setUp(self):
+        """
+        Copy the test files to the location that would be in,
+        if we had downloaded them from the public archives:
+        """
+
+        self.upd_1_fn = "rcc23.updates.20220421.0200.gz"
+        self.upd_2_fn = "rcc23.updates.20220501.2305.gz"
+
+        self.upd_1_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), self.upd_1_fn
+        )
+        if not os.path.isfile(self.upd_1_path):
+            raise Exception(f"Test MRT file is not found: {self.upd_1_path}")
+
+        self.upd_2_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), self.upd_2_fn
+        )
+        if not os.path.isfile(self.upd_2_path):
+            raise Exception(f"Test MRT file is not found: {self.upd_2_path}")
+
+        mrt_a = mrt_archives()
+        for arch in mrt_a.archives:
+            if arch.NAME == "RCC_23":
+                os.makedirs(arch.MRT_DIR, exist_ok=True)
+                self.upd_1_mrt = os.path.join(arch.MRT_DIR, self.upd_1_fn)
+                self.upd_2_mrt = os.path.join(arch.MRT_DIR, self.upd_2_fn)
+        
+        shutil.copy2(self.upd_1_path, self.upd_1_mrt)
+        shutil.copy2(self.upd_2_path, self.upd_2_mrt)
 
     def test_init(self):
         """
@@ -32,17 +65,18 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(asserted, False)
 
     def test_parse_upd_dump(self):
+        """
+        Throughout this function the MRT file being parsed is alternating,
+        because we want to hit all code paths, no one MRT file contains the
+        "perfect storm" of UPDATES to hit all code paths.
+        """
+
         mrt_p = mrt_parser()
 
         self.assertRaises(ValueError, mrt_p.parse_upd_dump, None)
         self.assertRaises(TypeError, mrt_p.parse_upd_dump, 123)
 
-        # Make full path
-        upd_filename = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "rcc23.updates.20220421.0200.gz"
-        )
-        stats = mrt_p.parse_upd_dump(upd_filename)
+        stats = mrt_p.parse_upd_dump(self.upd_1_mrt)
 
         self.assertIsInstance(stats, mrt_stats)
 
@@ -50,15 +84,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(len(stats.bogon_origin_asns), 1)
         self.assertIsInstance(stats.bogon_origin_asns[0], mrt_entry)
         self.assertEqual(stats.bogon_origin_asns[0].advt, 0)
-        self.assertEqual(stats.bogon_origin_asns[0].as_path, ["137409", "17494", "137491", "58689", "137464", "65551"])
-        self.assertEqual(stats.bogon_origin_asns[0].comm_set, [])
         self.assertEqual(
-            stats.bogon_origin_asns[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220421.0200.gz"
-            )
+            stats.bogon_origin_asns[0].as_path,
+            ["137409", "17494", "137491", "58689", "137464", "65551"]
         )
+        self.assertEqual(stats.bogon_origin_asns[0].comm_set, [])
+        self.assertEqual(stats.bogon_origin_asns[0].filename, self.upd_1_mrt)
         self.assertEqual(stats.bogon_origin_asns[0].next_hop, "27.111.228.145")
         self.assertEqual(stats.bogon_origin_asns[0].origin_asns, set(["65551"]))
         self.assertEqual(stats.bogon_origin_asns[0].peer_asn, "137409")
@@ -67,33 +98,15 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.bogon_origin_asns[0].updates, 0)
         self.assertEqual(stats.bogon_origin_asns[0].withdraws, 0)
 
-        # Make full path
-        upd_filename = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "rcc23.updates.20220501.2305.gz"
-        )
-        stats = mrt_p.parse_upd_dump(upd_filename)
+        stats = mrt_p.parse_upd_dump(self.upd_2_mrt)
 
         self.assertIsInstance(stats.bogon_prefixes, list)
         self.assertEqual(len(stats.bogon_prefixes), 1)
         self.assertIsInstance(stats.bogon_prefixes[0], mrt_entry)
         self.assertEqual(stats.bogon_prefixes[0].advt, 0)
         self.assertEqual(stats.bogon_prefixes[0].as_path, ["133210", "6939"])
-        self.assertEqual(
-            stats.bogon_prefixes[0].comm_set,
-            [
-                "24115:6939", "24115:24115", "24115:65023",
-                "24115:1000:2", "24115:1001:1", "24115:1002:1",
-                "24115:1003:1", "24115:1004:6939"
-            ]
-        )
-        self.assertEqual(
-            stats.bogon_prefixes[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.bogon_prefixes[0].comm_set, [])
+        self.assertEqual(stats.bogon_prefixes[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.bogon_prefixes[0].next_hop, "27.111.228.81")
         self.assertEqual(stats.bogon_prefixes[0].origin_asns, set(["6939"]))
         self.assertEqual(stats.bogon_prefixes[0].peer_asn, "133210")
@@ -117,13 +130,7 @@ class test_mrt_parser(unittest.TestCase):
             ]
         )
         self.assertEqual(stats.longest_as_path[0].comm_set,["13538:3000"])
-        self.assertEqual(
-            stats.longest_as_path[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.longest_as_path[0].filename, self.upd_2_mrt)
         self.assertEqual(
             stats.longest_as_path[0].next_hop,
             ["2001:de8:4::1:8106:1", "fe80::bac2:53ff:fedb:2004"]
@@ -136,77 +143,161 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.longest_as_path[0].withdraws, 0)
 
         self.assertIsInstance(stats.longest_comm_set, list)
-        self.assertEqual(len(stats.longest_comm_set), 1)
+        self.assertEqual(len(stats.longest_comm_set), 4)
         self.assertIsInstance(stats.longest_comm_set[0], mrt_entry)
         self.assertEqual(stats.longest_comm_set[0].advt, 0)
         self.assertEqual(
             stats.longest_comm_set[0].as_path,
-            ["58952", "39386", "47589", "9155", "13335"]
+            ["18106", "57463", "61568", "268267"]
         )
         self.assertEqual(
             stats.longest_comm_set[0].comm_set,
             [
-                "13335:10249", "13335:19060", "13335:20510", "13335:20520",
-                "24115:1248", "24115:2497", "24115:2518", "24115:3491",
-                "24115:3856", "24115:4621", "24115:4628", "24115:4637",
-                "24115:4651", "24115:4657", "24115:4739", "24115:4761",
-                "24115:4773", "24115:4775", "24115:4788", "24115:4800", 
-                "24115:4818", "24115:4826", "24115:4844", "24115:5017",
-                "24115:6619", "24115:6648", "24115:7568", "24115:7595",
-                "24115:7598", "24115:7632", "24115:7642", "24115:7713",
-                "24115:8529", "24115:8757", "24115:8781", "24115:9269",
-                "24115:9299", "24115:9304", "24115:9326", "24115:9329",
-                "24115:9381", "24115:9498", "24115:9505", "24115:9534",
-                "24115:9583", "24115:9658", "24115:9873", "24115:9892",
-                "24115:9902", "24115:9924", "24115:9930", "24115:10026",
-                "24115:10030", "24115:10089", "24115:10158", "24115:16265",
-                "24115:17451", "24115:17494", "24115:17511", "24115:17547",
-                "24115:17557", "24115:17639", "24115:17645", "24115:17660",
-                "24115:17666", "24115:17676", "24115:17726", "24115:17922",
-                "24115:17978", "24115:18001", "24115:18059", "24115:18403",
-                "24115:20940", "24115:23576", "24115:23673", "24115:23930",
-                "24115:23939", "24115:23944", "24115:23947", "24115:24203",
-                "24115:24218", "24115:24482", "24115:24535", "24115:38001",
-                "24115:38040", "24115:38082", "24115:38090", "24115:38158",
-                "24115:38182", "24115:38193", "24115:38195", "24115:38321",
-                "24115:38322", "24115:38466", "24115:38565", "24115:38740",
-                "24115:38753", "24115:38757", "24115:38861", "24115:38880",
-                "24115:38895", "24115:39386", "24115:45102", "24115:45352",
-                "24115:45430", "24115:45474", "24115:45494", "24115:45629",
-                "24115:45634", "24115:45706", "24115:45796", "24115:45845",
-                "24115:45903", "24115:50010", "24115:54994", "24115:55329",
-                "24115:55658", "24115:55685", "24115:55818", "24115:55944",
-                "24115:55967", "24115:56258", "24115:56308", "24115:58389",
-                "24115:58430", "24115:58436", "24115:58453", "24115:58580",
-                "24115:58587", "24115:58599", "24115:58601", "24115:58682",
-                "24115:58715", "24115:58717", "24115:58952", "24115:59019",
-                "24115:59318", "24115:59605", "24115:63516", "24115:63541",
-                "24115:63916", "24115:63927", "24115:63947", "24115:64049",
-                "24115:64096", "24115:65023", "24115:1000:2", "24115:1001:1",
-                "24115:1002:1", "24115:1003:115", "24115:1004:39386"
+                "13538:3000", "57463:0:1120", "57463:0:5408", "57463:0:6461",
+                "57463:0:6663", "57463:0:6762", "57463:0:6830", "57463:0:6939",
+                "57463:0:8657", "57463:0:8757", "57463:0:8763", "57463:0:10906",
+                "57463:0:11284", "57463:0:11644", "57463:0:12989", "57463:0:13237",
+                "57463:0:14840", "57463:0:20562", "57463:0:21574", "57463:0:22356",
+                "57463:0:22381", "57463:0:22822", "57463:0:28186", "57463:0:28260",
+                "57463:0:28330", "57463:0:28663", "57463:0:32787", "57463:0:33891",
+                "57463:0:36351", "57463:0:37100", "57463:0:37468", "57463:0:43350",
+                "57463:0:45474", "57463:0:52320", "57463:0:52551", "57463:0:52866",
+                "57463:0:52937", "57463:0:53162", "57463:0:58453", "57463:0:61568",
+                "57463:0:61832", "57463:0:262354", "57463:0:262589",
+                "57463:0:262773", "57463:0:262807", "57463:0:263009",
+                "57463:0:263276", "57463:0:263324", "57463:0:263421",
+                "57463:0:263626", "57463:0:265187", "57463:0:267056",
+                "57463:0:267613", "57463:0:268331", "57463:0:268696"
             ]
         )
+        self.assertEqual(stats.longest_comm_set[0].filename, self.upd_2_mrt)
         self.assertEqual(
-            stats.longest_comm_set[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
+            stats.longest_comm_set[0].next_hop,
+            ["2001:de8:4::1:8106:1", "fe80::bac2:53ff:fedb:2004"]
         )
-        self.assertEqual(stats.longest_comm_set[0].next_hop, "27.111.229.106")
-        self.assertEqual(stats.longest_comm_set[0].origin_asns, set(["13335"]))
-        self.assertEqual(stats.longest_comm_set[0].peer_asn, "58952")
-        self.assertEqual(stats.longest_comm_set[0].prefix, "162.158.59.0/24")
-        self.assertEqual(stats.longest_comm_set[0].timestamp, "20220501.2308")
+        self.assertEqual(stats.longest_comm_set[0].origin_asns, set(["268267"]))
+        self.assertEqual(stats.longest_comm_set[0].peer_asn, "18106")
+        self.assertEqual(stats.longest_comm_set[0].prefix, "2804:4e88::/34")
+        self.assertEqual(stats.longest_comm_set[0].timestamp, "20220501.2305")
         self.assertEqual(stats.longest_comm_set[0].updates, 0)
         self.assertEqual(stats.longest_comm_set[0].withdraws, 0)
 
-        # Make full path
-        upd_filename = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "rcc23.updates.20220421.0200.gz"
+        self.assertIsInstance(stats.longest_comm_set[1], mrt_entry)
+        self.assertEqual(stats.longest_comm_set[1].advt, 0)
+        self.assertEqual(
+            stats.longest_comm_set[1].as_path,
+            ["18106", "57463", "61568", "265080", "270793"]
         )
-        stats = mrt_p.parse_upd_dump(upd_filename)
+        self.assertEqual(
+            stats.longest_comm_set[1].comm_set,
+            [
+                "13538:3000", "57463:0:1120", "57463:0:5408", "57463:0:6461",
+                "57463:0:6663", "57463:0:6762", "57463:0:6830", "57463:0:6939",
+                "57463:0:8657", "57463:0:8757", "57463:0:8763", "57463:0:10906",
+                "57463:0:11284", "57463:0:11644", "57463:0:12989", "57463:0:13237",
+                "57463:0:14840", "57463:0:20562", "57463:0:21574", "57463:0:22356",
+                "57463:0:22381", "57463:0:22822", "57463:0:28186", "57463:0:28260",
+                "57463:0:28330", "57463:0:28663", "57463:0:32787", "57463:0:33891",
+                "57463:0:36351", "57463:0:37100", "57463:0:37468", "57463:0:43350",
+                "57463:0:45474", "57463:0:52320", "57463:0:52551", "57463:0:52866",
+                "57463:0:52937", "57463:0:53162", "57463:0:58453", "57463:0:61568",
+                "57463:0:61832", "57463:0:262354", "57463:0:262589",
+                "57463:0:262773", "57463:0:262807", "57463:0:263009",
+                "57463:0:263276", "57463:0:263324", "57463:0:263421",
+                "57463:0:263626", "57463:0:265187", "57463:0:267056",
+                "57463:0:267613", "57463:0:268331", "57463:0:268696"
+            ]
+        )
+        self.assertEqual(stats.longest_comm_set[1].filename, self.upd_2_mrt)
+        self.assertEqual(
+            stats.longest_comm_set[1].next_hop,
+            ["2001:de8:4::1:8106:1", "fe80::bac2:53ff:fedb:2004"]
+        )
+        self.assertEqual(stats.longest_comm_set[1].origin_asns, set(["270793"]))
+        self.assertEqual(stats.longest_comm_set[1].peer_asn, "18106")
+        self.assertEqual(stats.longest_comm_set[1].prefix, "2804:7180:100::/40")
+        self.assertEqual(stats.longest_comm_set[1].timestamp, "20220501.2305")
+        self.assertEqual(stats.longest_comm_set[1].updates, 0)
+        self.assertEqual(stats.longest_comm_set[1].withdraws, 0)
+
+        self.assertIsInstance(stats.longest_comm_set[2], mrt_entry)
+        self.assertEqual(stats.longest_comm_set[2].advt, 0)
+        self.assertEqual(
+            stats.longest_comm_set[2].as_path,
+            ["18106", "57463", "61568", "265080", "270793"]
+        )
+        self.assertEqual(
+            stats.longest_comm_set[2].comm_set,
+            [
+                "13538:3000", "57463:0:1120", "57463:0:5408", "57463:0:6461",
+                "57463:0:6663", "57463:0:6762", "57463:0:6830", "57463:0:6939",
+                "57463:0:8657", "57463:0:8757", "57463:0:8763", "57463:0:10906",
+                "57463:0:11284", "57463:0:11644", "57463:0:12989", "57463:0:13237",
+                "57463:0:14840", "57463:0:20562", "57463:0:21574", "57463:0:22356",
+                "57463:0:22381", "57463:0:22822", "57463:0:28186", "57463:0:28260",
+                "57463:0:28330", "57463:0:28663", "57463:0:32787", "57463:0:33891",
+                "57463:0:36351", "57463:0:37100", "57463:0:37468", "57463:0:43350",
+                "57463:0:45474", "57463:0:52320", "57463:0:52551", "57463:0:52866",
+                "57463:0:52937", "57463:0:53162", "57463:0:58453", "57463:0:61568",
+                "57463:0:61832", "57463:0:262354", "57463:0:262589",
+                "57463:0:262773", "57463:0:262807", "57463:0:263009",
+                "57463:0:263276", "57463:0:263324", "57463:0:263421",
+                "57463:0:263626", "57463:0:265187", "57463:0:267056",
+                "57463:0:267613", "57463:0:268331", "57463:0:268696"
+            ]
+        )
+        self.assertEqual(stats.longest_comm_set[2].filename, self.upd_2_mrt)
+        self.assertEqual(
+            stats.longest_comm_set[2].next_hop,
+            ["2001:de8:4::1:8106:1", "fe80::bac2:53ff:fedb:2004"]
+        )
+        self.assertEqual(stats.longest_comm_set[2].origin_asns, set(["270793"]))
+        self.assertEqual(stats.longest_comm_set[2].peer_asn, "18106")
+        self.assertEqual(stats.longest_comm_set[2].prefix, "2804:7180::/40")
+        self.assertEqual(stats.longest_comm_set[2].timestamp, "20220501.2305")
+        self.assertEqual(stats.longest_comm_set[2].updates, 0)
+        self.assertEqual(stats.longest_comm_set[2].withdraws, 0)
+
+        self.assertIsInstance(stats.longest_comm_set[3], mrt_entry)
+        self.assertEqual(stats.longest_comm_set[3].advt, 0)
+        self.assertEqual(
+            stats.longest_comm_set[3].as_path,
+            ["18106", "57463", "61568", "264293", "267429", "267956", "267956",
+            "267956", "267956", "267956", "267956", "268182"]
+        )
+        self.assertEqual(
+            stats.longest_comm_set[3].comm_set,
+            [
+                "13538:3000", "57463:0:1120", "57463:0:5408", "57463:0:6461",
+                "57463:0:6663", "57463:0:6762", "57463:0:6830", "57463:0:6939",
+                "57463:0:8657", "57463:0:8757", "57463:0:8763", "57463:0:10906",
+                "57463:0:11284", "57463:0:11644", "57463:0:12989", "57463:0:13237",
+                "57463:0:14840", "57463:0:20562", "57463:0:21574", "57463:0:22356",
+                "57463:0:22381", "57463:0:22822", "57463:0:28186", "57463:0:28260",
+                "57463:0:28330", "57463:0:28663", "57463:0:32787", "57463:0:33891",
+                "57463:0:36351", "57463:0:37100", "57463:0:37468", "57463:0:43350",
+                "57463:0:45474", "57463:0:52320", "57463:0:52551", "57463:0:52866",
+                "57463:0:52937", "57463:0:53162", "57463:0:58453", "57463:0:61568",
+                "57463:0:61832", "57463:0:262354", "57463:0:262589",
+                "57463:0:262773", "57463:0:262807", "57463:0:263009",
+                "57463:0:263276", "57463:0:263324", "57463:0:263421",
+                "57463:0:263626", "57463:0:265187", "57463:0:267056",
+                "57463:0:267613", "57463:0:268331", "57463:0:268696"
+            ]
+        )
+        self.assertEqual(stats.longest_comm_set[3].filename, self.upd_2_mrt)
+        self.assertEqual(
+            stats.longest_comm_set[3].next_hop,
+            ["2001:de8:4::1:8106:1", "fe80::bac2:53ff:fedb:2004"]
+        )
+        self.assertEqual(stats.longest_comm_set[3].origin_asns, set(["268182"]))
+        self.assertEqual(stats.longest_comm_set[3].peer_asn, "18106")
+        self.assertEqual(stats.longest_comm_set[3].prefix, "2804:5950::/33")
+        self.assertEqual(stats.longest_comm_set[3].timestamp, "20220501.2305")
+        self.assertEqual(stats.longest_comm_set[3].updates, 0)
+        self.assertEqual(stats.longest_comm_set[3].withdraws, 0)
+
+        stats = mrt_p.parse_upd_dump(self.upd_1_mrt)
 
         self.assertIsInstance(stats.invalid_len, list)
         self.assertEqual(len(stats.invalid_len), 6)
@@ -214,13 +305,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.invalid_len[0].advt, 0)
         self.assertEqual(stats.invalid_len[0].as_path, ["199524", "38082"])
         self.assertEqual(stats.invalid_len[0].comm_set, [])
-        self.assertEqual(
-            stats.invalid_len[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220421.0200.gz"
-            )
-        )
+        self.assertEqual(stats.invalid_len[0].filename, self.upd_1_mrt)
         self.assertEqual(stats.invalid_len[0].next_hop, ["2001:de8:4::19:9524:1"])
         self.assertEqual(stats.invalid_len[0].origin_asns, set(["38082"]))
         self.assertEqual(stats.invalid_len[0].peer_asn, "199524")
@@ -230,16 +315,20 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.invalid_len[0].withdraws, 0)
 
         self.assertEqual(stats.invalid_len[1].advt, 0)
-        self.assertEqual(stats.invalid_len[1].as_path, ["133210", "4788", "38044", "38044", "23736"])
-        self.assertEqual(stats.invalid_len[1].comm_set, ["4788:811", "4788:6300", "4788:6310", "4788:16300", "4788:23030", "4788:32011", "24115:4788", "24115:65023", "24115:1000:2", "24115:1001:2", "24115:1002:2", "24115:1003:1", "24115:1004:4788"])
         self.assertEqual(
-            stats.invalid_len[1].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220421.0200.gz"
-            )
+            stats.invalid_len[1].as_path,
+            ["133210", "4788", "38044", "38044", "23736"]
         )
-        self.assertEqual(stats.invalid_len[1].next_hop, ["2001:de8:4::4788:1", "fe80::8ae6:4b00:6c1:6029"])
+        self.assertEqual(
+            stats.invalid_len[1].comm_set,
+            ["4788:811", "4788:6300", "4788:6310", "4788:16300",
+            "4788:23030", "4788:32011"]
+        )
+        self.assertEqual(stats.invalid_len[1].filename, self.upd_1_mrt)
+        self.assertEqual(
+            stats.invalid_len[1].next_hop,
+            ["2001:de8:4::4788:1", "fe80::8ae6:4b00:6c1:6029"]
+        )
         self.assertEqual(stats.invalid_len[1].origin_asns, set(["23736"]))
         self.assertEqual(stats.invalid_len[1].peer_asn, "133210")
         self.assertEqual(stats.invalid_len[1].prefix, "2400:7400:0:105::/64")
@@ -248,16 +337,20 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.invalid_len[1].withdraws, 0)
 
         self.assertEqual(stats.invalid_len[2].advt, 0)
-        self.assertEqual(stats.invalid_len[2].as_path, ["133210", "4788", "38044", "23736"])
-        self.assertEqual(stats.invalid_len[2].comm_set, ["4788:811", "4788:6300", "4788:6310", "4788:16300", "4788:23030", "4788:34002", "24115:4788", "24115:65023", "24115:1000:2", "24115:1001:2", "24115:1002:2", "24115:1003:1", "24115:1004:4788"])
         self.assertEqual(
-            stats.invalid_len[2].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220421.0200.gz"
-            )
+            stats.invalid_len[2].as_path,
+            ["133210", "4788", "38044", "23736"]
         )
-        self.assertEqual(stats.invalid_len[2].next_hop, ["2001:de8:4::4788:1", "fe80::8ae6:4b00:6c1:6029"])
+        self.assertEqual(
+            stats.invalid_len[2].comm_set,
+            ["4788:811", "4788:6300", "4788:6310", "4788:16300",
+            "4788:23030", "4788:34002"]
+        )
+        self.assertEqual(stats.invalid_len[2].filename, self.upd_1_mrt)
+        self.assertEqual(
+            stats.invalid_len[2].next_hop,
+            ["2001:de8:4::4788:1", "fe80::8ae6:4b00:6c1:6029"]
+        )
         self.assertEqual(stats.invalid_len[2].origin_asns, set(["23736"]))
         self.assertEqual(stats.invalid_len[2].peer_asn, "133210")
         self.assertEqual(stats.invalid_len[2].prefix, "2400:7400:0:106::/64")
@@ -268,13 +361,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.invalid_len[3].advt, 0)
         self.assertEqual(stats.invalid_len[3].as_path, ["136168"])
         self.assertEqual(stats.invalid_len[3].comm_set, [])
-        self.assertEqual(
-            stats.invalid_len[3].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220421.0200.gz"
-            )
-        )
+        self.assertEqual(stats.invalid_len[3].filename, self.upd_1_mrt)
         self.assertEqual(stats.invalid_len[3].next_hop, "27.111.228.170")
         self.assertEqual(stats.invalid_len[3].origin_asns, set(["136168"]))
         self.assertEqual(stats.invalid_len[3].peer_asn, "136168")
@@ -284,16 +371,18 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.invalid_len[3].withdraws, 0)
 
         self.assertEqual(stats.invalid_len[4].advt, 0)
-        self.assertEqual(stats.invalid_len[4].as_path, ["133210", "59318", "59318", "15133"])
-        self.assertEqual(stats.invalid_len[4].comm_set, ["15133:4351", "24115:59318", "24115:65023", "59318:2015", "24115:1000:2", "24115:1001:1", "24115:1002:1", "24115:1003:33", "24115:1004:59318"])
         self.assertEqual(
-            stats.invalid_len[4].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220421.0200.gz"
-            )
+            stats.invalid_len[4].as_path, ["133210", "59318", "59318", "15133"]
         )
-        self.assertEqual(stats.invalid_len[4].next_hop, ["2001:de8:4::13:1207:1", "fe80::8ae6:4b00:6c1:6029"])
+        self.assertEqual(
+            stats.invalid_len[4].comm_set,
+            ["15133:4351", "59318:2015"]
+        )
+        self.assertEqual(stats.invalid_len[4].filename, self.upd_1_mrt)
+        self.assertEqual(
+            stats.invalid_len[4].next_hop,
+            ["2001:de8:4::13:1207:1", "fe80::8ae6:4b00:6c1:6029"]
+        )
         self.assertEqual(stats.invalid_len[4].origin_asns, set(["15133"]))
         self.assertEqual(stats.invalid_len[4].peer_asn, "133210")
         self.assertEqual(stats.invalid_len[4].prefix, "2404:b300:33:1::/64")
@@ -304,13 +393,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.invalid_len[5].advt, 0)
         self.assertEqual(stats.invalid_len[5].as_path, ["136168"])
         self.assertEqual(stats.invalid_len[5].comm_set, [])
-        self.assertEqual(
-            stats.invalid_len[5].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220421.0200.gz"
-            )
-        )
+        self.assertEqual(stats.invalid_len[5].filename, self.upd_1_mrt)
         self.assertEqual(stats.invalid_len[5].next_hop, "27.111.228.170")
         self.assertEqual(stats.invalid_len[5].origin_asns, set(["136168"]))
         self.assertEqual(stats.invalid_len[5].peer_asn, "136168")
@@ -319,12 +402,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.invalid_len[5].updates, 0)
         self.assertEqual(stats.invalid_len[5].withdraws, 0)
 
-        # Make full path
-        upd_filename = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            "rcc23.updates.20220501.2305.gz"
-        )
-        stats = mrt_p.parse_upd_dump(upd_filename)
+        stats = mrt_p.parse_upd_dump(self.upd_2_mrt)
 
         self.assertIsInstance(stats.most_advt_prefixes, list)
         self.assertEqual(len(stats.most_advt_prefixes), 1)
@@ -332,13 +410,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_advt_prefixes[0].advt, 884)
         self.assertEqual(stats.most_advt_prefixes[0].as_path, [[]])
         self.assertEqual(stats.most_advt_prefixes[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_advt_prefixes[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_advt_prefixes[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_advt_prefixes[0].next_hop, None)
         self.assertEqual(stats.most_advt_prefixes[0].origin_asns, set())
         self.assertEqual(stats.most_advt_prefixes[0].peer_asn, None)
@@ -353,13 +425,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_upd_prefixes[0].advt, 0)
         self.assertEqual(stats.most_upd_prefixes[0].as_path, [[]])
         self.assertEqual(stats.most_upd_prefixes[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_upd_prefixes[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_upd_prefixes[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_upd_prefixes[0].next_hop, None)
         self.assertEqual(stats.most_upd_prefixes[0].origin_asns, set())
         self.assertEqual(stats.most_upd_prefixes[0].peer_asn, None)
@@ -374,13 +440,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_withd_prefixes[0].advt, 0)
         self.assertEqual(stats.most_withd_prefixes[0].as_path, [[]])
         self.assertEqual(stats.most_withd_prefixes[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_withd_prefixes[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_withd_prefixes[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_withd_prefixes[0].next_hop, None)
         self.assertEqual(stats.most_withd_prefixes[0].origin_asns, set())
         self.assertEqual(stats.most_withd_prefixes[0].peer_asn, None)
@@ -399,13 +459,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_advt_origin_asn[0].advt, 2628)
         self.assertEqual(stats.most_advt_origin_asn[0].as_path, [[]])
         self.assertEqual(stats.most_advt_origin_asn[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_advt_origin_asn[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_advt_origin_asn[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_advt_origin_asn[0].next_hop, None)
         self.assertEqual(
             stats.most_advt_origin_asn[0].origin_asns, set(["20473"])
@@ -424,13 +478,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_advt_peer_asn[0].advt, 11595)
         self.assertEqual(stats.most_advt_peer_asn[0].as_path, [[]])
         self.assertEqual(stats.most_advt_peer_asn[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_advt_peer_asn[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_advt_peer_asn[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_advt_peer_asn[0].next_hop, None)
         self.assertEqual(stats.most_advt_peer_asn[0].origin_asns, set())
         self.assertEqual(stats.most_advt_peer_asn[0].peer_asn, "18106")
@@ -445,13 +493,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_upd_peer_asn[0].advt, 0)
         self.assertEqual(stats.most_upd_peer_asn[0].as_path, [[]])
         self.assertEqual(stats.most_upd_peer_asn[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_upd_peer_asn[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_upd_peer_asn[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_upd_peer_asn[0].next_hop, None)
         self.assertEqual(stats.most_upd_peer_asn[0].origin_asns, set())
         self.assertEqual(stats.most_upd_peer_asn[0].peer_asn, "18106")
@@ -466,13 +508,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_withd_peer_asn[0].advt, 0)
         self.assertEqual(stats.most_withd_peer_asn[0].as_path, [[]])
         self.assertEqual(stats.most_withd_peer_asn[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_withd_peer_asn[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_withd_peer_asn[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_withd_peer_asn[0].next_hop, None)
         self.assertEqual(stats.most_withd_peer_asn[0].origin_asns, set())
         self.assertEqual(stats.most_withd_peer_asn[0].peer_asn, "18106")
@@ -489,13 +525,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[0].advt, 0)
         self.assertEqual(stats.most_origin_asns[0].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[0].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[0].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[0].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[0].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[0].origin_asns, set(["28198", "262375"])
@@ -509,13 +539,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[1].advt, 0)
         self.assertEqual(stats.most_origin_asns[1].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[1].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[1].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[1].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[1].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[1].origin_asns, set(["271204", "266181"])
@@ -529,13 +553,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[2].advt, 0)
         self.assertEqual(stats.most_origin_asns[2].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[2].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[2].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[2].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[2].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[2].origin_asns, set(["396559", "396542"])
@@ -549,13 +567,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[3].advt, 0)
         self.assertEqual(stats.most_origin_asns[3].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[3].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[3].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[3].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[3].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[3].origin_asns, set(["7420", "37154"])
@@ -569,13 +581,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[4].advt, 0)
         self.assertEqual(stats.most_origin_asns[4].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[4].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[4].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[4].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[4].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[4].origin_asns, set(["7487", "54396"])
@@ -589,13 +595,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[5].advt, 0)
         self.assertEqual(stats.most_origin_asns[5].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[5].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[5].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[5].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[5].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[5].origin_asns, set(["203020", "29802"])
@@ -609,13 +609,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[6].advt, 0)
         self.assertEqual(stats.most_origin_asns[6].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[6].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[6].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[6].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[6].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[6].origin_asns, set(["52000", "19318"])
@@ -629,13 +623,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[7].advt, 0)
         self.assertEqual(stats.most_origin_asns[7].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[7].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[7].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[7].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[7].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[7].origin_asns, set(["55020", "137951"])
@@ -649,13 +637,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(stats.most_origin_asns[8].advt, 0)
         self.assertEqual(stats.most_origin_asns[8].as_path, [[]])
         self.assertEqual(stats.most_origin_asns[8].comm_set, [[]])
-        self.assertEqual(
-            stats.most_origin_asns[8].filename,
-            os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                "rcc23.updates.20220501.2305.gz"
-            )
-        )
+        self.assertEqual(stats.most_origin_asns[8].filename, self.upd_2_mrt)
         self.assertEqual(stats.most_origin_asns[8].next_hop, None)
         self.assertEqual(
             stats.most_origin_asns[8].origin_asns, set(["269208", "268347"])
@@ -673,15 +655,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertIsInstance(stats.total_withd, int)
         self.assertEqual(stats.total_withd, 950)
         self.assertIsInstance(stats.file_list, list)
-        self.assertEqual(
-            stats.file_list,
-            [
-                os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)),
-                    "rcc23.updates.20220501.2305.gz"
-                )
-            ]
-        )
+        self.assertEqual(stats.file_list, [self.upd_2_mrt])
         self.assertIsInstance(stats.timestamp, str)
         self.assertEqual(stats.timestamp, "20220501.2305")
 
