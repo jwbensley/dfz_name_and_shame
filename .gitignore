@@ -16,6 +16,9 @@ redis/data/*
 **/*.bz2
 **/*.gz
 
+# Don't sync mypy cache
+**/.mypy_cache/
+
 # Don't sync pycache
 **/__pycache__/
 

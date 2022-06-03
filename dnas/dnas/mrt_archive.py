@@ -29,6 +29,7 @@ class mrt_archive:
         UPD_OFFSET: int = None,
         UPD_PREFIX: str = None,
         UPD_URL: str = None,
+        STRIP_COMM: str = None,
 
     ):
 
@@ -38,7 +39,7 @@ class mrt_archive:
             )
         if type(ENABLED) != bool:
             raise TypeError(
-                f"ENABLED is not of type str: {type(ENABLED)}"
+                f"ENABLED is not of type bool: {type(ENABLED)}"
             )
         if type(MRT_DIR) != str:
             raise TypeError(
@@ -104,6 +105,10 @@ class mrt_archive:
             raise TypeError(
                 f"UPD_URL is not of type str: {type(UPD_URL)}"
             )
+        if type(STRIP_COMM) != str:
+            raise TypeError(
+                f"STRIP_COMM is not of type str: {type(STRIP_COMM)}"
+            )
 
         self.BASE_URL = BASE_URL
         self.ENABLED = ENABLED
@@ -123,6 +128,7 @@ class mrt_archive:
         self.UPD_OFFSET = UPD_OFFSET
         self.UPD_PREFIX = UPD_PREFIX
         self.UPD_URL = UPD_URL
+        self.STRIP_COMM = STRIP_COMM
 
     @staticmethod
     def concat_url(url_chunks: List[str] = None) -> str:
