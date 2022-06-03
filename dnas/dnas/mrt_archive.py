@@ -29,7 +29,7 @@ class mrt_archive:
         UPD_OFFSET: int = None,
         UPD_PREFIX: str = None,
         UPD_URL: str = None,
-        STRIP_COMM: str = None,
+        STRIP_COMM: str = "",
 
     ):
 
