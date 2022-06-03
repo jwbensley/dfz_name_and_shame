@@ -114,6 +114,7 @@ class mrt_parser:
         longest_as_path: List[mrt_entry] = []
         longest_comm_set: List[mrt_entry] = []
         invalid_len_entries: List[mrt_entry] = []
+        most_bogon_asns: Dict[str, set] = {}
         origin_asns_prefix: Dict[str, set] = {}
         upd_prefix: Dict[str, dict] = {}
         advt_per_origin_asn: Dict[str, int] = {}
@@ -327,7 +328,6 @@ class mrt_parser:
                             int(prefix.split("/")[1]) < 8):
                             invalid_len.append(prefix)
 
-
             # Nothing further to do if this UPDATE was a withdraw
             if not prefixes:
                 continue
@@ -359,6 +359,21 @@ class mrt_parser:
                             )
                 else:
                     non_bogon_asns[origin_asn] = None
+
+            """
+            When the origin ASN is a bogon, find the first non-bogon ASN
+            """
+            if origin_asn not in non_bogon_asns:
+                i = -1
+                while bogon_asn.is_bogon(int(as_path[i])):
+                    i -= 1
+                    if i+len(as_path) < 0:
+                        break
+                else:
+                    if as_path[i] not in most_bogon_asns:
+                        most_bogon_asns[as_path[i]] = set([origin_asn])
+                    else:
+                        most_bogon_asns[as_path[i]].add(origin_asn)
 
             """
             Keep unique prefixes only, with additional origin ASNs for the same
@@ -535,6 +550,29 @@ class mrt_parser:
                     mrt_s.invalid_len.append(mrt_e)
                 elif len(mrt_e.origin_asns) > len(mrt_s.invalid_len[0].origin_asns):
                     mrt_s.invalid_len = [mrt_e]
+
+        # Only get the ASNs originating the most bogon downstream ASNs
+        bogon_asn_count = 0
+        for asn in most_bogon_asns:
+            if len(most_bogon_asns[asn]) > bogon_asn_count:
+                bogon_asn_count = len(most_bogon_asns[asn])
+                mrt_s.most_bogon_asns = [
+                    mrt_entry(
+                        as_path=[asn],
+                        origin_asns=most_bogon_asns[asn],
+                        filename=orig_filename,
+                        timestamp=file_ts,
+                    )
+                ]
+            elif len(most_bogon_asns[asn]) == bogon_asn_count:
+                mrt_s.most_bogon_asns.append(
+                    mrt_entry(
+                        as_path=[asn],
+                        origin_asns=most_bogon_asns[asn],
+                        filename=orig_filename,
+                        timestamp=file_ts,
+                    )
+                )
 
         most_updates = 0
         most_upd_prefixes = []

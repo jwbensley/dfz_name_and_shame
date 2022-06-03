@@ -19,6 +19,7 @@ class mrt_stats:
         self.longest_comm_set: List[mrt_entry] = []
         self.invalid_len: List[mrt_entry] = []
         self.most_advt_prefixes: List[mrt_entry] = []
+        self.most_bogon_asns: List[mrt_entry] = []
         self.most_upd_prefixes: List[mrt_entry] = []
         self.most_withd_prefixes: List[mrt_entry] = []
         self.most_advt_origin_asn: List[mrt_entry] = []
@@ -236,7 +237,6 @@ class mrt_stats:
                     self.invalid_len = merge_data.invalid_len.copy()
                     changed = True
 
-
         # Most advertisements per prefix
         tmp = []
         # If stats from a rib dump are being added this wont be present:
@@ -252,7 +252,6 @@ class mrt_stats:
                                 timestamp=u_e.timestamp,
                             )
                         )
-                        merge_data.most_advt_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -281,6 +280,50 @@ class mrt_stats:
                     self.most_advt_prefixes = merge_data.most_advt_prefixes.copy()
                     changed = True
 
+        # Most bogon ASNs per origin ASN
+        tmp = []
+        # If stats from a rib dump are being added this wont be present:
+        if merge_data.most_bogon_asns:
+            for idx, u_e in enumerate(merge_data.most_bogon_asns[:]):
+                for res_e in self.most_bogon_asns:
+                    if (res_e.as_path == u_e.as_path):
+                        tmp.append(
+                            mrt_entry(
+                                as_path=res_e.as_path,
+                                origin_asns=res_e.origin_asns.union(u_e.origin_asns),
+                                filename=orig_filename,
+                                timestamp=file_ts,
+                            )
+                        )
+
+        if tmp:
+            for tmp_e in tmp:
+                if len(tmp_e.origin_asns) == len(self.most_bogon_asns[0].origin_asns):
+                    s_asns = [mrt_e.as_path for mrt_e in self.most_bogon_asns]
+                    if tmp_e.as_path not in s_asns:
+                        self.most_bogon_asns.append(tmp_e)
+                        changed = True
+                elif len(tmp_e.origin_asns) > len(self.most_bogon_asns[0].origin_asns):
+                    self.most_bogon_asns = [tmp_e]
+                    changed = True
+        else:
+            if merge_data.most_bogon_asns:
+                if self.most_bogon_asns:
+                    if (
+                        len(merge_data.most_bogon_asns[0].origin_asns) == len(self.most_bogon_asns[0].origin_asns) and
+                        len(self.most_bogon_asns[0].origin_asns) > 0
+                    ):
+                        s_asns = [mrt_e.as_path for mrt_e in self.most_bogon_asns]
+                        for mrt_e in merge_data.most_bogon_asns:
+                            if mrt_e.as_path not in s_asns:
+                                self.most_bogon_asns.append(mrt_e)
+                                changed = True
+                    elif len(merge_data.most_bogon_asns[0].origin_asns) > len(self.most_bogon_asns[0].origin_asns):
+                        self.most_bogon_asns = merge_data.most_bogon_asns.copy()
+                        changed = True
+                else:
+                    self.most_bogon_asns = merge_data.most_bogon_asns.copy()
+                    changed = True
 
         # Most updates per prefix
         tmp = []
@@ -297,7 +340,6 @@ class mrt_stats:
                                 updates=(res_e.updates + u_e.updates),
                             )
                         )
-                        merge_data.most_upd_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -342,7 +384,6 @@ class mrt_stats:
                                 withdraws=(res_e.withdraws + u_e.withdraws),
                             )
                         )
-                        merge_data.most_withd_prefixes.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -387,7 +428,6 @@ class mrt_stats:
                                 timestamp=u_e.timestamp,
                             )
                         )
-                        merge_data.most_advt_origin_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -432,7 +472,6 @@ class mrt_stats:
                                 timestamp=u_e.timestamp,
                             )
                         )
-                        merge_data.most_advt_peer_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -477,7 +516,6 @@ class mrt_stats:
                                 updates=(res_e.updates + u_e.updates),
                             )
                         )
-                        merge_data.most_upd_peer_asn.remove(u_e) ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
 
         if tmp:
             for tmp_e in tmp:
@@ -522,8 +560,6 @@ class mrt_stats:
                                 withdraws=(res_e.withdraws + u_e.withdraws),
                             )
                         )
-                        merge_data.most_withd_peer_asn.remove(u_e)  ############### DO WE NEED TO REMOVE - merge_data NOT USED if tmp
-                        ###### IF WE HAVE THIS - DO WE NEED AN "if" to check if merge_data is not empty, under the "else" below?
 
         if tmp:
             for tmp_e in tmp:
@@ -627,10 +663,10 @@ class mrt_stats:
 
         return changed
 
-    def equal_to(self, mrt_s: 'mrt_stats' = None) -> bool:
+    def equal_to(self, mrt_s: 'mrt_stats' = None, meta: bool = False) -> bool:
         """
         Return True if this MRT stats obj is the same as mrt_s, else False.
-        Don't compare meta data like file list or timestamp, only the stats.
+        Comparing meta data like file list or timestamp is optional.
         """
         if not mrt_s:
             raise ValueError(
@@ -642,7 +678,6 @@ class mrt_stats:
                 f"mrt_s is not a stats object: {type(mrt_s)}"
             )
 
-
         if len(self.bogon_origin_asns) != len(mrt_s.bogon_origin_asns):
             return False
 
@@ -650,6 +685,7 @@ class mrt_stats:
             for mrt_e in mrt_s.bogon_origin_asns[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.bogon_origin_asns.remove(mrt_e)
+                    break
         if mrt_s.bogon_origin_asns:
             return False
 
@@ -660,6 +696,7 @@ class mrt_stats:
             for mrt_e in mrt_s.bogon_prefixes[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.bogon_prefixes.remove(mrt_e)
+                    break
         if mrt_s.bogon_prefixes:
             return False
 
@@ -670,6 +707,7 @@ class mrt_stats:
             for mrt_e in mrt_s.longest_as_path[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.longest_as_path.remove(mrt_e)
+                    break
         if mrt_s.longest_as_path:
             return False
 
@@ -680,6 +718,7 @@ class mrt_stats:
             for mrt_e in mrt_s.longest_comm_set[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.longest_comm_set.remove(mrt_e)
+                    break
         if mrt_s.longest_comm_set:
             return False
 
@@ -690,7 +729,19 @@ class mrt_stats:
             for mrt_e in mrt_s.invalid_len[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.invalid_len.remove(mrt_e)
+                    break
         if mrt_s.invalid_len:
+            return False
+
+        if len(self.most_bogon_asns) != len(mrt_s.most_bogon_asns):
+            return False
+
+        for self_e in self.most_bogon_asns:
+            for mrt_e in mrt_s.most_bogon_asns[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_bogon_asns.remove(mrt_e)
+                    break
+        if mrt_s.most_bogon_asns:
             return False
 
         if len(self.most_advt_prefixes) != len(mrt_s.most_advt_prefixes):
@@ -700,6 +751,7 @@ class mrt_stats:
             for mrt_e in mrt_s.most_advt_prefixes[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_advt_prefixes.remove(mrt_e)
+                    break
         if mrt_s.most_advt_prefixes:
             return False
 
@@ -710,6 +762,7 @@ class mrt_stats:
             for mrt_e in mrt_s.most_upd_prefixes[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_upd_prefixes.remove(mrt_e)
+                    break
         if mrt_s.most_upd_prefixes:
             return False
 
@@ -720,6 +773,7 @@ class mrt_stats:
             for mrt_e in mrt_s.most_withd_prefixes[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_withd_prefixes.remove(mrt_e)
+                    break
         if mrt_s.most_withd_prefixes:
             return False
 
@@ -730,6 +784,7 @@ class mrt_stats:
             for mrt_e in mrt_s.most_advt_origin_asn[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_advt_origin_asn.remove(mrt_e)
+                    break
         if mrt_s.most_advt_origin_asn:
             return False
 
@@ -740,6 +795,7 @@ class mrt_stats:
             for mrt_e in mrt_s.most_advt_peer_asn[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_advt_peer_asn.remove(mrt_e)
+                    break
         if mrt_s.most_advt_peer_asn:
             return False
 
@@ -750,6 +806,7 @@ class mrt_stats:
             for mrt_e in mrt_s.most_upd_peer_asn[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_upd_peer_asn.remove(mrt_e)
+                    break
         if mrt_s.most_upd_peer_asn:
             return False
 
@@ -760,6 +817,7 @@ class mrt_stats:
             for mrt_e in mrt_s.most_withd_peer_asn[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_withd_peer_asn.remove(mrt_e)
+                    break
         if mrt_s.most_withd_peer_asn:
             return False
 
@@ -770,9 +828,9 @@ class mrt_stats:
             for mrt_e in mrt_s.most_origin_asns[:]:
                 if self_e.equal_to(mrt_e):
                     mrt_s.most_origin_asns.remove(mrt_e)
+                    break
         if mrt_s.most_origin_asns:
             return False
-
 
         if self.total_upd != mrt_s.total_upd:
             return False
@@ -782,6 +840,13 @@ class mrt_stats:
 
         if self.total_withd != mrt_s.total_withd:
             return False
+
+        if meta:
+            if self.file_list != mrt_s.file_list:
+                return False
+
+            if self.timestamp != mrt_s.timestamp:
+                return False
 
         return True
 
@@ -864,6 +929,15 @@ class mrt_stats:
             mrt_e = mrt_entry()
             mrt_e.from_json(json_e)
             self.most_advt_prefixes.append(mrt_e)
+
+        self.most_bogon_asns = []
+        if "most_bogon_asns" in json_dict:
+            for json_e in json_dict["most_bogon_asns"]:
+                mrt_e = mrt_entry()
+                mrt_e.from_json(json_e)
+                self.most_bogon_asns.append(mrt_e)
+        else:
+            self.most_bogon_asns.append(mrt_entry())
 
         self.most_upd_prefixes = []
         for json_e in json_dict["most_upd_prefixes"]:
@@ -1016,6 +1090,7 @@ class mrt_stats:
         diff.longest_comm_set = []
         diff.invalid_len = []
         diff.most_advt_prefixes = []
+        diff.most_bogon_asns = []
         diff.most_upd_prefixes = []
         diff.most_withd_prefixes = []
         diff.most_advt_origin_asn = []
@@ -1077,6 +1152,15 @@ class mrt_stats:
                     break
             if not found:
                 diff.most_advt_prefixes.append(mrt_e)
+
+        for mrt_e in mrt_s.most_bogon_asns:
+            found = False
+            for self_e in self.most_bogon_asns:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_bogon_asns.append(mrt_e)
 
         for mrt_e in mrt_s.most_upd_prefixes:
             found = False
@@ -1176,6 +1260,7 @@ class mrt_stats:
         diff.longest_comm_set = []
         diff.invalid_len = []
         diff.most_advt_prefixes = []
+        diff.most_bogon_asns = []
         diff.most_upd_prefixes = []
         diff.most_withd_prefixes = []
         diff.most_advt_origin_asn = []
@@ -1258,6 +1343,19 @@ class mrt_stats:
                         updated = True
             else:
                 diff.most_advt_prefixes = mrt_s.most_advt_prefixes.copy()
+                updated = True
+
+        # Origin ASNs with most bogon downstream origin ASNs
+        if mrt_s.most_bogon_asns:
+            if self.most_bogon_asns:
+                if (mrt_s.most_bogon_asns[0].as_path and
+                    self.most_bogon_asns[0].as_path):
+                    if (len(mrt_s.most_bogon_asns[0].origin_asns) >
+                        len(self.most_bogon_asns[0].origin_asns)):
+                        diff.most_bogon_asns = mrt_s.most_bogon_asns.copy()
+                        updated = True
+            else:
+                diff.most_bogon_asns = mrt_s.most_bogon_asns.copy()
                 updated = True
 
         # More updates per prefix
@@ -1415,6 +1513,7 @@ class mrt_stats:
             not self.longest_comm_set and
             not self.invalid_len and
             not self.most_advt_prefixes and
+            not self.most_bogon_asns and
             not self.most_upd_prefixes and
             not self.most_withd_prefixes and
             not self.most_advt_origin_asn and
@@ -1582,6 +1681,25 @@ class mrt_stats:
                     changed = True
             else:
                 self.most_advt_prefixes = merge_data.most_advt_prefixes.copy()
+                changed = True
+
+        # Origin ASNs with most downstream bogon origin ASNs
+        if merge_data.most_bogon_asns:
+            if self.most_bogon_asns:
+                if (
+                    len(merge_data.most_bogon_asns[0].origin_asns) == len(self.most_bogon_asns[0].origin_asns) and
+                    len(self.most_bogon_asns[0].origin_asns) > 0
+                ):
+                    s_asns = [mrt_e.as_path for mrt_e in self.most_bogon_asns]
+                    for mrt_e in merge_data.most_bogon_asns:
+                        if mrt_e.as_path not in s_asns:
+                            self.most_bogon_asns.append(mrt_e)
+                            changed = True
+                elif len(merge_data.most_bogon_asns[0].origin_asns) > len(self.most_bogon_asns[0].origin_asns):
+                    self.most_bogon_asns = merge_data.most_bogon_asns.copy()
+                    changed = True
+            else:
+                self.most_bogon_asns = merge_data.most_bogon_asns.copy()
                 changed = True
 
         """
@@ -1851,6 +1969,21 @@ class mrt_stats:
         if self.most_advt_prefixes:
             print("")
 
+        for mrt_e in self.most_bogon_asns:
+            print(f"most_bogon_asns->prefix: {mrt_e.prefix}")
+            print(f"most_bogon_asns->advt: {mrt_e.advt}")
+            print(f"most_bogon_asns->as_path: {mrt_e.as_path}")
+            print(f"most_bogon_asns->comm_set: {mrt_e.comm_set}")
+            print(f"most_bogon_asns->filename: {mrt_e.filename}")
+            print(f"most_bogon_asns->next_hop: {mrt_e.next_hop}")
+            print(f"most_bogon_asns->origin_asns: {mrt_e.origin_asns}")
+            print(f"most_bogon_asns->peer_asn: {mrt_e.peer_asn}")
+            print(f"most_bogon_asns->timestamp: {mrt_e.timestamp}")
+            print(f"most_bogon_asns->updates: {mrt_e.updates}")
+            print(f"most_bogon_asns->withdraws: {mrt_e.withdraws}")
+        if self.most_bogon_asns:
+            print("")
+
         for mrt_e in self.most_upd_prefixes:
             print(f"most_upd_prefixes->prefix: {mrt_e.prefix}")
             print(f"most_upd_prefixes->advt: {mrt_e.advt}")
@@ -2006,6 +2139,9 @@ class mrt_stats:
             ],
             "most_advt_prefixes": [
                 mrt_e.to_json() for mrt_e in self.most_advt_prefixes
+            ],
+            "most_bogon_asns": [
+                mrt_e.to_json() for mrt_e in self.most_bogon_asns
             ],
             "most_upd_prefixes": [
                 mrt_e.to_json() for mrt_e in self.most_upd_prefixes
