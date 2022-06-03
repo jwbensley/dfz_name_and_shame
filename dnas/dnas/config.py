@@ -164,6 +164,7 @@ class config:
             "UPD_OFFSET": 0,
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "",
+            "STRIP_COMM": "",
         }
     )
 
@@ -194,6 +195,7 @@ class config:
             "UPD_OFFSET": 0,
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "0:",
         }
     )
 
@@ -224,6 +226,7 @@ class config:
             "UPD_OFFSET": 0,            
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "0:",
         }
     )
 
@@ -254,6 +257,7 @@ class config:
             "UPD_OFFSET": 0,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "24115:",
         }
     )
 
@@ -284,5 +288,6 @@ class config:
             "UPD_OFFSET": 0,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "0:",
         }
     )

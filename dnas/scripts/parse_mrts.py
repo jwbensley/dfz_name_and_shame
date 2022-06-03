@@ -221,7 +221,7 @@ def parse_args():
 
 def parse_file(
     filename: str = None, keep_chunks: bool = False,
-    multi: bool = True,
+    multi: bool = True
     ) -> 'mrt_stats':
     """
     Split and parse an individual MRT file, return the mrt_stats.

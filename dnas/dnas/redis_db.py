@@ -3,7 +3,7 @@ import json
 import redis
 from typing import Any, Dict, List, Union
 
-from dnas.redis_auth import redis_auth
+from dnas.redis_auth import redis_auth # type: ignore
 from dnas.mrt_stats import mrt_stats
 from dnas.twitter_msg import twitter_msg
 

@@ -3,7 +3,6 @@ import os
 from typing import Union, Literal
 
 from dnas.config import config as cfg
-from dnas.mrt_getter import mrt_getter
 from dnas.mrt_archive import mrt_archive
 
 class mrt_archives:
@@ -32,6 +31,7 @@ class mrt_archives:
                     UPD_OFFSET = arch["UPD_OFFSET"],
                     UPD_PREFIX = arch["UPD_PREFIX"],
                     UPD_URL = arch["UPD_URL"],
+                    STRIP_COMM = arch["STRIP_COMM"],
                 )
             )
 
@@ -82,6 +82,24 @@ class mrt_archives:
                     pass
         logging.error(f"Couldn't match {url} to any MRT archive")
         return False
+
+
+    def get_arch_option(self, file_path: str = None, opt: str = None) -> str:
+        """
+        Return the value of an MRT archive attribute, based on the file name.
+        """
+        if not file_path or not opt:
+            raise ValueError(
+                f"Missing required arguments: file_path={file_path}, opt={opt}."
+            )
+
+        arch = self.arch_from_file_path(file_path)
+        if not arch:
+            raise ValueError(
+                f"Unable to determine MRT archive from file path {file_path}"
+            )
+
+        return getattr(arch, opt)
 
     def get_day_key(self, file_path: str = None) -> str:
         """
