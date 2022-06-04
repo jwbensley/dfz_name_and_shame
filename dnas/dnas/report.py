@@ -121,8 +121,8 @@ class report:
                         text += f"AS{asn} ({as_name}) "
                     else:
                         text += f"AS{asn} "
-                    test += f"is originating {len(mrt_e.origin_asns)} "
-                            f"bogon ASNs: {mrt_e.origin_asns}\n"
+                    text += f"is originating {len(mrt_e.origin_asns)} "
+                    text += f"bogon ASNs: {' '.join(list(asns))}"
                 text = text[0:-1]
                 text += "\n\n"
 
