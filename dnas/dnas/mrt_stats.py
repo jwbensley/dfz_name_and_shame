@@ -291,8 +291,8 @@ class mrt_stats:
                             mrt_entry(
                                 as_path=res_e.as_path,
                                 origin_asns=res_e.origin_asns.union(u_e.origin_asns),
-                                filename=orig_filename,
-                                timestamp=file_ts,
+                                filename=res_e.filename,
+                                timestamp=res_e.timestamp,
                             )
                         )
 
