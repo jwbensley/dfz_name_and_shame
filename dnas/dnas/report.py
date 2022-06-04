@@ -101,6 +101,33 @@ class report:
 
                 txt_report.append(text)
 
+        if mrt_s.most_bogon_asns:
+            text = (
+                f"ASNs originating the most bogons ASNs: "
+                f"{len(mrt_s.most_bogon_asns)} ASN(s) are originating "
+                f"{len(mrt_s.most_bogon_asns[0].origin_asns)} bogon ASNs.\n"
+            )
+
+            txt_report.append(text)
+
+            if body:
+                text = ""
+                for mrt_e in mrt_s.most_bogon_asns:
+                    asn = mrt_e.as_path[0]
+                    if asn not in whois_cache:
+                        whois_cache[asn] = whois.as_lookup(int(asn))
+                    as_name = whois_cache[asn]
+                    if as_name:
+                        text += f"AS{asn} ({as_name}) "
+                    else:
+                        text += f"AS{asn} "
+                    test += f"is originating {len(mrt_e.origin_asns)} "
+                            f"bogon ASNs: {mrt_e.origin_asns}\n"
+                text = text[0:-1]
+                text += "\n\n"
+
+                txt_report.append(text)
+
         if mrt_s.longest_as_path:
             text = (
                 f"Longest AS path: {len(mrt_s.longest_as_path)} prefix(es) had "
