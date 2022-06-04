@@ -292,7 +292,7 @@ class mrt_stats:
                                 as_path=res_e.as_path,
                                 origin_asns=res_e.origin_asns.union(u_e.origin_asns),
                                 filename=res_e.filename,
-                                timestamp=res_e.timestamp,
+                                timestamp=res_e.timestamp
                             )
                         )
 
