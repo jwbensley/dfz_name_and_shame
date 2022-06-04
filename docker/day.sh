@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # If there was a problem with the pipeline on a specific day,
 # use this script to re-run it for that day:
