@@ -126,7 +126,10 @@ The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to r
 
 One can run `docker-compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git. To pull the latest code from the Git repo and rebuild the DNAS container run the build script: `/opt/dnas/docker/build_dnas.sh`
 
-One can use the script `day.sh` to run the containers in retrospective mode for a specific day: `/opt/dnas/docker/day.sh 20220228`
+One can use the script `day.sh` to run the containers in retrospective mode for a specific day: `/opt/dnas/docker/day.sh 20220228` or `/opt/dnas/docker/day.sh $(date --date="1 day ago" +"%Y%m%d")`  
+&nbsp;
+
+One can use the script `yesterday.sh` to run the containers in retrospective mode for yesterday: `/opt/dnas/docker/yesterday.sh`  
 &nbsp;
 
 Note that when manually running containers, they join the docker network "docker0", whereas when running containers user docker-compose they join the network "docker_default". Containers manually started using `docker run ...` which join "docker0" might not be able to communicate with containers started using `docker-compuse -d up ...`. This seems to be an UFW issue on Ubuntu. Also when starting containers manuall with `docker run ...` which expose ports, the folling is needed to allow other containers in "docker0" to access those exposed ports: `sudo ufw allow in on docker0 proto tcp from 172.16.0.0/12`.
