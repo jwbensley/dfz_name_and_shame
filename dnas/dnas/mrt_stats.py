@@ -240,18 +240,17 @@ class mrt_stats:
         # Most advertisements per prefix
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_advt_prefixes[0].prefix:
-            for idx, u_e in enumerate(merge_data.most_advt_prefixes[:]):
-                for res_e in self.most_advt_prefixes:
-                    if (res_e.prefix == u_e.prefix):
-                        tmp.append(
-                            mrt_entry(
-                                advt=(res_e.advt + u_e.advt),
-                                filename=u_e.filename,
-                                prefix=res_e.prefix,
-                                timestamp=u_e.timestamp,
-                            )
+        for idx, u_e in enumerate(merge_data.most_advt_prefixes[:]):
+            for res_e in self.most_advt_prefixes:
+                if (res_e.prefix == u_e.prefix):
+                    tmp.append(
+                        mrt_entry(
+                            advt=(res_e.advt + u_e.advt),
+                            filename=u_e.filename,
+                            prefix=res_e.prefix,
+                            timestamp=u_e.timestamp,
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
@@ -283,18 +282,17 @@ class mrt_stats:
         # Most bogon ASNs per origin ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_bogon_asns:
-            for idx, u_e in enumerate(merge_data.most_bogon_asns[:]):
-                for res_e in self.most_bogon_asns:
-                    if (res_e.as_path == u_e.as_path):
-                        tmp.append(
-                            mrt_entry(
-                                as_path=res_e.as_path,
-                                origin_asns=res_e.origin_asns.union(u_e.origin_asns),
-                                filename=res_e.filename,
-                                timestamp=res_e.timestamp
-                            )
+        for idx, u_e in enumerate(merge_data.most_bogon_asns[:]):
+            for res_e in self.most_bogon_asns:
+                if (res_e.as_path == u_e.as_path):
+                    tmp.append(
+                        mrt_entry(
+                            as_path=res_e.as_path,
+                            origin_asns=res_e.origin_asns.union(u_e.origin_asns),
+                            filename=res_e.filename,
+                            timestamp=res_e.timestamp
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
@@ -328,18 +326,17 @@ class mrt_stats:
         # Most updates per prefix
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_upd_prefixes[0].prefix:
-            for idx, u_e in enumerate(merge_data.most_upd_prefixes[:]):
-                for res_e in self.most_upd_prefixes:
-                    if res_e.prefix == u_e.prefix:
-                        tmp.append(
-                            mrt_entry(
-                                filename=u_e.filename,
-                                prefix=res_e.prefix,
-                                timestamp=u_e.timestamp,
-                                updates=(res_e.updates + u_e.updates),
-                            )
+        for idx, u_e in enumerate(merge_data.most_upd_prefixes[:]):
+            for res_e in self.most_upd_prefixes:
+                if res_e.prefix == u_e.prefix:
+                    tmp.append(
+                        mrt_entry(
+                            filename=u_e.filename,
+                            prefix=res_e.prefix,
+                            timestamp=u_e.timestamp,
+                            updates=(res_e.updates + u_e.updates),
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
@@ -372,18 +369,17 @@ class mrt_stats:
         # Most withdraws per prefix
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_withd_prefixes[0].prefix:
-            for idx, u_e in enumerate(merge_data.most_withd_prefixes[:]):
-                for res_e in self.most_withd_prefixes:
-                    if res_e.prefix == u_e.prefix:
-                        tmp.append(
-                            mrt_entry(
-                                filename=u_e.filename,
-                                prefix=res_e.prefix,
-                                timestamp=u_e.timestamp,
-                                withdraws=(res_e.withdraws + u_e.withdraws),
-                            )
+        for idx, u_e in enumerate(merge_data.most_withd_prefixes[:]):
+            for res_e in self.most_withd_prefixes:
+                if res_e.prefix == u_e.prefix:
+                    tmp.append(
+                        mrt_entry(
+                            filename=u_e.filename,
+                            prefix=res_e.prefix,
+                            timestamp=u_e.timestamp,
+                            withdraws=(res_e.withdraws + u_e.withdraws),
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
@@ -416,18 +412,17 @@ class mrt_stats:
         # Most advertisement per origin ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_advt_origin_asn[0].origin_asns:
-            for idx, u_e in enumerate(merge_data.most_advt_origin_asn[:]):
-                for res_e in self.most_advt_origin_asn:
-                    if res_e.origin_asns == u_e.origin_asns:
-                        tmp.append(
-                            mrt_entry(
-                                advt=(res_e.advt + u_e.advt),
-                                filename=u_e.filename,
-                                origin_asns=res_e.origin_asns,
-                                timestamp=u_e.timestamp,
-                            )
+        for idx, u_e in enumerate(merge_data.most_advt_origin_asn[:]):
+            for res_e in self.most_advt_origin_asn:
+                if res_e.origin_asns == u_e.origin_asns:
+                    tmp.append(
+                        mrt_entry(
+                            advt=(res_e.advt + u_e.advt),
+                            filename=u_e.filename,
+                            origin_asns=res_e.origin_asns,
+                            timestamp=u_e.timestamp,
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
@@ -460,18 +455,17 @@ class mrt_stats:
         # Most advertisement per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_advt_peer_asn[0].peer_asn:
-            for idx, u_e in enumerate(merge_data.most_advt_peer_asn[:]):
-                for res_e in self.most_advt_peer_asn:
-                    if res_e.peer_asn == u_e.peer_asn:
-                        tmp.append(
-                            mrt_entry(
-                                advt=(res_e.advt + u_e.advt),
-                                filename=u_e.filename,
-                                peer_asn=res_e.peer_asn,
-                                timestamp=u_e.timestamp,
-                            )
+        for idx, u_e in enumerate(merge_data.most_advt_peer_asn[:]):
+            for res_e in self.most_advt_peer_asn:
+                if res_e.peer_asn == u_e.peer_asn:
+                    tmp.append(
+                        mrt_entry(
+                            advt=(res_e.advt + u_e.advt),
+                            filename=u_e.filename,
+                            peer_asn=res_e.peer_asn,
+                            timestamp=u_e.timestamp,
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
@@ -504,18 +498,17 @@ class mrt_stats:
         # Most updates per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_upd_peer_asn[0].peer_asn:
-            for idx, u_e in enumerate(merge_data.most_upd_peer_asn[:]):
-                for res_e in self.most_upd_peer_asn:
-                    if res_e.peer_asn == u_e.peer_asn:
-                        tmp.append(
-                            mrt_entry(
-                                filename=u_e.filename,
-                                peer_asn=res_e.peer_asn,
-                                timestamp=u_e.timestamp,
-                                updates=(res_e.updates + u_e.updates),
-                            )
+        for idx, u_e in enumerate(merge_data.most_upd_peer_asn[:]):
+            for res_e in self.most_upd_peer_asn:
+                if res_e.peer_asn == u_e.peer_asn:
+                    tmp.append(
+                        mrt_entry(
+                            filename=u_e.filename,
+                            peer_asn=res_e.peer_asn,
+                            timestamp=u_e.timestamp,
+                            updates=(res_e.updates + u_e.updates),
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
@@ -548,18 +541,17 @@ class mrt_stats:
         # Most withdraws per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        if merge_data.most_withd_peer_asn[0].peer_asn:
-            for idx, u_e in enumerate(merge_data.most_withd_peer_asn[:]):
-                for res_e in self.most_withd_peer_asn:
-                    if res_e.peer_asn == u_e.peer_asn:
-                        tmp.append(
-                            mrt_entry(
-                                filename=u_e.filename,
-                                peer_asn=res_e.peer_asn,
-                                timestamp=u_e.timestamp,
-                                withdraws=(res_e.withdraws + u_e.withdraws),
-                            )
+        for idx, u_e in enumerate(merge_data.most_withd_peer_asn[:]):
+            for res_e in self.most_withd_peer_asn:
+                if res_e.peer_asn == u_e.peer_asn:
+                    tmp.append(
+                        mrt_entry(
+                            filename=u_e.filename,
+                            peer_asn=res_e.peer_asn,
+                            timestamp=u_e.timestamp,
+                            withdraws=(res_e.withdraws + u_e.withdraws),
                         )
+                    )
 
         if tmp:
             for tmp_e in tmp:
