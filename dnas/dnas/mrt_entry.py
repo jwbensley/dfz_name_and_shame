@@ -13,8 +13,8 @@ class mrt_entry:
     def __init__(
         self,
         advt=0,
-        as_path=[[]],
-        comm_set=[[]],
+        as_path=[],
+        comm_set=[],
         filename=None,
         next_hop=None,
         prefix=None,
