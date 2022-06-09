@@ -4,6 +4,8 @@
 
 This repo contains the "code"[^1] and configuration files for the BGP DFZ Name and Shame ("DNAS") bot on Twitter: https://twitter.com/bgp_shamer
 
+The ultimate output of this code are the daily reports published here: https://github.com/DFZ-Name-and-Shame/dnas_stats
+
 The bot is written in Python3 and runs in several Docker containers. These containers form a rudimentary pipeline:  
 
 * data collection (1 container continuously downloads MRT files from public and private sources as they become available)
@@ -71,5 +73,7 @@ To run DNAS "natively", not in a container, see documentation under [dnas/](dnas
 Thanks to the following people/organisations/groups for their help:
 
 * The authors of [mrtparse](https://github.com/t2mune/mrtparse) - I'm too lazy to write my own MRT parser for a spare time project, so this wouldn't be possible without them
+* The [RIPE RIS](https://ris.ripe.net/docs/) project for providing public MRT file archives which allow for "research" projects like this to take place.
+* The [RouteViews](http://routeviews.org/) project for providing public MRT file archives which allow for "research" projects like this to take place.
 * [Mythic Beasts](https://www.mythic-beasts.com/) for the server hosting - I was hitting the Linux OOM killer on a weekly basis before they stepped in
 * [Łukasz Bromirski](https://twitter.com/LukaszBromirski) - for a [full table feed](https://lukasz.bromirski.net/post/bgp-w-labie-3/)
