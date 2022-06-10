@@ -26,7 +26,7 @@ from dnas.mrt_archives import mrt_archives
 from dnas.mrt_archive import mrt_archive
 from dnas.mrt_stats import mrt_stats
 from dnas.mrt_parser import mrt_parser
-from dnas.mrt_splitter import mrt_splitter
+from dnas.mrt_splitter import mrt_splitter, MrtFormatError
 from dnas.redis_db import redis_db
 
 def continuous(args: Dict[str, Any] = None):
@@ -325,7 +325,14 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
                 )
                 mrt_s = parse_file(filename=file, multi=False)
             else:
-                mrt_s = parse_file(filename=file, multi=args["multi"])
+                try:
+                    mrt_s = parse_file(filename=file, multi=args["multi"])
+                except MrtFormatError as e:
+                    logging.error(
+                        f"Couldn't parse file {file} due to formatting error: "
+                        f"{str(e)}"
+                    )
+                    continue
             if day_stats.add(mrt_s):
                 logging.info(f"Added {file} to {day_key}")
             else:
@@ -342,7 +349,14 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
                 )
                 mrt_s = parse_file(filename=file, multi=False)
             else:
-                mrt_s = parse_file(filename=file, multi=args["multi"])
+                try:
+                    mrt_s = parse_file(filename=file, multi=args["multi"])
+                except MrtFormatError as e:
+                    logging.error(
+                        f"Couldn't parse file {file} due to formatting error: "
+                        f"{str(e)}"
+                    )
+                    continue
             rdb.set_stats(day_key, mrt_s)
             logging.info(f"Created new entry {day_key} from {file}")
 
