@@ -23,7 +23,15 @@ class whois:
             return ""
 
         cmd = ["whois", f"AS{str(asn)}"]
-        ret = subprocess.check_output(cmd)
+
+        # Some WHOIS records redirect to private unreachable whois servers
+        try:
+            ret = subprocess.check_output(cmd)
+        except subprocess.CalledProcessError as e:
+            if "returned non-zero exit status 2" in str(e):
+                return ""
+            else:
+                raise
 
         try:
             output = ret.decode("utf-8")
