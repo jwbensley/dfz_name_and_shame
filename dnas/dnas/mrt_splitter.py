@@ -12,11 +12,17 @@ class MrtFormatError(Exception):
     Exception for invalid MRT formatted data.
     """
 
-    def __init__(self, msg: str = ""):
+    def __init__(self, message: str = ""):
         Exception.__init__(self)
-        self.msg = msg
+        self.message = message
 
-class mrt_splitter():
+    def __str__(self) -> str:
+        if self.message:
+            return self.message
+        else:
+            return "MrtFormatError"
+
+class mrt_splitter:
     """
     Splitter for MRT files.
     Copy-pasta of the original mrtparer lib to split an MRT file into N files.
