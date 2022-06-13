@@ -22,7 +22,7 @@ class test_mrt_parser(unittest.TestCase):
 
     def setUp(self):
         """
-        Copy the test files to the location that would be in,
+        Copy the test files to the location they would be in,
         if we had downloaded them from the public archives:
         """
 
