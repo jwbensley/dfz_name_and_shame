@@ -220,6 +220,18 @@ class test_git(unittest.TestCase):
             self.cfg.GIT_STAT_BASE_URL + "2022/04/01"
         )
 
+    def test_pull(self):
+        # Nothing should happen if local is up to date with remote
+        self.g.clear()
+
+        asserted = False
+        try:
+            self.g.pull()
+        except:
+            asserted = True
+        self.assertEqual(asserted, False)
+
+
     def test_push(self):
         # With no new commits to push, nothing should happen
         self.g.clear()
