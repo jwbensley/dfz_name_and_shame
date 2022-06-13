@@ -79,7 +79,11 @@ class mrt_splitter:
         """
         Move to the next entry in the MRT file.
         """
-        mrt_entry = bytearray(self.f.read(12))
+        try:
+            mrt_entry = bytearray(self.f.read(12))
+        except EOFError:
+            self.close()
+            raise
 
         if len(mrt_entry) == 0:
             self.close()
