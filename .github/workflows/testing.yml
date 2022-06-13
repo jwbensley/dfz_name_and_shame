@@ -52,3 +52,5 @@ jobs:
           python3 dnas/tests/test_mrt_parser.py -v
           python3 dnas/tests/test_mrt_splitter.py -v
           python3 dnas/tests/test_mrt_stats.py -v
+          python3 dnas/tests/test_whois.py -v
+
