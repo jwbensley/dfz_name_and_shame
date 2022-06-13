@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import logging
 import os
 import sys
@@ -59,7 +60,11 @@ def split(filename: str = None, num_chunks: int = None):
         )
 
     splitter = mrt_splitter(filename)
-    num_entires, chunk_names = splitter.split(num_chunks)
+    try:
+        num_entires, chunk_names = splitter.split(num_chunks)
+    except EOFError as e:
+        logging.error(f"Unable to split {filename}, unexpeted EOF")
+        raise
     logging.info(f"Split {num_entires} MRT entries into {len(chunk_names)} files:")
     logging.info(chunk_names)
 

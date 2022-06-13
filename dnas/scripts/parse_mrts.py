@@ -239,6 +239,15 @@ def parse_file(
     mrt_a = mrt_archives()
     logging.info(f"Processing {filename}...")
 
+    fs = os.path.getsize(file) / 1000 / 1000
+    if fs > cfg.MAX_MRT_SIZE:
+        logging.warning(
+            f"File size of {file} ({fs:0.4}MBs) is greater than max "
+            f"size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
+            "parsing"
+        )
+        multi = False
+
     if multi:
         no_cpu =  multiprocessing.cpu_count()
         Pool = multiprocessing.Pool(no_cpu)
@@ -307,7 +316,6 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
 
         day_key = mrt_a.get_day_key(file)
         day_stats = rdb.get_stats(day_key)
-        fs = os.path.getsize(file) / 1000 / 1000
 
         if day_stats:
             if file in day_stats.file_list and not args["overwrite"]:
@@ -317,22 +325,23 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
                     os.remove(file)
                 continue
 
-            if fs > cfg.MAX_MRT_SIZE:
-                logging.warning(
-                    f"File size of {file} ({fs:0.4}MBs) is greater than max "
-                    f"size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
-                    "parsing"
-                )
-                mrt_s = parse_file(filename=file, multi=False)
-            else:
-                try:
-                    mrt_s = parse_file(filename=file, multi=args["multi"])
-                except MrtFormatError as e:
-                    logging.error(
-                        f"Couldn't parse file {file} due to formatting error: "
-                        f"{str(e)}"
-                    )
-                    continue
+        try:
+            mrt_s = parse_file(filename=file, multi=args["multi"])
+        except MrtFormatError as e:
+            logging.error(
+                f"Couldn't parse file {file} due to formatting error: "
+                f"{str(e)}"
+            )
+            continue
+        except EOFError as e:
+            logging.error(
+                f"Unable to split {filename}, unexpected EOF: {e}"
+            )
+            os.remove(file)
+            logging.error(f"Deleted {filename}")
+            continue
+
+        if day_stats:
             if day_stats.add(mrt_s):
                 logging.info(f"Added {file} to {day_key}")
             else:
@@ -340,23 +349,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
                 day_stats.file_list.append(file)
             rdb.set_stats(day_key, day_stats)
 
-        if not day_stats:
-            if fs > cfg.MAX_MRT_SIZE:
-                logging.warning(
-                    f"File size of {file} ({fs:0.4}MBs) is greater than max "
-                    f"size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
-                    "parsing"
-                )
-                mrt_s = parse_file(filename=file, multi=False)
-            else:
-                try:
-                    mrt_s = parse_file(filename=file, multi=args["multi"])
-                except MrtFormatError as e:
-                    logging.error(
-                        f"Couldn't parse file {file} due to formatting error: "
-                        f"{str(e)}"
-                    )
-                    continue
+        else:
             rdb.set_stats(day_key, mrt_s)
             logging.info(f"Created new entry {day_key} from {file}")
 
