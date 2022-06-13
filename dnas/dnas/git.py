@@ -212,6 +212,28 @@ class git:
         return git_url
 
     @staticmethod
+    def pull():
+        """
+        Perform a git pull to make sure the local repo is up to date
+        """
+        ret = subprocess.run(
+            ["git", "pull"],
+            cwd=cfg.GIT_BASE,
+            capture_output=True,
+        )
+        if ret.returncode != 0:
+            raise ChildProcessError(
+                f"Couldn't pull from remote branch "
+                f"{cfg.GIT_REPORT_BRANCH}\n"
+                f"args: {ret.args}\n"
+                f"stdout: {ret.stdout.decode()}\n"
+                f"stderr: {ret.stderr.decode()}"
+            )
+        logging.debug(
+            f"Git pull successed"
+        )
+
+    @staticmethod
     def push():
         """
         Push commits to GitHub.
