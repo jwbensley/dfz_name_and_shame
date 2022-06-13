@@ -403,9 +403,9 @@ class report:
 
             if body:
 
-                text = "Prefix(es): "
+                text = ""
                 for mrt_e in mrt_s.most_origin_asns:
-                    text += f"{mrt_e.prefix} from origin ASN(s)"
+                    text += f"Prefix {mrt_e.prefix} from origin ASN(s)"
                     for asn in mrt_e.origin_asns:
                         if asn not in whois_cache:
                             whois_cache[asn] = whois.as_lookup(int(asn))
