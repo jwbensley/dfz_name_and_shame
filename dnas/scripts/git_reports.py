@@ -25,9 +25,12 @@ from dnas.report import report
 def check_git():
     """
     Check if the git repo exists locally, if not, clone it.
+    If it already exists, make a pull to ensure it's up to date.
     """
     if not git.git_exists():
         git.clone()
+    else:
+        git.pull()
 
 def generate(ymd: str = None):
     """
@@ -255,7 +258,7 @@ def main():
         log_path = cfg.LOG_GIT,
     )
 
-    # Ensure the git repo exists, check it out if it doesn't:
+    # Ensure the git repo exists, clone if it doesn't:
     check_git()
 
     if args["generate"]:
