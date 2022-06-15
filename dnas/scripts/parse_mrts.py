@@ -239,10 +239,10 @@ def parse_file(
     mrt_a = mrt_archives()
     logging.info(f"Processing {filename}...")
 
-    fs = os.path.getsize(file) / 1000 / 1000
+    fs = os.path.getsize(filename) / 1000 / 1000
     if fs > cfg.MAX_MRT_SIZE:
         logging.warning(
-            f"File size of {file} ({fs:0.4}MBs) is greater than max "
+            f"File size of {filename} ({fs:0.4}MBs) is greater than max "
             f"size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
             "parsing"
         )
