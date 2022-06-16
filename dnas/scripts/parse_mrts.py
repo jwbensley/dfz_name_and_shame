@@ -335,10 +335,10 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
             continue
         except EOFError as e:
             logging.error(
-                f"Unable to split {filename}, unexpected EOF: {e}"
+                f"Unable to split {file}, unexpected EOF: {e}"
             )
             os.remove(file)
-            logging.error(f"Deleted {filename}")
+            logging.error(f"Deleted {file}")
             continue
 
         if day_stats:

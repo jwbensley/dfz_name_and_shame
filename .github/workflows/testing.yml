@@ -48,6 +48,7 @@ jobs:
           python3 dnas/tests/test_bogon_asn.py -v
           python3 dnas/tests/test_bogon_ip.py -v
           python3 dnas/tests/test_mrt_archive.py -v
+	  python3 dnas/tests/test_mrt_archives.py -v
           python3 dnas/tests/test_mrt_entry.py -v
           python3 dnas/tests/test_mrt_getter.py -v
           python3 dnas/tests/test_mrt_parser.py -v
