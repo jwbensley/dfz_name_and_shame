@@ -53,40 +53,54 @@ class mrt_entry:
             )
 
         if self.advt != mrt_e.advt:
+            print("a")
             return False
 
         if self.as_path != mrt_e.as_path:
+            print(self.as_path)
+            print(mrt_e.as_path)
+            print("b")
             return False
 
         if self.comm_set != mrt_e.comm_set:
+            print("c")
             return False
 
         if self.next_hop != mrt_e.next_hop:
+            print("d")
             return False
 
         if self.origin_asns != mrt_e.origin_asns:
+            print("e")
             return False
 
         if self.peer_asn != mrt_e.peer_asn:
+            print("f")
             return False
 
         if self.prefix != mrt_e.prefix:
+            print("g")
             return False
 
         if self.timestamp != mrt_e.timestamp:
+            print("h")
             return False
 
         if self.updates != mrt_e.updates:
+            print("i")
             return False
 
         if self.withdraws != mrt_e.withdraws:
+            print("j")
             return False
 
         if meta:
             if self.filename != mrt_e.filename:
+                print("k")
                 return False
 
             if self.timestamp != mrt_e.timestamp:
+                print("l")
                 return False
 
         return True

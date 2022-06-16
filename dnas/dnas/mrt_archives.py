@@ -44,6 +44,11 @@ class mrt_archives:
                 f"Missing required arguments: file_path={file_path}."
             )
 
+        if type(file_path) != str:
+            raise TypeError(
+                f"file_path is not a string: {type(file_path)}"
+            )
+
         for arch in self.archives:
             if (os.path.normpath(os.path.dirname(file_path)) == 
                 os.path.normpath(arch.MRT_DIR)):
@@ -59,6 +64,11 @@ class mrt_archives:
         if not url:
             raise ValueError(
                 f"Missing required arguments: url={url}."
+            )
+
+        if type(url) != str:
+            raise TypeError(
+                f"url is not a string: {type(url)}"
             )
 
         for arch in self.archives:
@@ -93,6 +103,12 @@ class mrt_archives:
                 f"Missing required arguments: file_path={file_path}, opt={opt}."
             )
 
+        if (type(file_path) != str) or (type(opt) != str):
+            raise TypeError(
+                f"file_path is not a string: {type(file_path)}, "
+                f"or opt is not a string: {type(opt)}"
+            )
+
         arch = self.arch_from_file_path(file_path)
         if not arch:
             raise ValueError(
@@ -109,6 +125,11 @@ class mrt_archives:
         if not file_path:
             raise ValueError(
                 f"Missing required arguments: file_path={file_path}."
+            )
+
+        if type(file_path) != str:
+            raise TypeError(
+                f"file_path is not a string: {type(file_path)}"
             )
 
         # Example: /path/to/route-views/LINX/updates.20220101.0600.bz2
@@ -132,6 +153,11 @@ class mrt_archives:
         if not file_path:
             raise ValueError(
                 f"Missing required arguments: file_path={file_path}."
+            )
+
+        if type(file_path) != str:
+            raise TypeError(
+                f"file_path is not a string: {type(file_path)}"
             )
 
         filename = os.path.basename(file_path)

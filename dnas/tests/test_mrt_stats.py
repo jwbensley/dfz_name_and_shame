@@ -2922,5 +2922,11 @@ class test_mrt_stats(unittest.TestCase):
     def test_ts_ymd_format(self):
         self.assertEqual(self.upd_1_stats.ts_ymd_format(), "2022/04/21")
 
+    def tearDown(self):
+        os.remove(self.upd_1_mrt)
+        os.remove(self.upd_2_mrt)
+        os.remove(self.upd_3_mrt)
+        os.remove(self.upd_4_mrt)
+
 if __name__ == '__main__':
     unittest.main()

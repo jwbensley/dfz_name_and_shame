@@ -10,7 +10,7 @@ sys.path.append(
 )
 from dnas.bogon_asn import bogon_asn
 
-class test_bogon_ip(unittest.TestCase):
+class test_bogon_asn(unittest.TestCase):
 
     ba = bogon_asn()
 
