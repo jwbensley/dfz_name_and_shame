@@ -24,7 +24,9 @@ docker-compose up -d
 
 To start an individual container from the pipeline use: `docker-compose up -d dnas_redis`
 
-To shut the pipeline down simply run: `docker-compose down`  
+To shut the pipeline down simply run: `docker-compose down`
+
+On Ubuntu the `ufw` may block connections between containers. This will allow REDIS access `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further)  
 &nbsp;
 
 ### In Pipeline Mode - Without Docker Compose
