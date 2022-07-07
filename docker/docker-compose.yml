@@ -56,3 +56,24 @@ services:
       - --update
       - --enabled
       - --remove
+
+  dnas_stats:
+    container_name: dnas_stats
+    image: dnas:latest
+    build:
+      context: /opt/dnas/
+      dockerfile: docker/dnas.Dockerfile
+    volumes:
+      - /etc/localtime:/etc/localtime
+      - /opt/dnas_data/:/opt/dnas_data/
+    restart: always
+    tty: true
+    depends_on:
+      - dnas_redis
+    environment:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+    entrypoint:
+      - /usr/sbin/cron
+      - -f
+
