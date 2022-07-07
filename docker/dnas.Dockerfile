@@ -5,9 +5,9 @@ LABEL description="DNAS"
 
 # Keep this as one giant run command to reduce the number of layers in the image.
 # Remote apt cache, pip cache, pypy tar ball etc. to also reduce the image size.
-RUN apt-get update -qq && \
-DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends -qq install \
-ca-certificates wget bzip2 gzip unzip git less whois netbase vim ssh cron && \
+RUN apt-get update && \
+DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
+ca-certificates wget bzip2 gzip unzip git less whois netbase vim ssh && \
 apt-get clean && \
 rm -rf /var/lib/apt/lists/* && \
 cd /opt && \
@@ -35,11 +35,3 @@ RUN /opt/pypy3.8-v7.3.7-linux64/bin/pypy3 -m ensurepip && \
 
 # Then copy the rest of the files because these often change, to avoid having to pip install each time
 COPY ./dnas/ /opt/dnas/
-
-# Set up the crontab function for the daily stats container
-COPY ./docker/cron_script.sh /opt/dnas/docker/cron_script.sh
-COPY ./docker/cronfile /opt/dnas/docker/cronfile
-RUN chmod 0755 /opt/dnas/docker/cron_script.sh && \
-chmod 0644 /opt/dnas/docker/cronfile && \
-crontab /opt/dnas/docker/cronfile
-
