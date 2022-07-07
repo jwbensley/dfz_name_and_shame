@@ -47,7 +47,7 @@ class report:
 
             txt_report.append(text)
 
-        if len(mrt_s.bogon_origin_asns[0].origin_asns):
+        if mrt_s.bogon_origin_asns:
             text = (
                 f"Prefixes with most bogon origin ASNs per prefix: "
                 f"{len(mrt_s.bogon_origin_asns)} prefix(es) had "
@@ -74,7 +74,7 @@ class report:
 
                 txt_report.append(text)
 
-        if len(mrt_s.bogon_prefixes[0].origin_asns):
+        if mrt_s.bogon_prefixes:
             text = (
                 f"Bogon prefixes with most origin ASNs per prefix: "
                 f"{len(mrt_s.bogon_prefixes)} bogon prefix(es) had "
@@ -101,7 +101,7 @@ class report:
 
                 txt_report.append(text)
 
-        if len(mrt_s.most_bogon_asns[0].origin_asns):
+        if mrt_s.most_bogon_asns:
             text = (
                 f"ASNs originating the most bogons ASNs: "
                 f"{len(mrt_s.most_bogon_asns)} ASN(s) are originating "
@@ -128,7 +128,7 @@ class report:
 
                 txt_report.append(text)
 
-        if len(mrt_s.longest_as_path[0].as_path):
+        if mrt_s.longest_as_path:
             text = (
                 f"Longest AS path: {len(mrt_s.longest_as_path)} prefix(es) had "
                 f"an AS path length of {len(mrt_s.longest_as_path[0].as_path)} "
@@ -164,7 +164,7 @@ class report:
                 text += "\n\n"
                 txt_report.append(text)
 
-        if len(mrt_s.longest_comm_set[0].comm_set):
+        if mrt_s.longest_comm_set:
             text = (
                 f"Longest community set: {len(mrt_s.longest_comm_set)} "
                 f"prefix(es) had a community set length of "
@@ -200,7 +200,7 @@ class report:
                 text += "\n\n"
                 txt_report.append(text)
 
-        if len(mrt_s.invalid_len[0].origin_asns):
+        if mrt_s.invalid_len:
             text = (
                 f"Abnormally large/small prefixes with most origin ASNs per prefix: "
                 f"{len(mrt_s.invalid_len)} large/small prefix(es) had "
@@ -227,7 +227,7 @@ class report:
 
                 txt_report.append(text)
 
-        if mrt_s.most_advt_prefixes[0].advt:
+        if mrt_s.most_advt_prefixes:
             text = (
                 f"Most BGP advertisements per prefix: "
                 f"{len(mrt_s.most_advt_prefixes)} prefix(es) had "
@@ -245,7 +245,7 @@ class report:
 
                 txt_report.append(text)
 
-        if mrt_s.most_upd_prefixes[0].updates:
+        if mrt_s.most_upd_prefixes:
             text = (
                 f"Most BGP updates per prefix: "
                 f"{len(mrt_s.most_upd_prefixes)} prefix(es) had "
@@ -263,7 +263,7 @@ class report:
 
                 txt_report.append(text)
 
-        if mrt_s.most_withd_prefixes[0].withdraws:
+        if mrt_s.most_withd_prefixes:
             text = (
                 f"Most BGP withdraws per prefix: "
                 f"{len(mrt_s.most_withd_prefixes)} prefix(es) had "
@@ -281,7 +281,7 @@ class report:
 
                 txt_report.append(text)
 
-        if mrt_s.most_advt_origin_asn[0].advt:
+        if mrt_s.most_advt_origin_asn:
             text = (
                 f"Most BGP advertisements per origin ASN: "
                 f"{len(mrt_s.most_advt_origin_asn)} origin ASN(s) sent "
@@ -308,7 +308,7 @@ class report:
 
                 txt_report.append(text)
 
-        if mrt_s.most_advt_peer_asn[0].advt:
+        if mrt_s.most_advt_peer_asn:
             text = (
                 f"Most BGP advertisements per peer ASN: "
                 f"{len(mrt_s.most_advt_peer_asn)} peer ASN(s) sent "
@@ -336,7 +336,7 @@ class report:
 
                 txt_report.append(text)
 
-        if mrt_s.most_upd_peer_asn[0].updates:
+        if mrt_s.most_upd_peer_asn:
             text = (
                 f"Most BGP updates per peer ASN: "
                 f"{len(mrt_s.most_upd_peer_asn)} peer ASN(s) sent "
@@ -364,7 +364,7 @@ class report:
 
                 txt_report.append(text)
 
-        if mrt_s.most_withd_peer_asn[0].withdraws:
+        if mrt_s.most_withd_peer_asn:
             text = (
                 f"Most BGP withdraws per peer ASN: "
                 f"{len(mrt_s.most_withd_peer_asn)} peer ASN(s) sent "
@@ -392,7 +392,7 @@ class report:
 
                 txt_report.append(text)
 
-        if len(mrt_s.most_origin_asns[0].origin_asns):
+        if mrt_s.most_origin_asns:
             text = (
                 f"Most origin ASNs per prefix: "
                 f"{len(mrt_s.most_origin_asns)} prefix(es) had "
