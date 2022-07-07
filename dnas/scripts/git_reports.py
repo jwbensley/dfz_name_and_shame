@@ -59,7 +59,7 @@ def generate(ymd: str = None):
 
     txt_filename = os.path.join(git_dir, report.gen_txt_report_fn_ymd(ymd))
     txt_report = report.gen_txt_report(day_stats)
-    with open(txt_filename, "w") as f:
+    with open(txt_filename, "w", encoding="utf-8") as f:
         f.writelines(txt_report)
     logging.info(f"Wrote text report to {txt_filename}")
 

@@ -22,11 +22,16 @@ cd docker/
 docker-compose up -d
 ```
 
+To shut the entire pipeline down simply run: `docker-compose down`
+
+On Ubuntu the `ufw` may block connections between containers. This will allow REDIS access: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further)
+This will allow access to BIRD: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 8000`
+
 To start an individual container from the pipeline use: `docker-compose up -d dnas_redis`
 
-To shut the pipeline down simply run: `docker-compose down`
+To stop and remove an individual container usei: `docker-compose stop dnas_redis && docker-compose rm dnas_redis`
 
-On Ubuntu the `ufw` may block connections between containers. This will allow REDIS access `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further)  
+To run BASH on a container use a custom entry point: `docker-compose run --entrypoint /bin/bash --rm dnas_redis`  
 &nbsp;
 
 ### In Pipeline Mode - Without Docker Compose

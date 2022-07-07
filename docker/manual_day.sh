@@ -2,7 +2,7 @@
 
 # If there was a problem with the pipeline on a specific day,
 # use this script to re-run it for that day:
-#./day.sh 20220228
+#./manual_day.sh 20220228
 
 # Error if undefined variables are present:
 set -u
