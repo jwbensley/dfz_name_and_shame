@@ -55,7 +55,7 @@ def continuous(args: Dict[str, Any] = None):
 
         delta = datetime.timedelta(minutes = 30)
         glob_ymd = datetime.datetime.strftime(
-            datetime.datetime.now() - delta, cfg.DAY_FORMAT
+            datetime.datetime.utcnow() - delta, cfg.DAY_FORMAT
         )
         logging.debug(f"Glob ymd is {glob_ymd}")
 

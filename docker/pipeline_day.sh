@@ -15,7 +15,7 @@ set -e
 
 pypy="/opt/pypy3.8-v7.3.7-linux64/bin/pypy3"
 
-source /opt/dnas/venv/bin/active
+source /opt/dnas/venv/bin/activate
 
 docker-compose run --rm \
 --name "dnas_tmp" \
@@ -24,10 +24,31 @@ dnas_getter \
 /opt/dnas/scripts/get_mrts.py \
 --backfill --update --enabled --range --start "${1}".0000 --end "${1}".2359
 
+docker-compose run --rm \
+--name "dnas_tmp" \
+--entrypoint "${pypy}" \
+dnas_parser \
+/opt/dnas/scripts/parse_mrts.py \
+--update --remove --enabled --ymd "${1}"
+
+docker-compose run --rm \
+--name "dnas_tmp" \
+--entrypoint "${pypy}" \
+dnas_stats \
+/opt/dnas/scripts/stats.py \
+--daily --ymd "${1}" --update --enabled
+
+docker-compose run --rm \
+--name "dnas_tmp" \
+--entrypoint "${pypy}" \
+dnas_stats \
+/opt/dnas/scripts/git_reports.py \
+--ymd "${1}" --generate --publish
+
 #docker-compose run --rm \
 #--name "dnas_tmp" \
 #--entrypoint "${pypy}" \
-#dnas_parser \
-#/opt/dnas/scripts/parse_mrts.py \
-#--update --remove --enabled --ymd "${1}"
+#dnas_stats \
+#/opt/dnas/scripts/tweet.py \
+#--ymd "${1}" --generate --tweet
 
