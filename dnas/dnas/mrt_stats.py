@@ -27,6 +27,7 @@ class mrt_stats:
         self.most_upd_peer_asn: List[mrt_entry] = []
         self.most_withd_peer_asn: List[mrt_entry] = []
         self.most_origin_asns: List[mrt_entry] = []
+        self.most_unknown_attrs: List[mrt_entry] = []
         self.file_list: List[str] = []
         self.timestamp: str = ""
         self.total_upd: int = 0 # All updates received/parsed
@@ -61,7 +62,7 @@ class mrt_stats:
 
         # Prefixes with bogon origin ASN
         tmp = []
-        for idx, u_e in enumerate(merge_data.bogon_origin_asns[:]):
+        for u_e in merge_data.bogon_origin_asns[:]:
             for res_e in self.bogon_origin_asns:
                 if (res_e.prefix == u_e.prefix and
                     res_e.origin_asns != u_e.origin_asns):
@@ -106,7 +107,7 @@ class mrt_stats:
 
         # Bogons prefixes with most origin ASNs
         tmp = []
-        for idx, u_e in enumerate(merge_data.bogon_prefixes[:]):
+        for u_e in merge_data.bogon_prefixes[:]:
             for res_e in self.bogon_prefixes:
                 if (res_e.prefix == u_e.prefix and
                     res_e.origin_asns != u_e.origin_asns):
@@ -195,7 +196,7 @@ class mrt_stats:
 
         # Invalid prefix length with most origin ASNs
         tmp = []
-        for idx, u_e in enumerate(merge_data.invalid_len[:]):
+        for u_e in merge_data.invalid_len[:]:
             for res_e in self.invalid_len:
                 if (res_e.prefix == u_e.prefix and
                     res_e.origin_asns != u_e.origin_asns):
@@ -240,7 +241,7 @@ class mrt_stats:
         # Most advertisements per prefix
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_advt_prefixes[:]):
+        for u_e in merge_data.most_advt_prefixes[:]:
             for res_e in self.most_advt_prefixes:
                 if (res_e.prefix == u_e.prefix):
                     tmp.append(
@@ -282,7 +283,7 @@ class mrt_stats:
         # Most bogon ASNs per origin ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_bogon_asns[:]):
+        for u_e in merge_data.most_bogon_asns[:]:
             for res_e in self.most_bogon_asns:
                 if (res_e.as_path == u_e.as_path):
                     tmp.append(
@@ -326,7 +327,7 @@ class mrt_stats:
         # Most updates per prefix
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_upd_prefixes[:]):
+        for u_e in merge_data.most_upd_prefixes[:]:
             for res_e in self.most_upd_prefixes:
                 if res_e.prefix == u_e.prefix:
                     tmp.append(
@@ -369,7 +370,7 @@ class mrt_stats:
         # Most withdraws per prefix
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_withd_prefixes[:]):
+        for u_e in merge_data.most_withd_prefixes[:]:
             for res_e in self.most_withd_prefixes:
                 if res_e.prefix == u_e.prefix:
                     tmp.append(
@@ -412,7 +413,7 @@ class mrt_stats:
         # Most advertisement per origin ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_advt_origin_asn[:]):
+        for u_e in merge_data.most_advt_origin_asn[:]:
             for res_e in self.most_advt_origin_asn:
                 if res_e.origin_asns == u_e.origin_asns:
                     tmp.append(
@@ -455,7 +456,7 @@ class mrt_stats:
         # Most advertisement per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_advt_peer_asn[:]):
+        for u_e in merge_data.most_advt_peer_asn[:]:
             for res_e in self.most_advt_peer_asn:
                 if res_e.peer_asn == u_e.peer_asn:
                     tmp.append(
@@ -498,7 +499,7 @@ class mrt_stats:
         # Most updates per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_upd_peer_asn[:]):
+        for u_e in merge_data.most_upd_peer_asn[:]:
             for res_e in self.most_upd_peer_asn:
                 if res_e.peer_asn == u_e.peer_asn:
                     tmp.append(
@@ -541,7 +542,7 @@ class mrt_stats:
         # Most withdraws per peer ASN
         tmp = []
         # If stats from a rib dump are being added this wont be present:
-        for idx, u_e in enumerate(merge_data.most_withd_peer_asn[:]):
+        for u_e in merge_data.most_withd_peer_asn[:]:
             for res_e in self.most_withd_peer_asn:
                 if res_e.peer_asn == u_e.peer_asn:
                     tmp.append(
@@ -633,6 +634,48 @@ class mrt_stats:
                     self.most_origin_asns = merge_data.most_origin_asns.copy()
                     changed = True
 
+        # Most unknown attributes per prefix
+        tmp = []
+        # If stats from a rib dump are being added this wont be present:
+        for u_e in merge_data.most_unknown_attrs:
+            for res_e in self.most_unknown_attrs:
+                if (res_e.prefix == u_e.prefix):
+                    tmp.append(
+                        mrt_entry(
+                            prefix=res_e.prefix,
+                            unknown_attrs=res_e.unknown_attrs.union(u_e.unknown_attrs),
+                            filename=res_e.filename,
+                            timestamp=res_e.timestamp
+                        )
+                    )
+
+        for tmp_e in tmp:
+            if len(tmp_e.unknown_attrs) == len(self.most_unknown_attrs[0].unknown_attrs):
+                s_prefixes = [mrt_e.prefix for mrt_e in self.most_unknown_attrs]
+                if tmp_e.prefix not in s_prefixes:
+                    self.most_unknown_attrs.append(tmp_e)
+                    changed = True
+            elif len(tmp_e.unknown_attrs) > len(self.most_unknown_attrs[0].unknown_attrs):
+                self.most_unknown_attrs = [tmp_e]
+                changed = True
+        else:
+            if merge_data.most_unknown_attrs:
+                if self.most_unknown_attrs:
+                    if (
+                        len(merge_data.most_unknown_attrs[0].unknown_attrs) == len(self.most_unknown_attrs[0].unknown_attrs) and
+                        len(self.most_unknown_attrs[0].unknown_attrs) > 0
+                    ):
+                        s_prefixes = [mrt_e.prefix for mrt_e in self.most_unknown_attrs]
+                        for mrt_e in merge_data.most_unknown_attrs:
+                            if mrt_e.prefix not in s_prefixes:
+                                self.most_unknown_attrs.append(mrt_e)
+                                changed = True
+                    elif len(merge_data.most_unknown_attrs[0].unknown_attrs) > len(self.most_unknown_attrs[0].unknown_attrs):
+                        self.most_unknown_attrs = merge_data.most_unknown_attrs.copy()
+                        changed = True
+                else:
+                    self.most_unknown_attrs = merge_data.most_unknown_attrs.copy()
+                    changed = True
 
         # If stats from a rib dump are being added, these will be 0:
         if merge_data.total_upd:
@@ -824,6 +867,17 @@ class mrt_stats:
         if mrt_s.most_origin_asns:
             return False
 
+        if len(self.most_unknown_attrs) != len(mrt_s.most_unknown_attrs):
+            return False
+
+        for self_e in self.most_unknown_attrs:
+            for mrt_e in mrt_s.most_unknown_attrs[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_unknown_attrs.remove(mrt_e)
+                    break
+        if mrt_s.most_unknown_attrs:
+            return False
+
         if self.total_upd != mrt_s.total_upd:
             return False
 
@@ -973,6 +1027,15 @@ class mrt_stats:
             mrt_e.from_json(json_e)
             self.most_origin_asns.append(mrt_e)
 
+        self.most_unknown_attrs = []
+        if "most_unknown_attrs" in json_dict:
+            for json_e in json_dict["most_unknown_attrs"]:
+                mrt_e = mrt_entry()
+                mrt_e.from_json(json_e)
+                self.most_unknown_attrs.append(mrt_e)
+        else:
+            self.most_unknown_attrs.append(mrt_entry())
+
         self.file_list = json_dict["file_list"]
 
         self.timestamp = json_dict["timestamp"]
@@ -1090,6 +1153,7 @@ class mrt_stats:
         diff.most_upd_peer_asn = []
         diff.most_withd_peer_asn = []
         diff.most_origin_asns = []
+        diff.most_unknown_attrs = []
 
         for mrt_e in mrt_s.bogon_origin_asns:
             found = False
@@ -1217,6 +1281,15 @@ class mrt_stats:
             if not found:
                 diff.most_origin_asns.append(mrt_e)
 
+        for mrt_e in mrt_s.most_unknown_attrs:
+            found = False
+            for self_e in self.most_unknown_attrs:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_unknown_attrs.append(mrt_e)
+
         if mrt_s.total_upd != self.total_upd:
             diff.total_upd = mrt_s.total_upd
 
@@ -1260,6 +1333,7 @@ class mrt_stats:
         diff.most_upd_peer_asn = []
         diff.most_withd_peer_asn = []
         diff.most_origin_asns = []
+        diff.most_unknown_attrs = []
 
         updated = False
 
@@ -1447,6 +1521,19 @@ class mrt_stats:
                 diff.most_origin_asns = mrt_s.most_origin_asns.copy()
                 updated = True
 
+        # Prefixes with most unknown attributes
+        if mrt_s.most_unknown_attrs:
+            if self.most_unknown_attrs:
+                if (mrt_s.most_unknown_attrs[0].prefix and
+                    self.most_unknown_attrs[0].prefix):
+                    if (len(mrt_s.most_unknown_attrs[0].unknown_attrs) >
+                        len(self.most_unknown_attrs[0].unknown_attrs)):
+                        diff.most_unknown_attrs = mrt_s.most_unknown_attrs.copy()
+                        updated = True
+            else:
+                    diff.most_unknown_attrs = mrt_s.most_unknown_attrs.copy()
+                    updated = True
+
         # If stats from a rib dump are being compared, these wont be present:
         # More updates parsed
         if mrt_s.total_upd > self.total_upd:
@@ -1464,7 +1551,7 @@ class mrt_stats:
             updated = True
 
         if updated:
-            ### FIXME - this least to an accumulating file list
+            ### FIXME - this needs to an accumulating file list
             ###diff.file_list.extend(self.file_list)
             ###diff.file_list.extend(mrt_s.file_list)
             diff.timestamp = mrt_s.timestamp
@@ -1513,6 +1600,7 @@ class mrt_stats:
             not self.most_upd_peer_asn and
             not self.most_withd_peer_asn and
             not self.most_origin_asns and
+            not self.most_unknown_attrs and
             not self.file_list and
             not self.timestamp and
             not self.total_upd and
@@ -1592,7 +1680,6 @@ class mrt_stats:
             else:
                 self.bogon_prefixes = merge_data.bogon_prefixes.copy()
                 changed = True
-
 
         # Longest AS path
         if merge_data.longest_as_path:
@@ -1795,8 +1882,10 @@ class mrt_stats:
                 changed = True
 
 
-        # Most withdraws per peer ASN
-        # If stats from a rib dump are being merged this wont be present:
+        """
+        Most withdraws per peer ASN
+        If stats from a rib dump are being merged this wont be present:
+        """
         if merge_data.most_withd_peer_asn:
             if self.most_withd_peer_asn:
                 if (merge_data.most_withd_peer_asn[0].withdraws == self.most_withd_peer_asn[0].withdraws and
@@ -1838,9 +1927,28 @@ class mrt_stats:
                 self.most_origin_asns = merge_data.most_origin_asns.copy()
                 changed = True
 
+        # Prefixes with most unknown attributes
+        if merge_data.most_unknown_attrs:
+            if self.most_unknown_attrs:
+                if (
+                    len(merge_data.most_unknown_attrs[0].unknown_attrs) == len(self.most_unknown_attrs[0].unknown_attrs) and
+                    len(self.most_unknown_attrs[0].unknown_attrs) > 0
+                ):
+                    s_prefixes = [mrt_e.prefix for mrt_e in self.most_unknown_attrs]
+                    for mrt_e in merge_data.most_unknown_attrs:
+                        if mrt_e.prefix not in s_prefixes:
+                            self.most_unknown_attrs.append(mrt_e)
+                            changed = True
+                elif len(merge_data.most_unknown_attrs[0].unknown_attrs) > len(self.most_unknown_attrs[0].unknown_attrs):
+                    self.most_unknown_attrs = merge_data.most_unknown_attrs.copy()
+                    changed = True
+            else:
+                self.most_unknown_attrs = merge_data.most_unknown_attrs.copy()
+                changed = True
+
         """
-        If stats from a rib dump are being merged, these wont be present:
         Most updates parsed
+        If stats from a rib dump are being merged, these wont be present:
         """
         if merge_data.total_upd:
             if merge_data.total_upd > self.total_upd:
@@ -1883,6 +1991,7 @@ class mrt_stats:
             print(f"bogon_origin_asns->timestamp: {mrt_e.timestamp}")
             print(f"bogon_origin_asns->updates: {mrt_e.updates}")
             print(f"bogon_origin_asns->withdraws: {mrt_e.withdraws}")
+            print(f"bogon_origin_asns->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.bogon_origin_asns:
             print("")
 
@@ -1898,6 +2007,7 @@ class mrt_stats:
             print(f"bogon_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"bogon_prefixes->updates: {mrt_e.updates}")
             print(f"bogon_prefixes->withdraws: {mrt_e.withdraws}")
+            print(f"bogon_prefixes->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.bogon_prefixes:
             print("")
 
@@ -1913,6 +2023,7 @@ class mrt_stats:
             print(f"longest_as_path->timestamp: {mrt_e.timestamp}")
             print(f"longest_as_path->updates: {mrt_e.updates}")
             print(f"longest_as_path->withdraws: {mrt_e.withdraws}")
+            print(f"longest_as_path->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.longest_as_path:
             print("")
 
@@ -1928,6 +2039,7 @@ class mrt_stats:
             print(f"longest_comm_set->timestamp: {mrt_e.timestamp}")
             print(f"longest_comm_set->updates: {mrt_e.updates}")
             print(f"longest_comm_set->withdraws: {mrt_e.withdraws}")
+            print(f"longest_comm_set->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.longest_comm_set:
             print("")
 
@@ -1943,6 +2055,7 @@ class mrt_stats:
             print(f"invalid_len->timestamp: {mrt_e.timestamp}")
             print(f"invalid_len->updates: {mrt_e.updates}")
             print(f"invalid_len->withdraws: {mrt_e.withdraws}")
+            print(f"invalid_len->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.invalid_len:
             print("")
 
@@ -1958,6 +2071,7 @@ class mrt_stats:
             print(f"most_advt_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"most_advt_prefixes->updates: {mrt_e.updates}")
             print(f"most_advt_prefixes->withdraws: {mrt_e.withdraws}")
+            print(f"most_advt_prefixes->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_advt_prefixes:
             print("")
 
@@ -1973,6 +2087,7 @@ class mrt_stats:
             print(f"most_bogon_asns->timestamp: {mrt_e.timestamp}")
             print(f"most_bogon_asns->updates: {mrt_e.updates}")
             print(f"most_bogon_asns->withdraws: {mrt_e.withdraws}")
+            print(f"most_bogon_asns->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_bogon_asns:
             print("")
 
@@ -1988,6 +2103,7 @@ class mrt_stats:
             print(f"most_upd_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"most_upd_prefixes->updates: {mrt_e.updates}")
             print(f"most_upd_prefixes->withdraws: {mrt_e.withdraws}")
+            print(f"most_upd_prefixes->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_upd_prefixes:
             print("")
 
@@ -2003,6 +2119,7 @@ class mrt_stats:
             print(f"most_withd_prefixes->timestamp: {mrt_e.timestamp}")
             print(f"most_withd_prefixes->updates: {mrt_e.updates}")
             print(f"most_withd_prefixes->withdraws: {mrt_e.withdraws}")
+            print(f"most_withd_prefixes->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_withd_prefixes:
             print("")
 
@@ -2018,6 +2135,7 @@ class mrt_stats:
             print(f"most_advt_origin_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_advt_origin_asn->updates: {mrt_e.updates}")
             print(f"most_advt_origin_asn->withdraws: {mrt_e.withdraws}")
+            print(f"most_advt_origin_asn->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_advt_origin_asn:
             print("")
 
@@ -2033,6 +2151,7 @@ class mrt_stats:
             print(f"most_advt_peer_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_advt_peer_asn->updates: {mrt_e.updates}")
             print(f"most_advt_peer_asn->withdraws: {mrt_e.withdraws}")
+            print(f"most_advt_peer_asn->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_advt_peer_asn:
             print("")
 
@@ -2048,6 +2167,7 @@ class mrt_stats:
             print(f"most_upd_peer_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_upd_peer_asn->updates: {mrt_e.updates}")
             print(f"most_upd_peer_asn->withdraws: {mrt_e.withdraws}")
+            print(f"most_upd_peer_asn->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_upd_peer_asn:
             print("")
 
@@ -2063,6 +2183,7 @@ class mrt_stats:
             print(f"most_withd_peer_asn->timestamp: {mrt_e.timestamp}")
             print(f"most_withd_peer_asn->updates: {mrt_e.updates}")
             print(f"most_withd_peer_asn->withdraws: {mrt_e.withdraws}")
+            print(f"most_withd_peer_asn->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_withd_peer_asn:
             print("")
 
@@ -2078,7 +2199,24 @@ class mrt_stats:
             print(f"most_origin_asns->timestamp: {mrt_e.timestamp}")
             print(f"most_origin_asns->updates: {mrt_e.updates}")
             print(f"most_origin_asns->withdraws: {mrt_e.withdraws}")
+            print(f"most_origin_asns->unknown_attrs: {mrt_e.unknown_attrs}")
         if self.most_origin_asns:
+            print("")
+
+        for mrt_e in self.most_unknown_attrs:
+            print(f"most_unknown_attrs->prefix: {mrt_e.prefix}")
+            print(f"most_unknown_attrs->advt: {mrt_e.advt}")
+            print(f"most_unknown_attrs->as_path: {mrt_e.as_path}")
+            print(f"most_unknown_attrs->comm_set: {mrt_e.comm_set}")
+            print(f"most_unknown_attrs->filename: {mrt_e.filename}")
+            print(f"most_unknown_attrs->next_hop: {mrt_e.next_hop}")
+            print(f"most_unknown_attrs->origin_asns: {mrt_e.origin_asns}")
+            print(f"most_unknown_attrs->peer_asn: {mrt_e.peer_asn}")
+            print(f"most_unknown_attrs->timestamp: {mrt_e.timestamp}")
+            print(f"most_unknown_attrs->updates: {mrt_e.updates}")
+            print(f"most_unknown_attrs->withdraws: {mrt_e.withdraws}")
+            print(f"most_unknown_attrs->unknown_attrs: {mrt_e.unknown_attrs}")
+        if self.most_unknown_attrs:
             print("")
 
         if self.total_upd:
@@ -2155,6 +2293,9 @@ class mrt_stats:
             ],
             "most_origin_asns": [
                 mrt_e.to_json() for mrt_e in self.most_origin_asns
+            ],
+            "most_unknown_attrs": [
+                mrt_e.to_json() for mrt_e in self.most_unknown_attrs
             ],
             "total_upd": self.total_upd,
             "total_advt": self.total_advt,

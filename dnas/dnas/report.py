@@ -420,6 +420,27 @@ class report:
 
                 txt_report.append(text)
 
+        if mrt_s.most_unknown_attrs:
+            text = (
+                f"Most unknown attributes per prefix: "
+                f"{len(mrt_s.most_unknown_attrs)} prefix(es) had "
+                f"{len(mrt_s.most_unknown_attrs[0].most_unknown_attrs)} "
+                "unknown attributes.\n"
+            )
+
+            txt_report.append(text)
+
+            if body:
+
+                text = ""
+                for mrt_e in mrt_s.most_unknown_attrs:
+                    text += f"Prefix {mrt_e.prefix} has attribute(s) "
+                         += f"{mrt_e.unknown_attr}\n"
+                text = text[0:-1]
+                text += "\n\n"
+
+                txt_report.append(text)
+
         return txt_report
 
     @staticmethod
