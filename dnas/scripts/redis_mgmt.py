@@ -135,6 +135,13 @@ def parse_args():
         default=None,
     )
     parser.add_argument(
+        "--pprint",
+        help="Pretty print the value stored in redis at the given key.",
+        type=str,
+        required=False,
+        default=None,
+    )
+    parser.add_argument(
         "--print",
         help="Print the value stored in redis at the given key.",
         type=str,
@@ -159,7 +166,7 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def print_key(key: str = None):
+def pprint_key(key: str = None):
     """
     Print the value stored in redis at the given key.
     """
@@ -170,6 +177,16 @@ def print_key(key: str = None):
 
     pp = pprint.PrettyPrinter(indent=2)
     pp.pprint(rdb.get(key))
+
+def print_key(key: str = None):
+    """
+    Print the value stored in redis at the given key.
+    """
+    if not key:
+        raise ValueError(
+            f"Missing required arguments: key={key}"
+        )
+    print(rdb.get(key))
 
 def print_keys():
     """
@@ -285,6 +302,9 @@ def main():
 
     if args["keys"]:
         print_keys()
+
+    if args["pprint"]:
+        pprint_key(args["pprint"])
 
     if args["print"]:
         print_key(args["print"])
