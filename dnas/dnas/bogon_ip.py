@@ -1,5 +1,5 @@
 import ipaddress
-import typing
+from typing import List
 
 from dnas.config import config as cfg
 
@@ -9,7 +9,7 @@ class bogon_ip:
     an RFC, the IETF, or IANA).
     """
 
-    BOGON_V4_NETS = []
+    BOGON_V4_NETS: List[ipaddress.IPv4Network] = []
     for bogon in cfg.BOGONS_V4:
         bog_net = ipaddress.ip_network(bogon)
         if type(bog_net) != ipaddress.IPv4Network:
@@ -18,7 +18,7 @@ class bogon_ip:
             )
         BOGON_V4_NETS.append(bog_net)
 
-    BOGON_V6_NETS = []
+    BOGON_V6_NETS: List[ipaddress.IPv6Network] = []
     for bogon in cfg.BOGONS_V6:
         bog_net = ipaddress.ip_network(bogon)
         if type(bog_net) != ipaddress.IPv6Network:

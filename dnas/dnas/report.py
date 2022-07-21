@@ -420,6 +420,35 @@ class report:
 
                 txt_report.append(text)
 
+        if mrt_s.most_unknown_attrs:
+            text = (
+                f"Most unknown attributes per prefix: "
+                f"{len(mrt_s.most_unknown_attrs)} prefix(es) had "
+                f"{len(mrt_s.most_unknown_attrs[0].most_unknown_attrs)} "
+                "unknown attribute(s).\n"
+            )
+
+            txt_report.append(text)
+
+            if body:
+
+                text = ""
+                for mrt_e in mrt_s.most_unknown_attrs:
+                    text += f"Prefix {mrt_e.prefix} from origin ASN(s) "
+                    for asn in mrt_e.origin_asns:
+                        if asn not in whois_cache:
+                            whois_cache[asn] = whois.as_lookup(int(asn))
+                        as_name = whois_cache[asn]
+                        if as_name:
+                            text += f"AS{asn} ({as_name}) "
+                        else:
+                            text += f"AS{asn} "
+                    text += f"has attribute(s) {mrt_e.unknown_attr}\n"
+                text = text[0:-1]
+                text += "\n\n"
+
+                txt_report.append(text)
+
         return txt_report
 
     @staticmethod
