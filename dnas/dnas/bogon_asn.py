@@ -1,4 +1,4 @@
-from typing import Dict
+import typing
 
 from dnas.config import config as cfg
 

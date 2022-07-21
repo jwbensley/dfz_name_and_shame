@@ -4,10 +4,11 @@ import logging
 import mrtparse # type: ignore
 import operator
 import os
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from dnas.config import config as cfg
 from dnas.bogon_asn import bogon_asn
+from dnas.bogon_attr import bogon_attr
 from dnas.bogon_ip import bogon_ip
 from dnas.mrt_archives import mrt_archives
 from dnas.mrt_entry import mrt_entry
@@ -115,6 +116,7 @@ class mrt_parser:
         longest_comm_set: List[mrt_entry] = []
         invalid_len_entries: List[mrt_entry] = []
         most_bogon_asns: Dict[str, set] = {}
+        most_unknown_attrs: List[mrt_entry] = []
         origin_asns_prefix: Dict[str, set] = {}
         upd_prefix: Dict[str, dict] = {}
         advt_per_origin_asn: Dict[str, int] = {}
@@ -176,10 +178,11 @@ class mrt_parser:
                 next(iter(mrt_e.data["timestamp"].items()))[0]
             ) # E.g., 1486801684
 
-            bogon_prefixes = []
-            comm_set = []
-            invalid_len = []
-            prefixes = []
+            bogon_prefixes: List[str] = []
+            comm_set: List[str] = []
+            invalid_len: List[str] = []
+            prefixes: List[str] = []
+            unknown_attrs: Set[int] = set()
 
             peer_asn = mrt_e.data["peer_as"]
             if peer_asn not in upd_peer_asn:
@@ -190,7 +193,7 @@ class mrt_parser:
 
             """
             Some RIPE MRTs don't always contain "withdraw_routes" key, whereas
-            all Route-Views MRTs do. The key may also be present but empty. Yay!
+            all Route-Views MRTs do. The key may be present, but empty. Yay!
             These are IPv4 withdraws, IPv6 withdraws are in attrib MP_UNREACH_NLRI
             """
             if withdrawn_routes := mrt_e.data["bgp_message"].get("withdrawn_routes"):
@@ -211,9 +214,8 @@ class mrt_parser:
             if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
                 upd_peer_asn[peer_asn]["advt"] += 1
                 mrt_s.total_advt += 1
-                
+
                 for attr in path_attributes:
-                    #attr_t = attr["type"][0]   ##### FIX ME
                     attr_t = next(iter(attr["type"]))
 
                     # AS_PATH
@@ -277,6 +279,10 @@ class mrt_parser:
                                 origin_asns_prefix[prefix] = set()
                             else:
                                 upd_prefix[prefix]["withdraws"] += 1
+
+                    # Unknown attribute type
+                    elif bogon_attr.is_unknown(attr_t):
+                        unknown_attrs.add(attr_t)
 
                 """
                 Note that IPv6 prefix advertisements will be encoded as an NLRI 
@@ -355,6 +361,7 @@ class mrt_parser:
                                     peer_asn=peer_asn,
                                     prefix=prefix,
                                     timestamp=ts,
+                                    unknown_attrs=unknown_attrs.copy(),
                                 )
                             )
                 else:
@@ -377,7 +384,7 @@ class mrt_parser:
 
             """
             Keep unique prefixes only, with additional origin ASNs for the same
-            prefix appended to existing matching prefix
+            prefix being appended to existing matching prefix
             """
             for prefix in bogon_prefixes:
                 for mrt_e in bogon_prefix_entries:
@@ -396,6 +403,7 @@ class mrt_parser:
                             peer_asn=peer_asn,
                             prefix=prefix,
                             timestamp=ts,
+                            unknown_attrs=unknown_attrs.copy(),
                         )
                     )
 
@@ -410,6 +418,7 @@ class mrt_parser:
                         peer_asn=peer_asn,
                         prefix=prefix,
                         timestamp=ts,
+                        unknown_attrs=unknown_attrs.copy(),
                     ) for prefix in prefixes
                 ]
             else:
@@ -427,6 +436,7 @@ class mrt_parser:
                                     peer_asn=peer_asn,
                                     prefix=prefix,
                                     timestamp=ts,
+                                    unknown_attrs=unknown_attrs.copy(),
                                 )
                             )
 
@@ -441,6 +451,7 @@ class mrt_parser:
                             peer_asn=peer_asn,
                             prefix=prefix,
                             timestamp=ts,
+                            unknown_attrs=unknown_attrs.copy(),
                         ) for prefix in prefixes
                     ]
 
@@ -455,6 +466,7 @@ class mrt_parser:
                         peer_asn=peer_asn,
                         prefix=prefix,
                         timestamp=ts,
+                        unknown_attrs=unknown_attrs.copy(),
                     ) for prefix in prefixes
                 ]
             else:
@@ -472,6 +484,7 @@ class mrt_parser:
                                     peer_asn=peer_asn,
                                     prefix=prefix,
                                     timestamp=ts,
+                                    unknown_attrs=unknown_attrs.copy(),
                                 )
                             )
 
@@ -486,13 +499,13 @@ class mrt_parser:
                             peer_asn=peer_asn,
                             prefix=prefix,
                             timestamp=ts,
+                            unknown_attrs=unknown_attrs.copy(),
                         ) for prefix in prefixes
                     ]
 
-
             """
-            Keep unique prefixes only, with additional origin ASNs for thr same
-            prefix appended to existing matching prefix:
+            Keep unique prefixes only, with additional origin ASNs for the same
+            prefix being appended to existing matching prefix:
             """
             for prefix in invalid_len:
                 for mrt_e in invalid_len_entries:
@@ -511,8 +524,34 @@ class mrt_parser:
                             peer_asn=peer_asn,
                             prefix=prefix,
                             timestamp=ts,
+                            unknown_attrs=unknown_attrs.copy(),
                         )
                     )
+
+            """
+            Keep unique prefixes only, with additional unknown attrs for the
+            same prefix being appended to existing matching prefix
+            """
+            if unknown_attrs:
+                for prefix in prefixes:
+                    for mrt_e in most_unknown_attrs:
+                        if mrt_e.prefix == prefix:
+                            mrt_e.unknown_attrs.update(unknown_attrs)
+                            break
+                    else:
+                        most_unknown_attrs.append(
+                            mrt_entry(
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                filename=orig_filename,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                                peer_asn=peer_asn,
+                                prefix=prefix,
+                                timestamp=ts,
+                                unknown_attrs=unknown_attrs.copy()
+                            )
+                        )
 
         # Only get the prefixes with the most bogon origin ASNs
         for mrt_e in bogon_origin_asns:
@@ -653,7 +692,6 @@ class mrt_parser:
             ) for prefix in most_upd_prefixes
         ]
 
-
         most_updates = 0
         most_upd_asns = []
         for asn in upd_peer_asn:
@@ -771,6 +809,17 @@ class mrt_parser:
                 timestamp=file_ts,
             ) for x in advt_per_orig_asn_sorted if x[1] == advt_per_orig_asn_sorted[-1][1]
         ]
+
+        # Only get the prefixes with the most unknown attributes
+        for mrt_e in most_unknown_attrs:
+            if not mrt_s.most_unknown_attrs:
+                mrt_s.most_unknown_attrs = [mrt_e]
+            else:
+                if (len(mrt_e.unknown_attrs) == len(mrt_s.most_unknown_attrs[0].unknown_attrs) and
+                    mrt_e.unknown_attrs):
+                    mrt_s.most_unknown_attrs.append(mrt_e)
+                elif len(mrt_e.unknown_attrs) > len(mrt_s.most_unknown_attrs[0].unknown_attrs):
+                    mrt_s.most_unknown_attrs = [mrt_e]
 
         return mrt_s
 
