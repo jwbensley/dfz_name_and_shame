@@ -1212,7 +1212,7 @@ class test_mrt_stats(unittest.TestCase):
         diff_3 = self.upd_3_stats.get_diff(self.upd_4_stats)
         self.assertIsInstance(diff_3, mrt_stats)
 
-        diff_5 = self.upd_5_stats.get_diff(self.upd_4_stats)
+        diff_5 = self.upd_5_stats.get_diff(self.upd_1_stats)
         self.assertIsInstance(diff_5, mrt_stats)
 
         self.assertEqual(len(diff_1.bogon_prefixes), 1)
@@ -1860,23 +1860,267 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff_1.most_origin_asns[8].updates, 0)
         self.assertEqual(diff_1.most_origin_asns[8].withdraws, 0)
 
+        self.assertEqual(len(diff_5.most_unknown_attrs), 9)
         self.assertEqual(diff_5.most_unknown_attrs[0].advt, 0)
-        self.assertEqual(diff_5.most_unknown_attrs[0].as_path, ["286", "1103", "12654"])
-        self.assertEqual(diff_5.most_unknown_attrs[0].comm_set, ["286:80", "286:800", "286:3031", "286:4001"])
+        self.assertEqual(
+            diff_5.most_unknown_attrs[0].as_path, ["18106", "17494", "58601", "24389"]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[0].comm_set,["9989:2000"])
         self.assertEqual(
             os.path.basename(diff_5.most_unknown_attrs[0].filename),
-            os.path.basename(self.upd_5_mrt)
+            os.path.basename(self.upd_1_mrt)
         )
-        self.assertEqual(diff_5.most_unknown_attrs[0].next_hop, "195.66.224.54")
         self.assertEqual(
-            diff_5.most_unknown_attrs[0].origin_asns, set(["12654"])
+            diff_5.most_unknown_attrs[0].next_hop, "27.111.228.145"
         )
-        self.assertEqual(diff_5.most_unknown_attrs[0].peer_asn, "286")
-        self.assertEqual(diff_5.most_unknown_attrs[0].prefix, "93.175.144.0/24")
-        self.assertEqual(diff_5.most_unknown_attrs[0].timestamp, "20100827.0842")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[0].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[0].peer_asn, "18106")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[0].prefix, "37.111.199.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[0].timestamp, "20220421.0200"
+        )
         self.assertEqual(diff_5.most_unknown_attrs[0].updates, 0)
         self.assertEqual(diff_5.most_unknown_attrs[0].withdraws, 0)
-        self.assertEqual(diff_5.most_unknown_attrs[0].unknown_attrs, set([99]))
+        self.assertEqual(
+            diff_5.most_unknown_attrs[0].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[1].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[1].as_path,
+            [
+                "18106", "17494", "17806", "17806", "17806", "17806", "17806",
+                "17806", "24389"
+            ]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[1].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[1].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[1].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[1].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[1].peer_asn, "18106")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[1].prefix, "37.111.234.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[1].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[1].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[1].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[1].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[2].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[2].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[2].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[2].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[2].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[2].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[2].peer_asn, "18106")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[2].prefix, "119.30.46.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[2].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[2].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[2].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[2].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[3].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[3].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[3].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[3].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[3].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[3].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[3].peer_asn, "18106")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[3].prefix, "119.30.34.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[3].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[3].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[3].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[3].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[4].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[4].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[4].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[4].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[4].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[4].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[4].peer_asn, "18106")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[4].prefix, "37.111.235.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[4].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[4].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[4].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[4].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[5].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[5].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[5].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[5].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[5].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[5].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[5].peer_asn, "18106")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[5].prefix, "37.111.233.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[5].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[5].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[5].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[5].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[6].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[6].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[6].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[6].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[6].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[6].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[6].peer_asn, "18106")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[6].prefix, "37.111.236.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[6].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[6].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[6].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[6].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[7].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[7].as_path, 
+            [
+                "137409", "17494", "58601", "24389", "24389", "24389", "24389",
+                "24389"
+            ]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[7].comm_set,[])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[7].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[7].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[7].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[7].peer_asn, "137409")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[7].prefix, "37.111.204.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[7].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[7].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[7].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[7].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(diff_5.most_unknown_attrs[8].advt, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[8].as_path, 
+            ["137409", "17494", "58601", "24389"]
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[8].comm_set,[])
+        self.assertEqual(
+            os.path.basename(diff_5.most_unknown_attrs[8].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[8].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[8].origin_asns, set(["24389"])
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[8].peer_asn, "137409")
+        self.assertEqual(
+            diff_5.most_unknown_attrs[8].prefix, "37.111.225.0/24"
+        )
+        self.assertEqual(
+            diff_5.most_unknown_attrs[8].timestamp, "20220421.0200"
+        )
+        self.assertEqual(diff_5.most_unknown_attrs[8].updates, 0)
+        self.assertEqual(diff_5.most_unknown_attrs[8].withdraws, 0)
+        self.assertEqual(
+            diff_5.most_unknown_attrs[8].unknown_attrs, set([255])
+        )
 
         self.assertEqual(diff_1.total_upd, 29688)
         self.assertEqual(diff_1.total_advt, 29396)
@@ -1894,7 +2138,7 @@ class test_mrt_stats(unittest.TestCase):
         diff_3 = self.upd_3_stats.get_diff_larger(self.upd_4_stats)
         self.assertIsInstance(diff_3, mrt_stats)
 
-        diff_5 = self.upd_5_stats.get_diff_larger(self.upd_4_stats)
+        diff_5 = self.upd_5_stats.get_diff_larger(self.upd_1_stats)
         self.assertIsInstance(diff_5, mrt_stats)
 
         self.assertEqual(len(diff_1.bogon_origin_asns), 0)
@@ -2028,32 +2272,11 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(len(diff_1.most_origin_asns), 0)
         self.assertEqual(diff_1.most_origin_asns, [])
 
-        self.assertEqual(diff_5.most_unknown_attrs[0].advt, 0)
-        self.assertEqual(
-            diff_5.most_unknown_attrs[0].as_path, ["286", "1103", "12654"]
-        )
-        self.assertEqual(
-            diff_5.most_unknown_attrs[0].comm_set,
-            ["286:80", "286:800", "286:3031", "286:4001"]
-        )
-        self.assertEqual(
-            os.path.basename(diff_5.most_unknown_attrs[0].filename),
-            os.path.basename(self.upd_5_mrt)
-        )
-        self.assertEqual(
-            diff_5.most_unknown_attrs[0].next_hop, "195.66.224.54"
-        )
-        self.assertEqual(
-            diff_5.most_unknown_attrs[0].origin_asns, set(["12654"])
-        )
-        self.assertEqual(diff_5.most_unknown_attrs[0].peer_asn, "286")
-        self.assertEqual(diff_5.most_unknown_attrs[0].prefix, "93.175.144.0/24")
-        self.assertEqual(diff_5.most_unknown_attrs[0].timestamp, "20100827.0842")
-        self.assertEqual(diff_5.most_unknown_attrs[0].updates, 0)
-        self.assertEqual(diff_5.most_unknown_attrs[0].withdraws, 0)
-        self.assertEqual(
-            diff_5.most_unknown_attrs[0].unknown_attrs, set([99])
-        )
+        self.assertEqual(len(diff_1.most_unknown_attrs), 0)
+        self.assertEqual(diff_1.most_unknown_attrs, [])
+
+        self.assertEqual(len(diff_5.most_unknown_attrs), 0)
+        self.assertEqual(diff_5.most_unknown_attrs, [])
 
         self.assertEqual(diff_1.total_upd, 29688)
         self.assertEqual(diff_1.total_advt, 29396)
@@ -2088,6 +2311,10 @@ class test_mrt_stats(unittest.TestCase):
         stats_3 = mrt_stats()
         stats_3.from_file(self.upd_3_json)
         stats_3.merge(self.upd_4_stats)
+
+        stats_5 = mrt_stats()
+        stats_5.from_file(self.upd_5_json)
+        stats_5.merge(self.upd_1_stats)
 
         self.assertEqual(len(stats_1.bogon_origin_asns), 1)
         self.assertEqual(stats_1.bogon_origin_asns[0].advt, 0)
@@ -2979,6 +3206,299 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(stats_1.most_origin_asns[15].timestamp, "20220501.2305")
         self.assertEqual(stats_1.most_origin_asns[15].updates, 0)
         self.assertEqual(stats_1.most_origin_asns[15].withdraws, 0)
+
+        self.assertEqual(len(stats_5.most_unknown_attrs), 10)
+        self.assertEqual(stats_5.most_unknown_attrs[0].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[0].as_path, ["286", "1103", "12654"]
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[0].comm_set,
+            ["286:80", "286:800", "286:3031", "286:4001"]
+        )
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[0].filename),
+            os.path.basename(self.upd_5_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[0].next_hop, "195.66.224.54"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[0].origin_asns, set(["12654"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[0].peer_asn, "286")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[0].prefix, "93.175.144.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[0].timestamp, "20100827.0842"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[0].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[0].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[0].unknown_attrs, set([99])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[1].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[1].as_path, ["18106", "17494", "58601", "24389"]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[1].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[1].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[1].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[1].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[1].peer_asn, "18106")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[1].prefix, "37.111.199.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[1].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[1].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[1].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[1].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[2].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[2].as_path,
+            [
+                "18106", "17494", "17806", "17806", "17806", "17806", "17806",
+                "17806", "24389"
+            ]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[2].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[2].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[2].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[2].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[2].peer_asn, "18106")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[2].prefix, "37.111.234.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[2].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[2].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[2].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[2].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[3].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[3].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[3].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[3].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[3].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[3].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[3].peer_asn, "18106")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[3].prefix, "119.30.46.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[3].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[3].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[3].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[3].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[4].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[4].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[4].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[4].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[4].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[4].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[4].peer_asn, "18106")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[4].prefix, "119.30.34.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[4].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[4].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[4].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[4].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[5].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[5].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[5].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[5].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[5].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[5].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[5].peer_asn, "18106")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[5].prefix, "37.111.235.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[5].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[5].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[5].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[5].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[6].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[6].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[6].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[6].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[6].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[6].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[6].peer_asn, "18106")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[6].prefix, "37.111.233.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[6].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[6].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[6].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[6].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[7].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[7].as_path, ["18106", "17494", "24389"]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[7].comm_set,["9989:2000"])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[7].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[7].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[7].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[7].peer_asn, "18106")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[7].prefix, "37.111.236.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[7].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[7].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[7].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[7].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[8].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[8].as_path, 
+            [
+                "137409", "17494", "58601", "24389", "24389", "24389", "24389",
+                "24389"
+            ]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[8].comm_set,[])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[8].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[8].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[8].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[8].peer_asn, "137409")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[8].prefix, "37.111.204.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[8].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[8].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[8].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[8].unknown_attrs, set([255])
+        )
+
+        self.assertEqual(stats_5.most_unknown_attrs[9].advt, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[9].as_path, 
+            ["137409", "17494", "58601", "24389"]
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[9].comm_set,[])
+        self.assertEqual(
+            os.path.basename(stats_5.most_unknown_attrs[9].filename),
+            os.path.basename(self.upd_1_mrt)
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[9].next_hop, "27.111.228.145"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[9].origin_asns, set(["24389"])
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[9].peer_asn, "137409")
+        self.assertEqual(
+            stats_5.most_unknown_attrs[9].prefix, "37.111.225.0/24"
+        )
+        self.assertEqual(
+            stats_5.most_unknown_attrs[9].timestamp, "20220421.0200"
+        )
+        self.assertEqual(stats_5.most_unknown_attrs[9].updates, 0)
+        self.assertEqual(stats_5.most_unknown_attrs[9].withdraws, 0)
+        self.assertEqual(
+            stats_5.most_unknown_attrs[9].unknown_attrs, set([255])
+        )
 
         self.assertEqual(stats_1.total_upd, 29688)
         self.assertEqual(stats_1.total_advt, 29396)

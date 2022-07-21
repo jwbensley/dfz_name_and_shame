@@ -20,10 +20,10 @@ class mrt_entry:
         prefix: str = None,
         origin_asns: Set[str] = set(),
         peer_asn: str = None,
+        unknown_attrs: Set[int] = set(),
         timestamp: str = None,
         updates: int = 0,
         withdraws: int = 0,
-        unknown_attrs: Set[int] = set(),
     ) -> None:
 
         self.advt = advt
@@ -75,6 +75,9 @@ class mrt_entry:
         if self.prefix != mrt_e.prefix:
             return False
 
+        if self.unknown_attrs != mrt_e.unknown_attrs:
+            return False
+
         if self.timestamp != mrt_e.timestamp:
             return False
 
@@ -84,8 +87,6 @@ class mrt_entry:
         if self.withdraws != mrt_e.withdraws:
             return False
 
-        if self.unknown_attrs != mrt_e.unknown_attrs:
-            return False
 
         if meta:
             if self.filename != mrt_e.filename:
@@ -119,10 +120,10 @@ class mrt_entry:
         self.prefix = json_data["prefix"]
         self.origin_asns = set(json_data["origin_asns"])
         self.peer_asn = json_data["peer_asn"]
+        self.unknown_attrs = set(json_data["unknown_attrs"]) if ("unknown_attrs" in json_data) else set() ##### FIX ME
         self.timestamp = json_data["timestamp"]
         self.updates = json_data["updates"]
         self.withdraws = json_data["withdraws"]
-        self.unknown_attrs = set(json_data["unknown_attrs"])
 
     @staticmethod
     def gen_timestamp() -> str:
@@ -144,10 +145,10 @@ class mrt_entry:
             "origin_asns": list(self.origin_asns),
             "peer_asn": self.peer_asn,
             "prefix": self.prefix,
+            "unknown_attrs": list(self.unknown_attrs),
             "timestamp": self.timestamp,
             "updates": self.updates,
             "withdraws": self.withdraws,
-            "unknown_attrs": list(self.unknown_attrs),
         }
         return json.dumps(json_data)
 
@@ -163,8 +164,8 @@ class mrt_entry:
         print(f"origin_asns: {self.origin_asns}")
         print(f"peer_asn: {self.peer_asn}")
         print(f"prefix: {self.prefix}")
+        print(f"unknown_attrs: {self.unknown_attrs}")
         print(f"timestamp: {self.timestamp}")
         print(f"updates: {self.updates}")
         print(f"withdraws: {self.withdraws}")
-        print(f"unknown_attrs: {self.unknown_attrs}")
         print("")

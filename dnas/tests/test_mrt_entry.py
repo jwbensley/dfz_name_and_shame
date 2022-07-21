@@ -105,6 +105,7 @@ class test_mrt_entry(unittest.TestCase):
 
         j2 = self.mrt_s.longest_as_path[0].to_json()
         self.assertIsInstance(j2, str)
+        self.maxDiff = None
         self.assertEqual(j1, j2)
 
     def tearDown(self):
