@@ -642,6 +642,7 @@ class mrt_stats:
                 if (res_e.prefix == u_e.prefix):
                     tmp.append(
                         mrt_entry(
+                            origin_asns=res_e.origin_asns.union(u_e.origin_asns),
                             prefix=res_e.prefix,
                             unknown_attrs=res_e.unknown_attrs.union(u_e.unknown_attrs),
                             filename=res_e.filename,

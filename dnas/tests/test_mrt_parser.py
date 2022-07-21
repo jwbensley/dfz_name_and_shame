@@ -30,6 +30,7 @@ class test_mrt_parser(unittest.TestCase):
         self.upd_2_fn = "rcc23.updates.20220501.2305.gz"
         self.upd_3_fn = "sydney.updates.20220601.0415.bz2"
         self.json_3_fn = "sydney.updates.20220601.0415.bz2.json"
+        self.upd_4_fn = "rcc01.updates.20100827.0840.gz"
 
         self.upd_1_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), self.upd_1_fn
@@ -55,12 +56,19 @@ class test_mrt_parser(unittest.TestCase):
         if not os.path.isfile(self.json_3_path):
             raise Exception(f"Test JSON file is not found: {self.json_3_path}")
 
+        self.upd_4_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), self.upd_4_fn
+        )
+        if not os.path.isfile(self.upd_4_path):
+            raise Exception(f"Test MRT file is not found: {self.upd_4_path}")
+
         mrt_a = mrt_archives()
         for arch in mrt_a.archives:
             if arch.NAME == "RCC_23":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_1_mrt = os.path.join(arch.MRT_DIR, self.upd_1_fn)
                 self.upd_2_mrt = os.path.join(arch.MRT_DIR, self.upd_2_fn)
+                self.upd_4_mrt = os.path.join(arch.MRT_DIR, self.upd_4_fn)
             if arch.NAME == "RV_SYDNEY":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_3_mrt = os.path.join(arch.MRT_DIR, self.upd_3_fn)
@@ -68,6 +76,7 @@ class test_mrt_parser(unittest.TestCase):
         shutil.copy2(self.upd_1_path, self.upd_1_mrt)
         shutil.copy2(self.upd_2_path, self.upd_2_mrt)
         shutil.copy2(self.upd_3_path, self.upd_3_mrt)
+        shutil.copy2(self.upd_4_path, self.upd_4_mrt)
 
     def test_init(self):
         """
@@ -103,6 +112,8 @@ class test_mrt_parser(unittest.TestCase):
         test_3_stats = mrt_stats()
         test_3_stats.from_file(self.json_3_path)
         self.assertIsInstance(test_3_stats, mrt_stats)
+        upd_4_stats = mrt_p.parse_upd_dump(self.upd_4_mrt)
+        self.assertIsInstance(upd_4_stats, mrt_stats)
 
         self.assertIsInstance(upd_1_stats.bogon_origin_asns, list)
         self.assertEqual(len(upd_1_stats.bogon_origin_asns), 1)
@@ -674,6 +685,35 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(upd_2_stats.most_origin_asns[8].timestamp, "20220501.2305")
         self.assertEqual(upd_2_stats.most_origin_asns[8].updates, 0)
         self.assertEqual(upd_2_stats.most_origin_asns[8].withdraws, 0)
+
+        self.assertIsInstance(upd_4_stats.most_unknown_attrs, list)
+        self.assertEqual(len(upd_4_stats.most_unknown_attrs), 1)
+        self.assertEqual(upd_4_stats.most_unknown_attrs[0].advt, 0)
+        self.assertEqual(
+            upd_4_stats.most_unknown_attrs[0].as_path, ["286", "1103", "12654"]
+        )
+        self.assertEqual(
+            upd_4_stats.most_unknown_attrs[0].comm_set,
+            ["286:80", "286:800", "286:3031", "286:4001"]
+        )
+        self.assertEqual(
+            os.path.basename(upd_4_stats.most_unknown_attrs[0].filename),
+            os.path.basename(self.upd_4_mrt)
+        )
+        self.assertEqual(
+            upd_4_stats.most_unknown_attrs[0].next_hop, "195.66.224.54"
+        )
+        self.assertEqual(
+            upd_4_stats.most_unknown_attrs[0].origin_asns, set(["12654"])
+        )
+        self.assertEqual(upd_4_stats.most_unknown_attrs[0].peer_asn, "286")
+        self.assertEqual(upd_4_stats.most_unknown_attrs[0].prefix, "93.175.144.0/24")
+        self.assertEqual(upd_4_stats.most_unknown_attrs[0].timestamp, "20100827.0842")
+        self.assertEqual(upd_4_stats.most_unknown_attrs[0].updates, 0)
+        self.assertEqual(upd_4_stats.most_unknown_attrs[0].withdraws, 0)
+        self.assertEqual(
+            upd_4_stats.most_unknown_attrs[0].unknown_attrs, set([99])
+        )
 
         self.assertIsInstance(upd_2_stats.total_upd, int)
         self.assertEqual(upd_2_stats.total_upd, 29688)

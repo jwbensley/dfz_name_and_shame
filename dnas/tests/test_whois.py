@@ -21,8 +21,9 @@ class test_whois(unittest.TestCase):
         self.assertEqual("", whois.as_lookup(65000))
 
         # ASN which redirects to a private whois server
-        self.assertEqual("", whois.as_lookup(8100))
-        print(whois.as_lookup(8100))
+        #self.assertEqual("", whois.as_lookup(8100))
+        #print(whois.as_lookup(8100))
+        # ^ they've gone public / fixed the redirect so no longer a valid test.
 
         # Whois entry which will decode using utf-8
         self.assertEqual("VOSTRON-AS", whois.as_lookup(41695))
