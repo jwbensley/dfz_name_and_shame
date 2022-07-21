@@ -57,10 +57,13 @@ class test_mrt_entry(unittest.TestCase):
         self.assertEqual(self.mrt_e.next_hop, None)
         self.assertEqual(self.mrt_e.prefix, None)
         self.assertIsInstance(self.mrt_e.origin_asns, set)
+        self.assertEqual(len(self.mrt_e.origin_asns), 0)
         self.assertEqual(self.mrt_e.peer_asn, None)
         self.assertEqual(self.mrt_e.timestamp, None)
         self.assertIsInstance(self.mrt_e.updates, int)
         self.assertIsInstance(self.mrt_e.withdraws, int)
+        self.assertIsInstance(self.mrt_e.unknown_attrs, set)
+        self.assertEqual(len(self.mrt_e.unknown_attrs), 0)
 
     def test_equal_to(self):
         e1 = copy.deepcopy(self.mrt_s.longest_as_path[0])
@@ -102,6 +105,7 @@ class test_mrt_entry(unittest.TestCase):
 
         j2 = self.mrt_s.longest_as_path[0].to_json()
         self.assertIsInstance(j2, str)
+        self.maxDiff = None
         self.assertEqual(j1, j2)
 
     def tearDown(self):

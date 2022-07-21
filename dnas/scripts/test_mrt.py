@@ -35,7 +35,6 @@ def check_rib_dump(filename: str = None):
 
     mrt_entries = mrtparse.Reader(filename)
     for idx, mrt_e in enumerate(mrt_entries):
-        #rib_type = mrt_e.data["type"][0]
         rib_type = list(mrt_e.data["type"].keys())[0]
         if (rib_type != mrtparse.MRT_T['TABLE_DUMP_V2']):
             logging.error(
@@ -46,7 +45,6 @@ def check_rib_dump(filename: str = None):
             return
 
         # RIB dumps can contain both AFIs (v4 and v6)
-        #rib_subtype = mrt_e.data["subtype"][0]
         rib_subtype = list(mrt_e.data["subtype"].keys())[0]
         if rib_subtype not in mrtparse.TD_V2_ST:
             logging.error(
@@ -73,7 +71,6 @@ def check_update_dump(filename: str = None):
 
     mrt_entries = mrtparse.Reader(filename)
     for idx, mrt_e in enumerate(mrt_entries):
-        #upd_type = mrt_e.data["type"][0]
         upd_type = list(mrt_e.data["type"].keys())[0]
         if (upd_type != mrtparse.MRT_T['BGP4MP_ET'] and
             upd_type != mrtparse.MRT_T['BGP4MP']):
@@ -85,7 +82,6 @@ def check_update_dump(filename: str = None):
             return
 
         # UPDATE dumps can contain both AFIs (v4 and v6)
-        #upd_subtype = mrt_e.data["subtype"][0]
         upd_subtype = list(mrt_e.data["subtype"].keys())[0]
         if upd_subtype not in mrtparse.BGP4MP_ST:
             logging.error(
@@ -109,6 +105,7 @@ def get_stats(filename: str = None):
             errno.ENOENT, os.strerror(errno.ENOENT), filename
         )
 
+    attrs = {}
     e_types = {}
     e_subtypes = {}
     e_msgtypes = {}
@@ -172,6 +169,11 @@ def get_stats(filename: str = None):
             for attr in path_attributes:
                 attr_t = next(iter(attr["type"]))
 
+                if attr_t not in attrs:
+                    attrs[attr_t] = 1
+                else:
+                    attrs[attr_t] += 1
+
                 if attr_t == 2: # AS_PATH
                     if attr["value"][0]["value"] not in as_paths:
                         as_paths.append(attr["value"][0]["value"])
@@ -204,6 +206,10 @@ def get_stats(filename: str = None):
     logging.info("Count per BGP message type:")
     for k,v in e_msgtypes.items():
         logging.info(f"{mrtparse.BGP_MSG_T[k]}: {v}")
+
+    logging.info(f"Count per BGP attribute type:")
+    for k,v in attrs.items():
+        logging.info(f"Attr {mrtparse.BGP_ATTR_T[k]}: {v}")
 
     logging.info(f"Unique AS paths: {len(as_paths)}")
     logging.info(f"Unique prefixes: {len(prefixes)}")

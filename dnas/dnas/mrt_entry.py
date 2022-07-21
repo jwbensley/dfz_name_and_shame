@@ -1,6 +1,6 @@
 import datetime
 import json
-import typing
+from typing import List, Set
 
 from dnas.config import config as cfg
 
@@ -12,17 +12,18 @@ class mrt_entry:
 
     def __init__(
         self,
-        advt=0,
-        as_path=[],
-        comm_set=[],
-        filename=None,
-        next_hop=None,
-        prefix=None,
-        origin_asns=set(),
-        peer_asn=None,
-        timestamp=None,
-        updates=0,
-        withdraws=0,
+        advt: int = 0,
+        as_path: List[str] = [],
+        comm_set: List[str] = [],
+        filename: str = None,
+        next_hop: str = None,
+        prefix: str = None,
+        origin_asns: Set[str] = set(),
+        peer_asn: str = None,
+        unknown_attrs: Set[int] = set(),
+        timestamp: str = None,
+        updates: int = 0,
+        withdraws: int = 0,
     ) -> None:
 
         self.advt = advt
@@ -36,6 +37,7 @@ class mrt_entry:
         self.timestamp = timestamp
         self.updates = updates
         self.withdraws = withdraws
+        self.unknown_attrs = unknown_attrs
 
     def equal_to(self, mrt_e: 'mrt_entry' = None, meta: bool = False) -> bool:
         """
@@ -53,54 +55,44 @@ class mrt_entry:
             )
 
         if self.advt != mrt_e.advt:
-            print("a")
             return False
 
         if self.as_path != mrt_e.as_path:
-            print(self.as_path)
-            print(mrt_e.as_path)
-            print("b")
             return False
 
         if self.comm_set != mrt_e.comm_set:
-            print("c")
             return False
 
         if self.next_hop != mrt_e.next_hop:
-            print("d")
             return False
 
         if self.origin_asns != mrt_e.origin_asns:
-            print("e")
             return False
 
         if self.peer_asn != mrt_e.peer_asn:
-            print("f")
             return False
 
         if self.prefix != mrt_e.prefix:
-            print("g")
+            return False
+
+        if self.unknown_attrs != mrt_e.unknown_attrs:
             return False
 
         if self.timestamp != mrt_e.timestamp:
-            print("h")
             return False
 
         if self.updates != mrt_e.updates:
-            print("i")
             return False
 
         if self.withdraws != mrt_e.withdraws:
-            print("j")
             return False
+
 
         if meta:
             if self.filename != mrt_e.filename:
-                print("k")
                 return False
 
             if self.timestamp != mrt_e.timestamp:
-                print("l")
                 return False
 
         return True
@@ -128,6 +120,7 @@ class mrt_entry:
         self.prefix = json_data["prefix"]
         self.origin_asns = set(json_data["origin_asns"])
         self.peer_asn = json_data["peer_asn"]
+        self.unknown_attrs = set(json_data["unknown_attrs"]) if ("unknown_attrs" in json_data) else set() ##### FIX ME
         self.timestamp = json_data["timestamp"]
         self.updates = json_data["updates"]
         self.withdraws = json_data["withdraws"]
@@ -152,6 +145,7 @@ class mrt_entry:
             "origin_asns": list(self.origin_asns),
             "peer_asn": self.peer_asn,
             "prefix": self.prefix,
+            "unknown_attrs": list(self.unknown_attrs),
             "timestamp": self.timestamp,
             "updates": self.updates,
             "withdraws": self.withdraws,
@@ -170,6 +164,7 @@ class mrt_entry:
         print(f"origin_asns: {self.origin_asns}")
         print(f"peer_asn: {self.peer_asn}")
         print(f"prefix: {self.prefix}")
+        print(f"unknown_attrs: {self.unknown_attrs}")
         print(f"timestamp: {self.timestamp}")
         print(f"updates: {self.updates}")
         print(f"withdraws: {self.withdraws}")
