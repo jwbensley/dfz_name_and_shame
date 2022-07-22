@@ -424,7 +424,7 @@ class report:
             text = (
                 f"Most unknown attributes per prefix: "
                 f"{len(mrt_s.most_unknown_attrs)} prefix(es) had "
-                f"{len(mrt_s.most_unknown_attrs[0].most_unknown_attrs)} "
+                f"{len(mrt_s.most_unknown_attrs[0].unknown_attrs)} "
                 "unknown attribute(s).\n"
             )
 
