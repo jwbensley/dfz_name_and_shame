@@ -443,7 +443,7 @@ class report:
                             text += f"AS{asn} ({as_name}) "
                         else:
                             text += f"AS{asn} "
-                    text += f"has attribute(s) {mrt_e.unknown_attr}\n"
+                    text += f"has attribute(s) {mrt_e.unknown_attrs}\n"
                 text = text[0:-1]
                 text += "\n\n"
 
