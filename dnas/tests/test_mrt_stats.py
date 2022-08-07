@@ -124,6 +124,8 @@ class test_mrt_stats(unittest.TestCase):
     def test_init(self):
         mrt_s = mrt_stats()
         self.assertIsInstance(mrt_s, mrt_stats)
+        self.assertIsInstance(mrt_s.archive_list, set)
+        self.assertEqual(len(mrt_s.archive_list), 0)
         self.assertIsInstance(mrt_s.bogon_origin_asns, list)
         self.assertEqual(len(mrt_s.bogon_origin_asns), 0)
         self.assertIsInstance(mrt_s.bogon_prefixes, list)
@@ -1155,13 +1157,24 @@ class test_mrt_stats(unittest.TestCase):
         self.assertRaises(TypeError, stats.from_json, 123)
 
         f = open(self.upd_1_json, "r")
+        d = json.loads(f.read())
+        f.seek(0)
         stats.from_json(f.read())
         f.close()
+
+        """
+        Check that the JSON file has all the attributes the object does,
+        and that all the attributes in the object are in the JSON file:
+        """
+        for k in d:
+            stats.__getattribute__(k)
+        for v in vars(stats):
+            if "__" not in v:
+                self.assertTrue(v in d)
 
         self.assertIsInstance(stats, mrt_stats)
         self.assertTrue(stats.equal_to(self.upd_1_stats))
 
-        #####stats = mrt_stats()
         f = open(self.upd_5_json, "r")
         stats.from_json(f.read())
         f.close()
@@ -3528,6 +3541,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertIsInstance(json_str, str)
         self.assertNotEqual(json_str, "")
 
+        self.assertTrue("archive_list" in json_str)
         self.assertTrue("bogon_origin_asns" in json_str)
         self.assertTrue("bogon_prefixes" in json_str)
         self.assertTrue("longest_as_path" in json_str)
@@ -3551,6 +3565,17 @@ class test_mrt_stats(unittest.TestCase):
 
         stats = mrt_stats()
         stats.from_json(json_str)
+
+        """
+        Check that the JSON string has all the attributes the object does,
+        and that all the attributes in the object are in the JSON string:
+        """
+        d = json.loads(json_str)
+        for k in d:
+            stats.__getattribute__(k)
+        for v in vars(stats):
+            if "__" not in v:
+                self.assertTrue(v in d)
 
         self.assertTrue(stats.equal_to(self.upd_1_stats))
 

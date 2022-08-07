@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
@@ -13,6 +13,7 @@ class mrt_stats:
     """
 
     def __init__(self) -> None:
+        self.archive_list: Set[str] = set() # Archives from which this stats object was populated
         self.bogon_origin_asns: List[mrt_entry] = []
         self.bogon_prefixes: List[mrt_entry] = []
         self.longest_as_path: List[mrt_entry] = []
@@ -699,6 +700,12 @@ class mrt_stats:
 
         return changed
 
+    def add_archive(self, name: str = None):
+        """
+        Add the name of an MRT archive to the list if it is't already present.
+        """
+        self.archive_list.add(name)
+
     def equal_to(self, mrt_s: 'mrt_stats' = None, meta: bool = False) -> bool:
         """
         Return True if this MRT stats obj is the same as mrt_s, else False.
@@ -931,6 +938,11 @@ class mrt_stats:
             )
 
         json_dict = json.loads(json_str)
+
+        if "archive_list" in json_dict:
+            self.archive_list = set(json_dict["archive_list"])
+        else:
+            self.archive_list = set()
 
         self.bogon_origin_asns = []
         if "bogon_origin_asns" in json_dict:
@@ -1976,6 +1988,13 @@ class mrt_stats:
 
         return changed
 
+    def merge_archives(self, mrt_s: 'mrt_stats' = None):
+        """
+        Add MRT archive names from mrt_s to this stats object, only if they
+        are missing.
+        """
+        self.archive_list.update(mrt_s.archive_list)
+
     def print(self):
         """
         Ugly print the stats in this obj.
@@ -2253,6 +2272,7 @@ class mrt_stats:
         Serialise the MRT stats obj to JSON, and returns the JSON string.
         """
         json_data = {
+            "archive_list": list(self.archive_list),
             "bogon_origin_asns": [
                 mrt_e.to_json() for mrt_e in self.bogon_origin_asns
             ],

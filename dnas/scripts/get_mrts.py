@@ -165,6 +165,9 @@ def get_mrts(replace: bool = False, url_list: List[str] = None):
         except requests.exceptions.HTTPError as e:
             logging.error(e)
             pass
+        except requests.exceptions.ConnectionError as e:
+            logging.error(e)
+            pass
 
     logging.info(f"Finished, downloaded {i}/{len(url_list)}")
 
