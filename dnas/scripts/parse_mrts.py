@@ -314,6 +314,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
     for idx, file in enumerate(filelist):
         logging.info(f"Checking file {file}")
 
+        arch = mrt_a.arch_from_file_path(file)
         day_key = mrt_a.get_day_key(file)
         day_stats = rdb.get_stats(day_key)
 
@@ -343,6 +344,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
 
         if day_stats:
             if day_stats.add(mrt_s):
+                day_stats.add_archive(arch.NAME)
                 logging.info(f"Added {file} to {day_key}")
             else:
                 logging.info(f"Added {file} to {day_key} file list")
@@ -350,6 +352,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
             rdb.set_stats(day_key, day_stats)
 
         else:
+            mrt_s.add_archive(arch.NAME)
             rdb.set_stats(day_key, mrt_s)
             logging.info(f"Created new entry {day_key} from {file}")
 
