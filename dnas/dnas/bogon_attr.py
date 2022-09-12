@@ -45,6 +45,7 @@ class bogon_attr:
         38: "BFD Discriminator", # RFC9026
         40: "BGP Prefix-SID", # RFC8669
         128: "ATTR_SET", # RFC6368
+        255: "Reserved for development", #RFC2042
     }
 
     @staticmethod

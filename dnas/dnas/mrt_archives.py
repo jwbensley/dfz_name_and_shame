@@ -93,7 +93,6 @@ class mrt_archives:
         logging.error(f"Couldn't match {url} to any MRT archive")
         return False
 
-
     def get_arch_option(self, file_path: str = None, opt: str = None) -> str:
         """
         Return the value of an MRT archive attribute, based on the file name.
