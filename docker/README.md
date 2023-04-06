@@ -79,11 +79,11 @@ Run as a container in the background:
 ```bash
 docker run -td \
 -v /etc/localtime:/etc/localtime \
--v /opt/dnas_data/;/opt/dnas_data/ \
+-v /opt/dnas_data/:/opt/dnas_data/ \
 --restart always \
 --name dnas_getter \
 dnas:latest \
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --continuous --update
+/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --continuous --update
 ```
 
 Run in interactive mode with debugging:
@@ -94,7 +94,7 @@ docker run -it --rm \
 -v /opt/dnas_data/:/opt/dnas_data/ \
 --name dnas_getter \
 dnas:latest \
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --continuous --update --debug
+/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --continuous --update --debug
 ```
 &nbsp;
 
@@ -109,7 +109,7 @@ docker run -dt \
 --restart always \
 --name dnas_parser \
 dnas:latest \
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --continuous --remove
+/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --continuous --remove
 ```
 
 Run in interactive mode with debugging:
@@ -121,7 +121,7 @@ docker run -it --rm \
 --restart always \
 --name dnas_parser \
 dnas:latest \
-/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --continuous --remove --debug
+/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --continuous --remove --debug
 ```
 &nbsp;
 
