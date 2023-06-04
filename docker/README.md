@@ -2,9 +2,9 @@
 
 ## Automated Build and Run
 
-### In Pipeline Mode - With Docker Compose
+### In Pipeline Mode
 
-To build the Redis DB container and DNAS container use the following:
+To build the Redis DB container and DNAS containers use the following:
 
 ```bash
 cd /opt/dnas/
@@ -24,110 +24,61 @@ docker-compose up -d
 
 To shut the entire pipeline down simply run: `docker-compose down`
 
-On Ubuntu the `ufw` may block connections between containers. This will allow REDIS access: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further)
-This will allow access to BIRD: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 8000`
+On Ubuntu the `ufw` may block connections between containers.  
+
+* This will allow REDIS access from the other contains: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further)
+* This will allow access to BIRD: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 8000`
 
 To start an individual container from the pipeline use: `docker-compose up -d dnas_redis`
 
-To stop and remove an individual container usei: `docker-compose stop dnas_redis && docker-compose rm dnas_redis`
+To stop and remove an individual container use: `docker-compose stop dnas_redis && docker-compose rm dnas_redis`
 
-To run BASH on a container use a custom entry point: `docker-compose run --entrypoint /bin/bash --rm dnas_redis`  
+To run BASH on a container use: `docker-compose exec dnas_redis /bin/bash`  
 &nbsp;
 
-### In Pipeline Mode - Without Docker Compose
-
-Use the commands below to run the pipeline containers individually.
 
 #### Redis
 
-Run as a container in the background
-
-```bash
-docker run -dt \
--p 6379:6379 \
--v /etc/localtime:/etc/localtime \
--v /opt/dnas/redis/data:/data \
--v /opt/dnas/redis/redis.conf:/usr/local/etc/redis/redis.conf \
---restart always \
---name dnas_redis \
-redis:6.2.6 \
-redis-server /usr/local/etc/redis/redis.conf
-```
-
-Run in interactive mode:
-
-```bash
-docker run -it --rm \
--p 6379:6379 \
--v /etc/localtime:/etc/localtime \
--v /opt/dnas/redis/data:/data \
--v /opt/dnas/redis/redis.conf:/usr/local/etc/redis/redis.conf \
---name dnas_redis \
-redis:6.2.6 \
-redis-server /usr/local/etc/redis/redis.conf
-```
-
-Redis uses authentication so you won't be able to access the redis CLI without authenticating first. With the container as a daemon (using the first command above), start an interactive redis-cli process on the same container (`docker exec -it dnas_redis redis-cli`). Use the auth using in the Redis CLI `AUTH xxxxx` (password from redis.conf file) and test with command `PING`.  
+Redis uses authentication so you won't be able to access the redis CLI without authenticating first. With the container running in the background, start an interactive redis-cli process on the same container (`docker-compose exec dnas_redis redis-cli`). Use the auth command in the Redis CLI `AUTH xxxxx` (password from redis.conf file) and test with command `PING`.  
 &nbsp;
 
 #### Continuous MRT Getter
 
-Note: the local time configuration file from the host is shared into the container because the host is not in UTC0/GMT time, but most MRT dumps use UTC0 timestamps.
-
-Run as a container in the background:
-
-```bash
-docker run -td \
--v /etc/localtime:/etc/localtime \
--v /opt/dnas_data/:/opt/dnas_data/ \
---restart always \
---name dnas_getter \
-dnas:latest \
-/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --continuous --update
-```
-
-Run in interactive mode with debugging:
-
-```bash
-docker run -it --rm \
--v /etc/localtime:/etc/localtime \
--v /opt/dnas_data/:/opt/dnas_data/ \
---name dnas_getter \
-dnas:latest \
-/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/get_mrts.py --continuous --update --debug
-```
-&nbsp;
+The local time configuration file from the host is shared into the container because the host is not in UTC0/GMT time, but most MRT dumps use UTC0 timestamps.
 
 #### Continuous MRT Parser
 
-Run as a container in the background:
+### In Retrospective Mode
 
-```bash
-docker run -dt \
--v /etc/localtime:/etc/localtime \
--v /opt/dnas_data/:/opt/dnas_data/ \
---restart always \
---name dnas_parser \
-dnas:latest \
-/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --continuous --remove
-```
-
-Run in interactive mode with debugging:
-
-```bash
+Run an extra parser container ad-hoc:  
+```shell
 docker run -it --rm \
 -v /etc/localtime:/etc/localtime \
 -v /opt/dnas_data/:/opt/dnas_data/ \
---restart always \
---name dnas_parser \
+--name tmp_parser \
 dnas:latest \
-/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --continuous --remove --debug
+/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --remove --debug --help
 ```
-&nbsp;
 
-### In Retrospective Mode
+Parse a specific range:  
+```shell
+docker run -it --rm \
+-v /etc/localtime:/etc/localtime \
+-v /opt/dnas_data/:/opt/dnas_data/ \
+--name tmp_parser \
+dnas:latest \
+/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --remove --debug --help
+```
 
-The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to run DNAS in a retrospective mode where it generates states for the previous day in a single run, on a daily basis, instead of continuous mode were it builds up the stats throughout the day. Note that the Redis container must be already running.
+Generate a report for a specific date/range:  
+```shell
+docker-compose run --rm --name tmp_parser --entrypoint \
+/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 \
+dnas_stats -- \
+/opt/dnas/scripts/git_reports.py --help
+```
+
+The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to run DNAS in a retrospective mode where it generates stats for the previous day in a single run, on a daily basis, instead of continuous mode were it builds up the stats throughout the day. Note that the Redis container must be already running.
 
 ## Manual Build and Run
 
