@@ -2,7 +2,8 @@
 
 cd /opt/dnas/
 git pull
-docker build -t dnas:latest -f docker/dnas.Dockerfile .
+cd docker/
+docker-compuse build
 docker images -f dangling=true
 docker image prune -f
 
