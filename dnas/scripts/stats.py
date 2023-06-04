@@ -387,7 +387,7 @@ def main():
             "specified!"
         )
 
-    if args["daily"]:
+    if args["daily"] and not args["range"]:
         gen_day_stats(
             enabled = args["enabled"],
             rib = args["rib"],
@@ -395,10 +395,10 @@ def main():
             ymd = args["ymd"]
         )
 
-    if args["diff"]:
+    if args["diff"] and not args["range"]:
         gen_diff(args["ymd"])
 
-    if args["global"]:
+    if args["global"] and not args["range"]:
         upd_global_with_day(args["ymd"])
 
     if args["range"]:

@@ -230,7 +230,7 @@ class git:
                 f"stderr: {ret.stderr.decode()}"
             )
         logging.debug(
-            f"Git pull successed"
+            f"Git pull succeeded"
         )
 
     @staticmethod

@@ -143,7 +143,7 @@ def parse_args():
         "--range",
         help="Generate a range of reports from --start to --end inclusive. "
         "Use with --generate instead of --ymd. "
-        "Reuires --start and --end.",
+        "Reqires --start and --end.",
         default=False,
         action="store_true",
         required=False,

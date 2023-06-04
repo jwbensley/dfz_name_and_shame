@@ -113,6 +113,8 @@ class report:
             if body:
                 text = ""
                 for mrt_e in mrt_s.most_bogon_asns:
+                    if not mrt_e.as_path:
+                        continue
                     asn = mrt_e.as_path[0]
                     if asn not in whois_cache:
                         whois_cache[asn] = whois.as_lookup(int(asn))
