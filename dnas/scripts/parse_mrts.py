@@ -239,14 +239,21 @@ def parse_file(
     mrt_a = mrt_archives()
     logging.info(f"Processing {filename}...")
 
-    fs = os.path.getsize(filename) / 1000 / 1000
+    fs = os.path.getsize(filename)
     if fs > cfg.MAX_MRT_SIZE:
         logging.warning(
-            f"File size of {filename} ({fs:0.4}MBs) is greater than max "
-            f"size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
+            f"File size of {filename} ({(fs/ 1000 / 1000):0.4}MBs) is greater "
+            f"than max size ({cfg.MAX_MRT_SIZE}MB), forcing single process "
             "parsing"
         )
         multi = False
+    elif fs < 64:
+        logging.error(
+            f"Skipping file {filename}. File size ({fs} bytes) is less "
+            f"than the minimum required size ({cfg.MIN_MRT_SIZE}). This is "
+            f"assumed to be an invalid file."
+        )
+        return mrt_stats()
 
     if multi:
         no_cpu =  multiprocessing.cpu_count()
