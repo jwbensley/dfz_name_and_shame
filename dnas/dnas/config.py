@@ -49,10 +49,16 @@ class config:
 
     """
     Max MRT file size to parse using multiple Python processes, files larger
-    than this value (in MBs) will be parsed without using multiprocessing
+    than this value (in bytes) will be parsed without using multiprocessing
     (a single Python process / on a single core).
     """
-    MAX_MRT_SIZE = 60
+    MAX_MRT_SIZE = 60000000
+
+    """
+    Min MRT file size to parse. Files less than this size (in bytes) are
+    considered invalid. The minimum MRT header size is 64 bytes:
+    """
+    MIN_MRT_SIZE = 64
 
     ################
     # GIT SETTINGS #
