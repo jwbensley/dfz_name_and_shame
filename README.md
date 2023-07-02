@@ -54,16 +54,19 @@ git clone git@github.com:jwbensley/dfz_name_and_shame.git /opt/dnas
 # Install virtualenv:
 sudo apt-get install -y virtualenv
 
-# Install docker-compose and build containers
-cd /opt/dnas/ && virtualenv venv && source venv/bin/activate && pip3 install docker-compose
+# Install docker-compose in a venv and build containers
+cd /opt/dnas/ && virtualenv venv && source venv/bin/activate
+pip3 install --upgrade pip
+pip3 install docker-compose
 cd docker/
 docker-compose build
 
-# Create the base directory: /dnas/dnas/config.py#L13
-sudo mkdir /opt/dnas_data/ && sudo chmod a+rwx /opt/dnas_data/
+# Create the data directory
+BASE_DIR=$(grep "BASE_DIR =" /opt/dnas/dnas/dnas/config.py | awk -F "\"" '{print $2}')
+sudo mkdir -p "${BASE_DIR}" && sudo chmod a+rwx "${BASE_DIR}"
 ```
 
-After the steps above DNAS is s ready to run inside the containers. See documentation under [docker/](docker/) for more details.  
+After the steps above, DNAS is ready to run inside the containers. See documentation under [docker/](docker/) for more details.
 
 To run DNAS "natively", not in a container, see documentation under [dnas/](dnas/).  
 
