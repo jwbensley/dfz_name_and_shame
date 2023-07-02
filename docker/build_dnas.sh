@@ -8,4 +8,3 @@ cd docker/
 docker-compose build
 docker images -f dangling=true
 docker image prune -f
-

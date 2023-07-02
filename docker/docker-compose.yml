@@ -20,6 +20,8 @@ services:
     container_name: dnas_getter
     image: dnas:latest
     build:
+      args:
+        - PYPY=pypy3.10-v7.3.12-linux64
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
@@ -29,8 +31,7 @@ services:
     tty: true
     depends_on:
       - dnas_redis
-    entrypoint:
-      - /opt/pypy3.8-v7.3.7-linux64/bin/pypy3
+    command:
       - /opt/dnas/scripts/get_mrts.py
       - --continuous
       - --update
@@ -40,6 +41,8 @@ services:
     container_name: dnas_parser
     image: dnas:latest
     build:
+      args:
+        - PYPY=pypy3.10-v7.3.12-linux64
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
@@ -49,8 +52,7 @@ services:
     tty: true
     depends_on:
       - dnas_redis
-    entrypoint:
-      - /opt/pypy3.8-v7.3.7-linux64/bin/pypy3
+    command:
       - /opt/dnas/scripts/parse_mrts.py
       - --continuous
       - --update
@@ -61,6 +63,8 @@ services:
     container_name: dnas_stats
     image: dnas:latest
     build:
+      args:
+        - PYPY=pypy3.10-v7.3.12-linux64
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:

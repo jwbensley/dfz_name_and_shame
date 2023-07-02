@@ -1,8 +1,9 @@
-ARG ARCH="x64"
-ARG OS="linux"
 FROM ubuntu:22.04
 LABEL description="DNAS"
-ARG PYPY="pypy3.10-v7.3.12rc2-linux64"
+# FROM must come before ARG, otherwise ARGs apply to FROM and nothing after
+ARG ARCH="x64"
+ARG OS="linux"
+ARG PYPY
 
 # Keep this as one giant run command to reduce the number of layers in the image.
 # Remote apt cache, pip cache, pypy tar ball etc. to also reduce the image size.
@@ -10,15 +11,13 @@ RUN apt-get update
 RUN apt-get -y --no-install-recommends install \
 ca-certificates wget bzip2 gzip unzip git less whois netbase vim ssh cron && \
 apt-get clean && \
-rm -rf /var/lib/apt/lists/* && \
-cd /opt && \
-wget https://downloads.python.org/pypy/$PYPY.tar.bz2 && \
-tar -xf $PYPY.tar.bz2 && \
-rm $PYPY.tar.bz2
-#wget https://downloads.python.org/pypy/pypy3.8-v7.3.7-linux64.tar.bz2 && \
-#tar -xf pypy3.8-v7.3.7-linux64.tar.bz2 && \
-#rm pypy3.8-v7.3.7-linux64.tar.bz2
-
+rm -rf /var/lib/apt/lists/*
+RUN cd /opt && \
+wget "https://downloads.python.org/pypy/$PYPY.tar.bz2" && \
+tar -xf "$PYPY.tar.bz2" && \
+rm "$PYPY.tar.bz2" && \
+ln -s "/opt/$PYPY/bin/pypy3.10" /opt/pypy && \
+/opt/pypy -V
 
 # This is needed to clone the reports repo as the dnasbot user:
 RUN mkdir -p /root/.ssh && \
@@ -48,3 +47,7 @@ RUN chmod 0755 /opt/dnas/docker/cron_script.sh && \
 chmod 0644 /opt/dnas/docker/cronfile && \
 crontab /opt/dnas/docker/cronfile
 
+# "Whatever is specified in the command in docker-compose.yml should get
+# appended to the entrypoint defined in the Dockerfile, provided entrypoint
+# is defined in exec form in the Dockerfile:
+ENTRYPOINT ["/opt/pypy"]
