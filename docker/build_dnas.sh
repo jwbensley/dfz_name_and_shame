@@ -3,6 +3,7 @@
 set -e
 
 cd /opt/dnas/
+git checkout main
 git pull
 cd docker/
 docker-compose build
