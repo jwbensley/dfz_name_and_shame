@@ -1,0 +1,2 @@
+# Weekly Redis backup
+0 12 * * 1 bensley /opt/dnas/redis/backup_redis.sh > /tmp/redis_backup.log 2>&1
