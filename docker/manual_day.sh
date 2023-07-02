@@ -13,32 +13,17 @@ set -o pipefail
 # Error if any command returns a non-zero exist status
 set -e
 
-#base_dir="/opt/dnas_data/"
-#pypy="/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3"
-pypy="/opt/pypy3.8-v7.3.7-linux64/bin/pypy3"
-
-docker-compose run --rm --name tmp_getter --entrypoint \
-"${pypy}" \
-dnas_getter -- \
+docker-compose run --rm --name tmp_getter dnas_getter -- \
 /opt/dnas/scripts/get_mrts.py --backfill --update --enabled -ymd "$1"
 
-docker-compose run --rm --name tmp_parser --entrypoint \
-"${pypy}" \
-dnas_parser -- \
+docker-compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "$1"
 
-docker-compose run --rm --name tmp_stats --entrypoint \
-"${pypy}" \
-dnas_stats -- \
+docker-compose run --rm --name tmp_stats dnas_stats -- \
 /opt/dnas/scripts/stats.py --update --enabled --daily --ymd "$1"
 
-docker-compose run --rm --name tmp_report --entrypoint \
-"${pypy}" \
-dnas_stats -- \
+docker-compose run --rm --name tmp_report dnas_stats -- \
 /opt/dnas/scripts/git_reports.py --generate --publish --ymd "$1"
 
-#docker-compose run --rm --name tmp_tweet --entrypoint \
-#"${pypy}" \
-#dnas_stats -- \
+#docker-compose run --rm --name tmp_tweet dnas_stats -- \
 #/opt/dnas/scripts/tweet.py --generate --tweet --ymd "$1"
-
