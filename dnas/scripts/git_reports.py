@@ -30,6 +30,7 @@ def check_git():
     if not git.git_exists():
         git.clone()
     else:
+        git.clear()
         git.pull()
 
 def generate(ymd: str = None):

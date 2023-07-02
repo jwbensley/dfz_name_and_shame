@@ -76,6 +76,52 @@ class test_git(unittest.TestCase):
         os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
         self.g.clear()
 
+    def test_clean(self):
+        """
+        Add an untracked file to the repo and test it is removed
+        """
+
+        # Create the test file
+        try:
+            os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
+        except FileNotFoundError:
+            pass
+        p = pathlib.Path(os.path.join(self.cfg.GIT_BASE, self.test_filename))
+        p.touch()
+
+        ret = subprocess.run(
+            ["git", "status"],
+            cwd=self.cfg.GIT_BASE,
+            capture_output=True,
+        )
+
+        if ret.returncode != 0:
+            raise ChildProcessError(
+                f"Couldn't check git index status:\n"
+                f"args: {ret.args}\n"
+                f"stdout: {ret.stdout.decode()}\n"
+                f"stderr: {ret.stderr.decode()}"
+            )
+        
+        assert self.test_filename in ret.stdout.decode()
+        self.g.clean()
+
+        ret = subprocess.run(
+            ["git", "status"],
+            cwd=self.cfg.GIT_BASE,
+            capture_output=True,
+        )
+
+        if ret.returncode != 0:
+            raise ChildProcessError(
+                f"Couldn't check git index status:\n"
+                f"args: {ret.args}\n"
+                f"stdout: {ret.stdout.decode()}\n"
+                f"stderr: {ret.stderr.decode()}"
+            )
+
+        assert self.test_filename not in ret.stdout.decode()
+
     def test_clear(self):
         """
         Stage, then de-stage a test file, and then check the git stage is empty
@@ -230,7 +276,6 @@ class test_git(unittest.TestCase):
         except:
             asserted = True
         self.assertEqual(asserted, False)
-
 
     def test_push(self):
         # With no new commits to push, nothing should happen

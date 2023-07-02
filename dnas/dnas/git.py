@@ -42,6 +42,25 @@ class git:
         logging.debug(f"Added {filename} to git index")
 
     @staticmethod
+    def clean():
+        """
+        Remove any untracked files
+        """
+        ret = subprocess.run(
+            ["git", "clean", "-f"],
+            cwd=cfg.GIT_BASE,
+            capture_output=True,
+        )
+        if ret.returncode != 0:
+            raise ChildProcessError(
+                f"Couldn't git clear -f:\n"
+                f"args: {ret.args}\n"
+                f"stdout: {ret.stdout.decode()}\n"
+                f"stderr: {ret.stderr.decode()}"
+            )
+        logging.debug(f"Removed untracked fit files in {cfg.GIT_BASE}")
+
+    @staticmethod
     def clear():
         """
         Remove all files currently in the git index for commit.
