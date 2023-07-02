@@ -1,8 +1,6 @@
 # DNAS Docker Details
 
-## Automated Build and Run
-
-### In Pipeline Mode
+## Building
 
 To build the Redis DB container and DNAS containers use the following:
 
@@ -13,7 +11,28 @@ cd docker/
 docker-compose build
 ```
 
-Use docker-compose to start the Redis container and the continuous-MRT-getter and continuous-MRT-parser containers:
+One can run `docker-compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git. To pull the latest code from the Git repo and rebuild the DNAS container run the build script: `/opt/dnas/docker/build_dnas.sh`
+
+### Build Issues
+
+If you see output like the following:
+```shell
+docker-compose build
+...
+Ign:1 http://mirror.mythic-beasts.com/ubuntu focal InRelease
+Ign:2 http://mirror.mythic-beasts.com/ubuntu focal-updates InRelease
+Ign:3 http://mirror.mythic-beasts.com/ubuntu focal-backports InRelease
+Ign:4 http://mirror.mythic-beasts.com/ubuntu focal-security InRelease
+Ign:5 http://mirror.mythic-beasts.com/mythic mythic InRelease
+```
+
+Update docker on the host machine (`sudo apt-get update && sudo apt-get --no-install-recommends upgrade`)
+
+## Running
+
+### In Pipeline Mode
+
+Use docker-compose to start the Redis container, and the MRT-getter and MRT-parser containers in continuous mode:
 
 ```bash
 cd /opt/dnas/
@@ -37,7 +56,6 @@ To stop and remove an individual container use: `docker-compose stop dnas_parser
 To run BASH on a container use: `docker-compose exec dnas_parser /bin/bash`
 &nbsp;
 
-
 #### Redis
 
 Redis uses authentication so you won't be able to access the redis CLI without authenticating first. With the container running in the background, start an interactive redis-cli process on the same container (`docker-compose exec dnas_redis redis-cli`). Use the auth command in the Redis CLI `AUTH xxxxx` (password from redis.conf file) and test with command `PING`.  
@@ -46,8 +64,6 @@ Redis uses authentication so you won't be able to access the redis CLI without a
 #### Continuous MRT Getter
 
 The local time configuration file from the host is shared into the container because the host is not in UTC0/GMT time, but most MRT dumps use UTC0 timestamps.
-
-#### Continuous MRT Parser
 
 ### In Retrospective Mode
 
@@ -89,12 +105,7 @@ docker-compose run --rm --name tmp_report dnas_stats -- \
 
 The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to run DNAS in a retrospective mode where it generates stats for the previous day in a single run, on a daily basis, instead of continuous mode were it builds up the stats throughout the day. Note that the Redis container must be already running.
 
-## Manual Build and Run
-
-One can run `docker-compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git. To pull the latest code from the Git repo and rebuild the DNAS container run the build script: `/opt/dnas/docker/build_dnas.sh`
-
 One can use the script `manual_day.sh` to run the containers in retrospective mode for a specific day: `/opt/dnas/docker/manual_day.sh 20220228`.
 
 To run the contains in retrospective mode for yesterday one can use `/opt/dnas/docker/manual_day.sh $(date --date="1 day ago" +"%Y%m%d")`
 &nbsp;
-
