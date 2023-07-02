@@ -1,2 +1,3 @@
-# Weekly Redis backup
-0 12 * * 1 bensley /opt/dnas/redis/backup_redis.sh > /tmp/redis_backup.log 2>&1
+# Weekly Redis backup - Daily stats report is at 11am
+0 7 * * 1 bensley /opt/dnas/redis/backup_redis.sh > /tmp/backup_redis.log 2>&1
+
