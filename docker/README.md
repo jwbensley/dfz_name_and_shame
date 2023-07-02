@@ -20,20 +20,21 @@ cd /opt/dnas/
 source venv/bin/activate
 cd docker/
 docker-compose up -d
+docker-compose logs -f
 ```
 
 To shut the entire pipeline down simply run: `docker-compose down`
 
 On Ubuntu the `ufw` may block connections between containers.  
 
-* This will allow REDIS access from the other contains: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further)
-* This will allow access to BIRD: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 8000`
+* This will allow REDIS access from the other contains: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further. Also, is it even needed now that DNAS is migrated from `docker` to `docker-compose` ?)
+* This will allow access to BIRD: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 8000` (TODO: this should be locked down further. Also, is it even needed now that DNAS is migrated from `docker` to `docker-compose` ?)
 
-To start an individual container from the pipeline use: `docker-compose up -d dnas_redis`
+To start an individual container from the pipeline use: `docker-compose up -d dnas_parser`
 
-To stop and remove an individual container use: `docker-compose stop dnas_redis && docker-compose rm dnas_redis`
+To stop and remove an individual container use: `docker-compose stop dnas_parser && docker-compose rm dnas_parser`
 
-To run BASH on a container use: `docker-compose exec dnas_redis /bin/bash`  
+To run BASH on a container use: `docker-compose exec dnas_parser /bin/bash`
 &nbsp;
 
 
@@ -50,32 +51,57 @@ The local time configuration file from the host is shared into the container bec
 
 ### In Retrospective Mode
 
-Run an extra parser container ad-hoc:  
+PyPy Path:
 ```shell
-docker run -it --rm \
--v /etc/localtime:/etc/localtime \
--v /opt/dnas_data/:/opt/dnas_data/ \
---name tmp_parser \
-dnas:latest \
-/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --remove --debug --help
+pypy="/opt/pypy3.8-v7.3.7-linux64/bin/pypy3"
 ```
 
-Parse a specific range:  
+Pull any missing MRTs for a specific day:
 ```shell
-docker run -it --rm \
--v /etc/localtime:/etc/localtime \
--v /opt/dnas_data/:/opt/dnas_data/ \
---name tmp_parser \
-dnas:latest \
-/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 /opt/dnas/scripts/parse_mrts.py --update --remove --debug --help
+docker-compose run --rm --name tmp_getter --entrypoint \
+"${pypy}" \
+dnas_getter -- \
+/opt/dnas/scripts/get_mrts.py --backfill --update --enabled --range --ymd "20210101"
 ```
 
-Generate a report for a specific date/range:  
+Run an the parser for a specific day:
 ```shell
 docker-compose run --rm --name tmp_parser --entrypoint \
-/opt/pypy3.8-v7.3.7-linux64/bin/pypy3 \
+"${pypy}" \
+dnas_parser -- \
+/opt/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "20210101"
+```
+
+Run the parser for a specfic file:
+```shell
+docker-compose run --rm --name tmp_parser --entrypoint \
+"${pypy}" \
+dnas_parser -- \
+/opt/dnas/scripts/parse_mrts.py --debug --remove --single /opt/dnas_data/downloads/SYDNEY/updates.20230424.0615.bz2
+```
+
+Run the parser for a specific time range (this can be less than a day or longer than a day):
+```shell
+docker-compose run --rm --name tmp_parser --entrypoint \
+"${pypy}" \
+dnas_parser -- \
+/opt/dnas/scripts/parse_mrts.py --update --remove --enabled --start "20210101.0000" --end "20210101.2359"
+```
+
+Generate stats in the DB for a specific day:
+```shell
+docker-compose run --rm --name tmp_stats --entrypoint \
+"${pypy}" \
 dnas_stats -- \
-/opt/dnas/scripts/git_reports.py --help
+/opt/dnas/scripts/stats.py --update --enabled --daily --ymd "$1"
+```
+
+Generate and push a report to git for a specific day:
+```shell
+docker-compose run --rm --name tmp_report --entrypoint \
+"${pypy}" \
+dnas_stats -- \
+/opt/dnas/scripts/git_reports.py --generate --publish --ymd "$1"
 ```
 
 The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to run DNAS in a retrospective mode where it generates stats for the previous day in a single run, on a daily basis, instead of continuous mode were it builds up the stats throughout the day. Note that the Redis container must be already running.
@@ -84,10 +110,10 @@ The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to r
 
 One can run `docker-compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git. To pull the latest code from the Git repo and rebuild the DNAS container run the build script: `/opt/dnas/docker/build_dnas.sh`
 
-One can use the script `day.sh` to run the containers in retrospective mode for a specific day: `/opt/dnas/docker/day.sh 20220228` or `/opt/dnas/docker/day.sh $(date --date="1 day ago" +"%Y%m%d")`  
+One can use the script `manual_day.sh` to run the containers in retrospective mode for a specific day: `/opt/dnas/docker/manual_day.sh 20220228`.
+
+To run the contains in retrospective mode for yesterday one can use `/opt/dnas/docker/manual_day.sh $(date --date="1 day ago" +"%Y%m%d")`
 &nbsp;
 
 One can use the script `yesterday.sh` to run the containers in retrospective mode for yesterday: `/opt/dnas/docker/yesterday.sh`  
 &nbsp;
-
-Note that when manually running containers, they join the docker network "docker0", whereas when running containers user docker-compose they join the network "docker_default". Containers manually started using `docker run ...` which join "docker0" might not be able to communicate with containers started using `docker-compuse -d up ...`. This seems to be an UFW issue on Ubuntu. Also when starting containers manuall with `docker run ...` which expose ports, the folling is needed to allow other containers in "docker0" to access those exposed ports: `sudo ufw allow in on docker0 proto tcp from 172.16.0.0/12`.
