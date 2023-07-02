@@ -17,14 +17,14 @@ set -e
 #pypy="/opt/pypy3.8-v7.3.7-aarch64/bin/pypy3"
 pypy="/opt/pypy3.8-v7.3.7-linux64/bin/pypy3"
 
-docker-compose run --rm --name tmp_geter --entrypoint \
+docker-compose run --rm --name tmp_getter --entrypoint \
 "${pypy}" \
-dnas_stats -- \
-/opt/dnas/scripts/get_mrts.py --backfill --update --enabled --range --start "$1".0000 --end "$1".2359
+dnas_getter -- \
+/opt/dnas/scripts/get_mrts.py --backfill --update --enabled -ymd "$1"
 
 docker-compose run --rm --name tmp_parser --entrypoint \
 "${pypy}" \
-dnas_stats -- \
+dnas_parser -- \
 /opt/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "$1"
 
 docker-compose run --rm --name tmp_stats --entrypoint \

@@ -4,6 +4,7 @@ import logging
 import mrtparse # type: ignore
 import operator
 import os
+import traceback
 from typing import Dict, List, Set
 
 from dnas.config import config as cfg
@@ -106,8 +107,8 @@ class mrt_parser:
             )
 
         """
-        Most ASNs won't be a bogon, and we'll see the same ASNs again and again.
-        Cache ASNs which aren't a bogon for a faster response time.
+        We will see the same data again and again, so cache "seen" data to
+        speed up parsing
         """
         non_bogon_asns: Dict[str, None] = {}
         bogon_origin_asns: List[mrt_entry] = []
@@ -148,176 +149,158 @@ class mrt_parser:
         mrt_a = mrt_archives()
         strip_comm = mrt_a.get_arch_option(orig_filename, "STRIP_COMM")
 
-        for idx, mrt_e in enumerate(mrt_entries):
-
-            """
-            Some RIPE UPDATE MRTs contain the BGP state change events, whereas
-            Route-Views don't. Yay!
-            """
-            s_type = next(iter(mrt_e.data["subtype"]))
-            if (s_type != 1 and # 1 BGP4MP_MESSAGE
-                s_type != 4): # 4 BGP4MP_MESSAGE_AS4
-                continue
-
-            """
-            I'm not sure why but some MRT files contain a BGP message with no
-            actual UPDATE, but they are an UPDATE, i.e. not a KEEPALIVE. Yay!
-            """
-            if "bgp_message" not in mrt_e.data:
-                continue
-
-            """
-            Some RIPE UPDATE MRTs contain all the BGP messages types
-            (OPEN, KEEPALIVE, etc), whereas Route-Views don't. Yay!
-            """
-            if next(iter(mrt_e.data["bgp_message"]["type"])) != 2: # UPDATE
-                continue
-            mrt_s.total_upd += 1
-
-            ts = mrt_parser.posix_to_ts(
-                next(iter(mrt_e.data["timestamp"].items()))[0]
-            ) # E.g., 1486801684
-
-            bogon_prefixes: List[str] = []
-            comm_set: List[str] = []
-            invalid_len: List[str] = []
-            prefixes: List[str] = []
-            unknown_attrs: Set[int] = set()
-
-            peer_asn = mrt_e.data["peer_as"]
-            if peer_asn not in upd_peer_asn:
-                upd_peer_asn[peer_asn] = {
-                    "advt": 0,
-                    "withdraws": 0,
-                }
-
-            """
-            Some RIPE MRTs don't always contain "withdraw_routes" key, whereas
-            all Route-Views MRTs do. The key may be present, but empty. Yay!
-            These are IPv4 withdraws, IPv6 withdraws are in attrib MP_UNREACH_NLRI
-            """
-            if withdrawn_routes := mrt_e.data["bgp_message"].get("withdrawn_routes"):
-                upd_peer_asn[peer_asn]["withdraws"] += 1
-                mrt_s.total_withd += 1
-
-                for withdrawn_route in withdrawn_routes:
-                    prefix = withdrawn_route["prefix"] + "/" + str(withdrawn_route["length"])
-                    if prefix not in upd_prefix:
-                        upd_prefix[prefix] = {
-                            "advt": 0,
-                            "withdraws": 1,
-                        }
-                        origin_asns_prefix[prefix] = set()
-                    else:
-                        upd_prefix[prefix]["withdraws"] += 1
-
-            if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
-                upd_peer_asn[peer_asn]["advt"] += 1
-                mrt_s.total_advt += 1
-
-                for attr in path_attributes:
-                    attr_t = next(iter(attr["type"]))
-
-                    # AS_PATH
-                    if attr_t == 2:
-                        as_path = attr["value"][0]["value"]
-                        origin_asn = as_path[-1]
-                        if origin_asn not in advt_per_origin_asn:
-                            advt_per_origin_asn[origin_asn] = 1
-                        else:
-                            advt_per_origin_asn[origin_asn] += 1
-
-                    # NEXT_HOP
-                    elif attr_t == 3:
-                        next_hop = attr["value"]
-
-                    # COMMUNITY or LARGE_COMMUNITY
-                    elif (attr_t == 8 or attr_t == 32):
-                        if strip_comm:
-                            comm_set.extend(
-                                [c for c in attr["value"] if strip_comm not in c]
-                            )
-                        else:
-                            comm_set.extend(attr["value"])
-
-                    # MP_REACH_NLRI
-                    elif attr_t == 14:
-                        """
-                        IPV6_UNICAST:
-                        if 2 in attr["value"]["afi"] and 
-                        1 in attr["value"]["safi"]
-                        ^ This is always the case.
-                        """
-                        next_hop = attr["value"]["next_hop"]
-                        for nlri in attr["value"]["nlri"]:
-                            prefixes.append(
-                                nlri["prefix"] + "/" + str(nlri["length"])
-                            )
-
-                    # MP_UNREACH_NLRI
-                    elif attr_t == 15:
-                        """
-                        IPV6_UNICAST:
-                        if 2 in attr["value"]["afi"] and 
-                        1 in attr["value"]["safi"]
-                        ^ This is always the case.
-                        """
-                        if withdrawn_routes := attr["value"].get("withdrawn_routes"):
-                            upd_peer_asn[peer_asn]["withdraws"] += 1
-                            mrt_s.total_withd += 1
-
-                        for withdrawn_route in withdrawn_routes:
-                            prefix = (
-                                withdrawn_route["prefix"] + "/"
-                                + str(withdrawn_route["length"])
-                            )
-                            if prefix not in upd_prefix:
-                                upd_prefix[prefix] = {
-                                    "advt": 0,
-                                    "withdraws": 1,
-                                }
-                                origin_asns_prefix[prefix] = set()
-                            else:
-                                upd_prefix[prefix]["withdraws"] += 1
-
-                    # Unknown attribute type
-                    elif bogon_attr.is_unknown(attr_t):
-                        unknown_attrs.add(attr_t)
+        # Sometimes the MRT files contain corrupt BGP UPDATES
+        try:
+            for idx, mrt_e in enumerate(mrt_entries):
 
                 """
-                Note that IPv6 prefix advertisements will be encoded as an NLRI 
-                NLRI attribute of a MP_REACH_NLRI update as above...
+                Some RIPE UPDATE MRTs contain the BGP state change events,
+                whereas Route-Views don't.
+                Yay!
                 """
-                for prefix in prefixes:
-                    if bogon_ip.is_v6_bogon(prefix):
-                        bogon_prefixes.append(prefix)
-
-                    if prefix not in upd_prefix:
-                        upd_prefix[prefix] = {
-                            "advt": 1,
-                            "withdraws": 0,
-                        }
-                        origin_asns_prefix[prefix] = set([origin_asn])
-                    else:
-                        upd_prefix[prefix]["advt"] += 1
-                        origin_asns_prefix[prefix].add(origin_asn)
-
-                    if (int(prefix.split("/")[1]) > 56 or
-                        int(prefix.split("/")[1]) < 16):
-                        invalid_len.append(prefix)
+                s_type = next(iter(mrt_e.data["subtype"]))
+                if (s_type != 1 and # 1 BGP4MP_MESSAGE
+                    s_type != 4): # 4 BGP4MP_MESSAGE_AS4
+                    continue
 
                 """
-                IPv4 prefix advertisements are encoded in the NLRI field of
-                a BGP UPDATE message, not as a multi-protocol attribute.
+                I'm not sure why but some MRT files contain a BGP message with
+                no actual UPDATE, but they are an UPDATE, i.e. not a KEEPALIVE.
+                 Yay!
                 """
-                if len(mrt_e.data["bgp_message"]["nlri"]) > 0:
-                    for nlri in mrt_e.data["bgp_message"]["nlri"]:
+                if "bgp_message" not in mrt_e.data:
+                    continue
+
+                """
+                Some RIPE UPDATE MRTs contain all the BGP messages types
+                (OPEN, KEEPALIVE, etc), whereas Route-Views don't.
+                Yay!
+                """
+                if next(iter(mrt_e.data["bgp_message"]["type"])) != 2: # UPDATE
+                    continue
+                mrt_s.total_upd += 1
+
+                ts = mrt_parser.posix_to_ts(
+                    next(iter(mrt_e.data["timestamp"].items()))[0]
+                ) # E.g., 1486801684
+
+                bogon_prefixes: List[str] = []
+                comm_set: List[str] = []
+                invalid_len: List[str] = []
+                prefixes: List[str] = []
+                unknown_attrs: Set[int] = set()
+
+                peer_asn = mrt_e.data["peer_as"]
+                if peer_asn not in upd_peer_asn:
+                    upd_peer_asn[peer_asn] = {
+                        "advt": 0,
+                        "withdraws": 0,
+                    }
+
+                """
+                Some RIPE MRTs don't always contain "withdraw_routes" key,
+                whereas all Route-Views MRTs do.
+                The key may be present, but empty. Yay!
+                These are IPv4 withdraws, IPv6 withdraws are in attrib
+                MP_UNREACH_NLRI
+                """
+                if withdrawn_routes := mrt_e.data["bgp_message"].get("withdrawn_routes"):
+                    upd_peer_asn[peer_asn]["withdraws"] += 1
+                    mrt_s.total_withd += 1
+
+                    for withdrawn_route in withdrawn_routes:
                         prefix = (
-                            nlri["prefix"] + "/" + str(nlri["length"])
+                            withdrawn_route["prefix"] + "/" +
+                            str(withdrawn_route["length"])
                         )
-                        prefixes.append(prefix)
+                        if prefix not in upd_prefix:
+                            upd_prefix[prefix] = {
+                                "advt": 0,
+                                "withdraws": 1,
+                            }
+                            origin_asns_prefix[prefix] = set()
+                        else:
+                            upd_prefix[prefix]["withdraws"] += 1
 
-                        if bogon_ip.is_v4_bogon(prefix):
+                if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
+                    upd_peer_asn[peer_asn]["advt"] += 1
+                    mrt_s.total_advt += 1
+
+                    for attr in path_attributes:
+                        attr_t = next(iter(attr["type"]))
+
+                        # AS_PATH
+                        if attr_t == 2:
+                            as_path = attr["value"][0]["value"]
+                            origin_asn = as_path[-1]
+                            if origin_asn not in advt_per_origin_asn:
+                                advt_per_origin_asn[origin_asn] = 1
+                            else:
+                                advt_per_origin_asn[origin_asn] += 1
+
+                        # NEXT_HOP
+                        elif attr_t == 3:
+                            next_hop = attr["value"]
+
+                        # COMMUNITY or LARGE_COMMUNITY
+                        elif (attr_t == 8 or attr_t == 32):
+                            if strip_comm:
+                                comm_set.extend(
+                                    [c for c in attr["value"] if strip_comm not in c]
+                                )
+                            else:
+                                comm_set.extend(attr["value"])
+
+                        # MP_REACH_NLRI
+                        elif attr_t == 14:
+                            """
+                            IPV6_UNICAST:
+                            if 2 in attr["value"]["afi"] and 
+                            1 in attr["value"]["safi"]
+                            ^ This is always the case.
+                            """
+                            next_hop = attr["value"]["next_hop"]
+                            for nlri in attr["value"]["nlri"]:
+                                prefixes.append(
+                                    nlri["prefix"] + "/" + str(nlri["length"])
+                                )
+
+                        # MP_UNREACH_NLRI
+                        elif attr_t == 15:
+                            """
+                            IPV6_UNICAST:
+                            if 2 in attr["value"]["afi"] and
+                            1 in attr["value"]["safi"]
+                            ^ This is always the case.
+                            """
+                            if withdrawn_routes := attr["value"].get("withdrawn_routes"):
+                                upd_peer_asn[peer_asn]["withdraws"] += 1
+                                mrt_s.total_withd += 1
+
+                            for withdrawn_route in withdrawn_routes:
+                                prefix = (
+                                    withdrawn_route["prefix"] + "/"
+                                    + str(withdrawn_route["length"])
+                                )
+                                if prefix not in upd_prefix:
+                                    upd_prefix[prefix] = {
+                                        "advt": 0,
+                                        "withdraws": 1,
+                                    }
+                                    origin_asns_prefix[prefix] = set()
+                                else:
+                                    upd_prefix[prefix]["withdraws"] += 1
+
+                        # Unknown attribute type
+                        elif bogon_attr.is_unknown(attr_t):
+                            unknown_attrs.add(attr_t)
+
+                    """
+                    Note that IPv6 prefix advertisements will be encoded as an
+                    NLRI attribute of a MP_REACH_NLRI update as above.
+                    """
+                    for prefix in prefixes:
+                        if bogon_ip.is_v6_bogon(prefix):
                             bogon_prefixes.append(prefix)
 
                         if prefix not in upd_prefix:
@@ -330,117 +313,112 @@ class mrt_parser:
                             upd_prefix[prefix]["advt"] += 1
                             origin_asns_prefix[prefix].add(origin_asn)
 
-                        if (int(prefix.split("/")[1]) > 24 or
-                            int(prefix.split("/")[1]) < 8):
+                        if (int(prefix.split("/")[1]) > 56 or
+                            int(prefix.split("/")[1]) < 16):
                             invalid_len.append(prefix)
 
-            # Nothing further to do if this UPDATE was a withdraw
-            if not prefixes:
-                continue
-
-            """
-            Keep unique prefixes only, with additional origin ASNs for the same
-            prefix
-            """
-            if origin_asn not in non_bogon_asns:
-                if bogon_asn.is_bogon(int(origin_asn)):
-                    for prefix in prefixes:
-                        for mrt_e in bogon_origin_asns:
-                            if prefix == mrt_e.prefix:
-                                if origin_asn not in mrt_e.origin_asns:
-                                    mrt_e.origin_asns.add(origin_asn)
-                                break
-                        else:
-                            bogon_origin_asns.append(
-                                mrt_entry(
-                                    as_path=as_path,
-                                    comm_set=comm_set,
-                                    filename=orig_filename,
-                                    next_hop=next_hop,
-                                    origin_asns=set([origin_asn]),
-                                    peer_asn=peer_asn,
-                                    prefix=prefix,
-                                    timestamp=ts,
-                                    unknown_attrs=unknown_attrs.copy(),
-                                )
+                    """
+                    IPv4 prefix advertisements are encoded in the NLRI field of
+                    a BGP UPDATE message, not as a multi-protocol attribute.
+                    """
+                    if len(mrt_e.data["bgp_message"]["nlri"]) > 0:
+                        for nlri in mrt_e.data["bgp_message"]["nlri"]:
+                            prefix = (
+                                nlri["prefix"] + "/" + str(nlri["length"])
                             )
-                else:
-                    non_bogon_asns[origin_asn] = None
+                            prefixes.append(prefix)
 
-            """
-            When the origin ASN is a bogon, find the first non-bogon ASN
-            """
-            if origin_asn not in non_bogon_asns:
-                i = -1
-                while bogon_asn.is_bogon(int(as_path[i])):
-                    i -= 1
-                    if i+len(as_path) < 0:
-                        break
-                else:
-                    if as_path[i] not in most_bogon_asns:
-                        most_bogon_asns[as_path[i]] = set([origin_asn])
+                            if bogon_ip.is_v4_bogon(prefix):
+                                bogon_prefixes.append(prefix)
+
+                            if prefix not in upd_prefix:
+                                upd_prefix[prefix] = {
+                                    "advt": 1,
+                                    "withdraws": 0,
+                                }
+                                origin_asns_prefix[prefix] = set([origin_asn])
+                            else:
+                                upd_prefix[prefix]["advt"] += 1
+                                origin_asns_prefix[prefix].add(origin_asn)
+
+                            if (int(prefix.split("/")[1]) > 24 or
+                                int(prefix.split("/")[1]) < 8):
+                                invalid_len.append(prefix)
+
+                # Nothing further to do if this UPDATE was a withdraw
+                if not prefixes:
+                    continue
+
+                """
+                Keep unique prefixes only, with additional origin ASNs for the
+                same prefix
+                """
+                if origin_asn not in non_bogon_asns:
+                    if bogon_asn.is_bogon(int(origin_asn)):
+                        for prefix in prefixes:
+                            for mrt_e in bogon_origin_asns:
+                                if prefix == mrt_e.prefix:
+                                    if origin_asn not in mrt_e.origin_asns:
+                                        mrt_e.origin_asns.add(origin_asn)
+                                    break
+                            else:
+                                bogon_origin_asns.append(
+                                    mrt_entry(
+                                        as_path=as_path,
+                                        comm_set=comm_set,
+                                        filename=orig_filename,
+                                        next_hop=next_hop,
+                                        origin_asns=set([origin_asn]),
+                                        peer_asn=peer_asn,
+                                        prefix=prefix,
+                                        timestamp=ts,
+                                        unknown_attrs=unknown_attrs.copy(),
+                                    )
+                                )
                     else:
-                        most_bogon_asns[as_path[i]].add(origin_asn)
+                        non_bogon_asns[origin_asn] = None
 
-            """
-            Keep unique prefixes only, with additional origin ASNs for the same
-            prefix being appended to existing matching prefix
-            """
-            for prefix in bogon_prefixes:
-                for mrt_e in bogon_prefix_entries:
-                    if prefix == mrt_e.prefix:
-                        if origin_asn not in mrt_e.origin_asns:
-                            mrt_e.origin_asns.add(origin_asn)
-                        break
-                else:
-                    bogon_prefix_entries.append(
-                        mrt_entry(
-                            as_path=as_path,
-                            comm_set=comm_set,
-                            filename=orig_filename,
-                            next_hop=next_hop,
-                            origin_asns=set([origin_asn]),
-                            peer_asn=peer_asn,
-                            prefix=prefix,
-                            timestamp=ts,
-                            unknown_attrs=unknown_attrs.copy(),
-                        )
-                    )
+                """
+                When the origin ASN is a bogon, find the first non-bogon ASN
+                """
+                if origin_asn not in non_bogon_asns:
+                    i = -1
+                    while bogon_asn.is_bogon(int(as_path[i])):
+                        i -= 1
+                        if i+len(as_path) < 0:
+                            break
+                    else:
+                        if as_path[i] not in most_bogon_asns:
+                            most_bogon_asns[as_path[i]] = set([origin_asn])
+                        else:
+                            most_bogon_asns[as_path[i]].add(origin_asn)
 
-            if not longest_as_path:
-                longest_as_path = [
-                    mrt_entry(
-                        as_path=as_path,
-                        comm_set=comm_set,
-                        filename=orig_filename,
-                        next_hop=next_hop,
-                        origin_asns=set([origin_asn]),
-                        peer_asn=peer_asn,
-                        prefix=prefix,
-                        timestamp=ts,
-                        unknown_attrs=unknown_attrs.copy(),
-                    ) for prefix in prefixes
-                ]
-            else:
-                if len(as_path) == len(longest_as_path[0].as_path):
-                    known_prefixes = [mrt_e.prefix for mrt_e in longest_as_path]
-                    for prefix in prefixes:
-                        if prefix not in known_prefixes:
-                            longest_as_path.append(
-                                mrt_entry(
-                                    as_path=as_path,
-                                    comm_set=comm_set,
-                                    filename=orig_filename,
-                                    next_hop=next_hop,
-                                    origin_asns=set([origin_asn]),
-                                    peer_asn=peer_asn,
-                                    prefix=prefix,
-                                    timestamp=ts,
-                                    unknown_attrs=unknown_attrs.copy(),
-                                )
+                """
+                Keep unique prefixes only, with additional origin ASNs for the
+                same prefix being appended to existing matching prefix
+                """
+                for prefix in bogon_prefixes:
+                    for mrt_e in bogon_prefix_entries:
+                        if prefix == mrt_e.prefix:
+                            if origin_asn not in mrt_e.origin_asns:
+                                mrt_e.origin_asns.add(origin_asn)
+                            break
+                    else:
+                        bogon_prefix_entries.append(
+                            mrt_entry(
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                filename=orig_filename,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                                peer_asn=peer_asn,
+                                prefix=prefix,
+                                timestamp=ts,
+                                unknown_attrs=unknown_attrs.copy(),
                             )
+                        )
 
-                elif len(as_path) > len(longest_as_path[0].as_path):
+                if not longest_as_path:
                     longest_as_path = [
                         mrt_entry(
                             as_path=as_path,
@@ -454,41 +432,41 @@ class mrt_parser:
                             unknown_attrs=unknown_attrs.copy(),
                         ) for prefix in prefixes
                     ]
-
-            if not longest_comm_set:
-                longest_comm_set = [
-                    mrt_entry(
-                        as_path=as_path,
-                        comm_set=comm_set,
-                        filename=orig_filename,
-                        next_hop=next_hop,
-                        origin_asns=set([origin_asn]),
-                        peer_asn=peer_asn,
-                        prefix=prefix,
-                        timestamp=ts,
-                        unknown_attrs=unknown_attrs.copy(),
-                    ) for prefix in prefixes
-                ]
-            else:
-                if len(comm_set) == len(longest_comm_set[0].comm_set):
-                    known_prefixes = [mrt_e.prefix for mrt_e in longest_comm_set]
-                    for prefix in prefixes:
-                        if prefix not in known_prefixes:
-                            longest_comm_set.append(
-                                mrt_entry(
-                                    as_path=as_path,
-                                    comm_set=comm_set,
-                                    filename=orig_filename,
-                                    next_hop=next_hop,
-                                    origin_asns=set([origin_asn]),
-                                    peer_asn=peer_asn,
-                                    prefix=prefix,
-                                    timestamp=ts,
-                                    unknown_attrs=unknown_attrs.copy(),
+                else:
+                    if len(as_path) == len(longest_as_path[0].as_path):
+                        known_prefixes = [mrt_e.prefix for mrt_e in longest_as_path]
+                        for prefix in prefixes:
+                            if prefix not in known_prefixes:
+                                longest_as_path.append(
+                                    mrt_entry(
+                                        as_path=as_path,
+                                        comm_set=comm_set,
+                                        filename=orig_filename,
+                                        next_hop=next_hop,
+                                        origin_asns=set([origin_asn]),
+                                        peer_asn=peer_asn,
+                                        prefix=prefix,
+                                        timestamp=ts,
+                                        unknown_attrs=unknown_attrs.copy(),
+                                    )
                                 )
-                            )
 
-                elif len(comm_set) > len(longest_comm_set[0].comm_set):
+                    elif len(as_path) > len(longest_as_path[0].as_path):
+                        longest_as_path = [
+                            mrt_entry(
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                filename=orig_filename,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                                peer_asn=peer_asn,
+                                prefix=prefix,
+                                timestamp=ts,
+                                unknown_attrs=unknown_attrs.copy(),
+                            ) for prefix in prefixes
+                        ]
+
+                if not longest_comm_set:
                     longest_comm_set = [
                         mrt_entry(
                             as_path=as_path,
@@ -502,44 +480,27 @@ class mrt_parser:
                             unknown_attrs=unknown_attrs.copy(),
                         ) for prefix in prefixes
                     ]
-
-            """
-            Keep unique prefixes only, with additional origin ASNs for the same
-            prefix being appended to existing matching prefix:
-            """
-            for prefix in invalid_len:
-                for mrt_e in invalid_len_entries:
-                    if prefix == mrt_e.prefix:
-                        if origin_asn not in mrt_e.origin_asns:
-                            mrt_e.origin_asns.add(origin_asn)
-                        break
                 else:
-                    invalid_len_entries.append(
-                        mrt_entry(
-                            as_path=as_path,
-                            comm_set=comm_set,
-                            filename=orig_filename,
-                            next_hop=next_hop,
-                            origin_asns=set([origin_asn]),
-                            peer_asn=peer_asn,
-                            prefix=prefix,
-                            timestamp=ts,
-                            unknown_attrs=unknown_attrs.copy(),
-                        )
-                    )
+                    if len(comm_set) == len(longest_comm_set[0].comm_set):
+                        known_prefixes = [mrt_e.prefix for mrt_e in longest_comm_set]
+                        for prefix in prefixes:
+                            if prefix not in known_prefixes:
+                                longest_comm_set.append(
+                                    mrt_entry(
+                                        as_path=as_path,
+                                        comm_set=comm_set,
+                                        filename=orig_filename,
+                                        next_hop=next_hop,
+                                        origin_asns=set([origin_asn]),
+                                        peer_asn=peer_asn,
+                                        prefix=prefix,
+                                        timestamp=ts,
+                                        unknown_attrs=unknown_attrs.copy(),
+                                    )
+                                )
 
-            """
-            Keep unique prefixes only, with additional unknown attrs for the
-            same prefix being appended to existing matching prefix
-            """
-            if unknown_attrs:
-                for prefix in prefixes:
-                    for mrt_e in most_unknown_attrs:
-                        if mrt_e.prefix == prefix:
-                            mrt_e.unknown_attrs.update(unknown_attrs)
-                            break
-                    else:
-                        most_unknown_attrs.append(
+                    elif len(comm_set) > len(longest_comm_set[0].comm_set):
+                        longest_comm_set = [
                             mrt_entry(
                                 as_path=as_path,
                                 comm_set=comm_set,
@@ -549,9 +510,65 @@ class mrt_parser:
                                 peer_asn=peer_asn,
                                 prefix=prefix,
                                 timestamp=ts,
-                                unknown_attrs=unknown_attrs.copy()
+                                unknown_attrs=unknown_attrs.copy(),
+                            ) for prefix in prefixes
+                        ]
+
+                """
+                Keep unique prefixes only, with additional origin ASNs for the
+                same prefix being appended to existing matching prefix:
+                """
+                for prefix in invalid_len:
+                    for mrt_e in invalid_len_entries:
+                        if prefix == mrt_e.prefix:
+                            if origin_asn not in mrt_e.origin_asns:
+                                mrt_e.origin_asns.add(origin_asn)
+                            break
+                    else:
+                        invalid_len_entries.append(
+                            mrt_entry(
+                                as_path=as_path,
+                                comm_set=comm_set,
+                                filename=orig_filename,
+                                next_hop=next_hop,
+                                origin_asns=set([origin_asn]),
+                                peer_asn=peer_asn,
+                                prefix=prefix,
+                                timestamp=ts,
+                                unknown_attrs=unknown_attrs.copy(),
                             )
                         )
+
+                """
+                Keep unique prefixes only, with additional unknown attrs for
+                the same prefix being appended to existing matching prefix
+                """
+                if unknown_attrs:
+                    for prefix in prefixes:
+                        for mrt_e in most_unknown_attrs:
+                            if mrt_e.prefix == prefix:
+                                mrt_e.unknown_attrs.update(unknown_attrs)
+                                break
+                        else:
+                            most_unknown_attrs.append(
+                                mrt_entry(
+                                    as_path=as_path,
+                                    comm_set=comm_set,
+                                    filename=orig_filename,
+                                    next_hop=next_hop,
+                                    origin_asns=set([origin_asn]),
+                                    peer_asn=peer_asn,
+                                    prefix=prefix,
+                                    timestamp=ts,
+                                    unknown_attrs=unknown_attrs.copy()
+                                )
+                            )
+
+        except KeyError as e:
+            logging.error(
+                f"Skipped unparsable entry in {filename} due to KeyError:\n"
+                f"{traceback.format_exc()}"
+            )
 
         # Only get the prefixes with the most bogon origin ASNs
         for mrt_e in bogon_origin_asns:
