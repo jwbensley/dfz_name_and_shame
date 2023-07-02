@@ -70,7 +70,7 @@ The local time configuration file from the host is shared into the container bec
 Pull any missing MRTs for a specific day:
 ```shell
 docker-compose run --rm --name tmp_getter dnas_getter -- \
-/opt/dnas/scripts/get_mrts.py --backfill --update --enabled --range --ymd "20210101"
+/opt/dnas/scripts/get_mrts.py --backfill --update --enabled --ymd "20210101"
 ```
 
 Run an the parser for a specific day:
