@@ -1,6 +1,8 @@
 # Don't sync test renders of READMEs to GitHub
 **/README.html
 
+# Don't sync redis config to avoid password in git
+redis/redis.conf
 # Dont sync Redis backups
 redis/backups/*
 # Don't sync Redis data
