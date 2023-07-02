@@ -9,7 +9,7 @@ set -o pipefail
 # Error if any command returns a non-zero exist status
 set -e
 
-pypy="/opt/pypy3.8-v7.3.7-linux64/bin/pypy3"
+pypy="/opt/pypy"
 
 # Generate the daily stats for yesterday:
 ${pypy} /opt/dnas/scripts/stats.py --yesterday --update --enabled

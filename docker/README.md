@@ -51,56 +51,39 @@ The local time configuration file from the host is shared into the container bec
 
 ### In Retrospective Mode
 
-PyPy Path:
-```shell
-pypy="/opt/pypy3.8-v7.3.7-linux64/bin/pypy3"
-```
-
 Pull any missing MRTs for a specific day:
 ```shell
-docker-compose run --rm --name tmp_getter --entrypoint \
-"${pypy}" \
-dnas_getter -- \
+docker-compose run --rm --name tmp_getter dnas_getter -- \
 /opt/dnas/scripts/get_mrts.py --backfill --update --enabled --range --ymd "20210101"
 ```
 
 Run an the parser for a specific day:
 ```shell
-docker-compose run --rm --name tmp_parser --entrypoint \
-"${pypy}" \
-dnas_parser -- \
+docker-compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "20210101"
 ```
 
 Run the parser for a specfic file:
 ```shell
-docker-compose run --rm --name tmp_parser --entrypoint \
-"${pypy}" \
-dnas_parser -- \
+docker-compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/scripts/parse_mrts.py --debug --remove --single /opt/dnas_data/downloads/SYDNEY/updates.20230424.0615.bz2
 ```
 
 Run the parser for a specific time range (this can be less than a day or longer than a day):
 ```shell
-docker-compose run --rm --name tmp_parser --entrypoint \
-"${pypy}" \
-dnas_parser -- \
+docker-compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/scripts/parse_mrts.py --update --remove --enabled --start "20210101.0000" --end "20210101.2359"
 ```
 
 Generate stats in the DB for a specific day:
 ```shell
-docker-compose run --rm --name tmp_stats --entrypoint \
-"${pypy}" \
-dnas_stats -- \
+docker-compose run --rm --name tmp_stats dnas_stats -- \
 /opt/dnas/scripts/stats.py --update --enabled --daily --ymd "$1"
 ```
 
 Generate and push a report to git for a specific day:
 ```shell
-docker-compose run --rm --name tmp_report --entrypoint \
-"${pypy}" \
-dnas_stats -- \
+docker-compose run --rm --name tmp_report dnas_stats -- \
 /opt/dnas/scripts/git_reports.py --generate --publish --ymd "$1"
 ```
 
@@ -115,5 +98,3 @@ One can use the script `manual_day.sh` to run the containers in retrospective mo
 To run the contains in retrospective mode for yesterday one can use `/opt/dnas/docker/manual_day.sh $(date --date="1 day ago" +"%Y%m%d")`
 &nbsp;
 
-One can use the script `yesterday.sh` to run the containers in retrospective mode for yesterday: `/opt/dnas/docker/yesterday.sh`  
-&nbsp;
