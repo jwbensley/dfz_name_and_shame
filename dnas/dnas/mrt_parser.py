@@ -55,11 +55,6 @@ class mrt_parser:
         Convert the posix timestamp in an MRT dump, to the UTC time in the
         standard format of MRTs.
         """
-        if not posix:
-            raise ValueError(
-                f"Missing required arguments: posix={posix}."
-            )
-
         if type(posix) != int:
             raise TypeError(
                 f"posix is not a string: {type(posix)}"
