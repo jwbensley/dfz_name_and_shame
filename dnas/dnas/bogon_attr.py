@@ -54,11 +54,6 @@ class bogon_attr:
         Return True is BGP attr ID is a unknown/bogon, else False
         """
 
-        if not attr:
-            raise ValueError(
-                f"Missing required options: attr={attr}"
-            )
-
         if type(attr) != int:
             raise TypeError(
                 f"attr is not an int: {type(attr)}"
