@@ -18,7 +18,7 @@ class test_bogon_asn(unittest.TestCase):
         self.assertIsInstance(self.ba, bogon_asn)
 
     def test_is_bogon(self):
-        self.assertRaises(ValueError, self.ba.is_bogon, None)
+        self.assertRaises(TypeError, self.ba.is_bogon)
         self.assertRaises(TypeError, self.ba.is_bogon, "abc")
         self.assertEqual(self.ba.is_bogon(65535), True)
         self.assertEqual(self.ba.is_bogon(1234567890), False)

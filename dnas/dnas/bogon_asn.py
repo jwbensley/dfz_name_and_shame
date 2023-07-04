@@ -13,14 +13,9 @@ class bogon_asn:
         """
         Return True if ASN is a bogon ASN, else False.
         """
-        if not asn:
-            raise ValueError(
-                f"Missing required options: asn={asn}"
-            )
-
         if type(asn) != int:
             raise TypeError(
-                f"asn is not an int: {type(asn)}"
+                f"{asn} is not an int: {type(asn)}"
             )
 
         if asn == 0: # RFC 7607
