@@ -18,7 +18,7 @@ class test_bogon_attr(unittest.TestCase):
         self.assertIsInstance(self.ba, bogon_attr)
 
     def test_is_unknown(self):
-        self.assertRaises(ValueError, self.ba.is_unknown, None)
+        self.assertRaises(TypeError, self.ba.is_unknown)
         self.assertRaises(TypeError, self.ba.is_unknown, "abc")
         for attr in self.ba.known_attrs:
             self.assertEqual(self.ba.is_unknown(attr), False)
