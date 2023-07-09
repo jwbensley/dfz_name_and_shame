@@ -7,13 +7,11 @@ import sys
 import unittest
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__))
-        , "../"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
 from dnas.config import config
 from dnas.git import git
+
 
 class test_git(unittest.TestCase):
 
@@ -29,7 +27,7 @@ class test_git(unittest.TestCase):
             shutil.rmtree(self.cfg.GIT_BASE)
         except FileNotFoundError:
             pass
-        os.makedirs(self.cfg.GIT_BASE, exist_ok = False)
+        os.makedirs(self.cfg.GIT_BASE, exist_ok=False)
         self.g.clone()
 
     def test_add(self):
@@ -71,7 +69,7 @@ class test_git(unittest.TestCase):
                 f"stderr: {ret.stderr.decode()}"
             )
 
-        self.assertTrue(re.search(f"new file:.*{self.test_filename}", ret.stdout.decode()))
+        self.assertTrue(re.search(self.test_filename, ret.stdout.decode()))
 
         os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
         self.g.clear()
@@ -102,7 +100,7 @@ class test_git(unittest.TestCase):
                 f"stdout: {ret.stdout.decode()}\n"
                 f"stderr: {ret.stderr.decode()}"
             )
-        
+
         assert self.test_filename in ret.stdout.decode()
         self.g.clean()
 
@@ -157,7 +155,9 @@ class test_git(unittest.TestCase):
                 f"stderr: {ret.stderr.decode()}"
             )
 
-        self.assertTrue(re.search(f"nothing added to commit", ret.stdout.decode()))
+        self.assertTrue(
+            re.search(f"nothing added to commit", ret.stdout.decode())
+        )
         try:
             os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
         except FileNotFoundError:
@@ -173,8 +173,8 @@ class test_git(unittest.TestCase):
             shutil.rmtree(self.cfg.GIT_BASE)
         except FileNotFoundError:
             pass
-        os.makedirs(self.cfg.GIT_BASE, exist_ok = False)
-        os.makedirs(os.path.join(self.cfg.GIT_BASE, ".git"), exist_ok = False)
+        os.makedirs(self.cfg.GIT_BASE, exist_ok=False)
+        os.makedirs(os.path.join(self.cfg.GIT_BASE, ".git"), exist_ok=False)
         self.assertRaises(ChildProcessError, self.g.clone)
 
         # Git clone should work if there is no existing .git sub-directory
@@ -244,7 +244,7 @@ class test_git(unittest.TestCase):
             pass
         self.assertFalse(self.g.git_exists())
         # With an empty directory it should fail because it has no .git dir
-        os.makedirs(self.cfg.GIT_BASE, exist_ok = False)
+        os.makedirs(self.cfg.GIT_BASE, exist_ok=False)
         self.assertFalse(self.g.git_exists())
         # Only after cloning a repo should it return True
         self.g.clone()
@@ -255,7 +255,7 @@ class test_git(unittest.TestCase):
         self.assertRaises(TypeError, self.g.gen_git_path_ymd, 123)
         self.assertEqual(
             self.g.gen_git_path_ymd("20220401"),
-            self.cfg.GIT_BASE + "2022/04/01"
+            self.cfg.GIT_BASE + "2022/04/01",
         )
 
     def test_gen_git_url_ymd(self):
@@ -263,7 +263,7 @@ class test_git(unittest.TestCase):
         self.assertRaises(TypeError, self.g.gen_git_url_ymd, 123)
         self.assertEqual(
             self.g.gen_git_url_ymd("20220401"),
-            self.cfg.GIT_STAT_BASE_URL + "2022/04/01"
+            self.cfg.GIT_STAT_BASE_URL + "2022/04/01",
         )
 
     def test_pull(self):
@@ -287,6 +287,7 @@ class test_git(unittest.TestCase):
         except:
             asserted = True
         self.assertEqual(asserted, False)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

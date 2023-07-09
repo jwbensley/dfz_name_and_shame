@@ -6,6 +6,7 @@ from dnas.config import config as cfg
 from dnas.mrt_stats import mrt_stats
 from dnas.whois import whois
 
+
 class report:
     """
     Class for generating human readable text reports from the stats stored in
@@ -13,25 +14,21 @@ class report:
     """
 
     @staticmethod
-    def gen_txt_report(mrt_s: 'mrt_stats' = None, body: bool = True) -> List[str]:
+    def gen_txt_report(
+        mrt_s: 'mrt_stats' = None, body: bool = True
+    ) -> List[str]:
         """
         Generate a text report using the data in an mrt stats object.
         If body == False, only generate the headline info for each stat.
         """
         if not mrt_s:
-            raise ValueError(
-                f"Missing required arguments: mrt_s={mrt_s}"
-            )
+            raise ValueError(f"Missing required arguments: mrt_s={mrt_s}")
 
         if type(mrt_s) != mrt_stats:
-            raise TypeError(
-                f"mrt_s is not an mrt stats object: {type(mrt_s)}"
-            )
+            raise TypeError(f"mrt_s is not an mrt stats object: {type(mrt_s)}")
 
         if type(body) != bool:
-            raise TypeError(
-                f"body is not a bool: {type(body)}"
-            )
+            raise TypeError(f"body is not a bool: {type(body)}")
 
         # Reduce the load on WHOIS by caching responses. It's also faster :)
         whois_cache = {}
@@ -124,10 +121,46 @@ class report:
                     else:
                         text += f"AS{asn} "
                     text += f"is originating {len(mrt_e.origin_asns)} "
-                    text += f"bogon ASNs: {' '.join(list(mrt_e.origin_asns))}\n"
+                    text += (
+                        f"bogon ASNs: {' '.join(list(mrt_e.origin_asns))}\n"
+                    )
                 text = text[0:-1]
                 text += "\n\n"
 
+                txt_report.append(text)
+
+        if mrt_s.highest_med_prefixes:
+            text = (
+                f"Prefixes with the highest MED: "
+                f"{len(mrt_s.highest_med_prefixes)} prefix(es) had a MED of "
+                f"{len(mrt_s.highest_med_prefixes[0].med)}.\n"
+            )
+
+            txt_report.append(text)
+
+            if body:
+                text = ""
+                for mrt_e in mrt_s.highest_med_prefixes:
+                    text += f"Prefix {mrt_e.prefix} "
+                    peeras = mrt_e.peer_asn
+                    if peeras not in whois_cache:
+                        whois_cache[peeras] = whois.as_lookup(int(peeras))
+                    if whois_cache[peeras]:
+                        text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                    else:
+                        text += f"via peer AS{peeras} "
+                    text += f"from origin ASN(s)"
+                    for asn in mrt_e.origin_asns:
+                        if asn not in whois_cache:
+                            whois_cache[asn] = whois.as_lookup(int(asn))
+                        as_name = whois_cache[asn]
+                        if as_name:
+                            text += f" AS{asn} ({as_name})"
+                        else:
+                            text += f" AS{asn}"
+                    text += ".\n"
+                text = text[0:-1]
+                text += "\n\n"
                 txt_report.append(text)
 
         if mrt_s.longest_as_path:
@@ -460,14 +493,10 @@ class report:
         specific date.
         """
         if not ymd:
-            raise ValueError(
-                f"Missing required arguments: ymd={ymd}."
-            )
+            raise ValueError(f"Missing required arguments: ymd={ymd}.")
 
         if type(ymd) != str:
-            raise TypeError(
-                f"ymd is not a string: {type(ymd)}"
-            )
+            raise TypeError(f"ymd is not a string: {type(ymd)}")
 
         # This is just a crude check that "ymd" is in the correct format
         day = datetime.datetime.strptime(ymd, cfg.DAY_FORMAT)
