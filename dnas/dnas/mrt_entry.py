@@ -117,7 +117,9 @@ class mrt_entry:
         self.filename = (
             json_data["filename"] if ("filename" in json_data) else None
         )  ##### FIX ME
-        self.med = json_data["med"]
+        self.med = (
+            json_data["med"] if ("med" in json_data) else None
+        ) ##### FIX ME
         self.next_hop = json_data["next_hop"]
         self.prefix = json_data["prefix"]
         self.origin_asns = set(json_data["origin_asns"])
