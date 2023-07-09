@@ -4,6 +4,7 @@ from typing import List, Set
 
 from dnas.config import config as cfg
 
+
 class mrt_entry:
     """
     An MRT Entry object contains the prased BGP data which is a single data
@@ -16,6 +17,7 @@ class mrt_entry:
         as_path: List[str] = [],
         comm_set: List[str] = [],
         filename: str = None,
+        med: int = cfg.MISSING_MED,
         next_hop: str = None,
         prefix: str = None,
         origin_asns: Set[str] = set(),
@@ -30,6 +32,7 @@ class mrt_entry:
         self.as_path = as_path
         self.comm_set = comm_set
         self.filename = filename
+        self.med = med
         self.next_hop = next_hop
         self.origin_asns = origin_asns
         self.peer_asn = peer_asn
@@ -45,14 +48,10 @@ class mrt_entry:
         Comparing meta data like filename and timestamp is option.
         """
         if not mrt_e:
-            raise ValueError(
-                f"Missing required arguments: mrt_e={mrt_e}"
-            )
+            raise ValueError(f"Missing required arguments: mrt_e={mrt_e}")
 
         if type(mrt_e) != mrt_entry:
-            raise TypeError(
-                f"mrt_e is not a stats entry: {type(mrt_e)}"
-            )
+            raise TypeError(f"mrt_e is not a stats entry: {type(mrt_e)}")
 
         if self.advt != mrt_e.advt:
             return False
@@ -61,6 +60,9 @@ class mrt_entry:
             return False
 
         if self.comm_set != mrt_e.comm_set:
+            return False
+
+        if self.med != mrt_e.med:
             return False
 
         if self.next_hop != mrt_e.next_hop:
@@ -87,7 +89,6 @@ class mrt_entry:
         if self.withdraws != mrt_e.withdraws:
             return False
 
-
         if meta:
             if self.filename != mrt_e.filename:
                 return False
@@ -107,20 +108,25 @@ class mrt_entry:
             )
 
         if type(json_str) != str:
-            raise TypeError(
-                f"json_str is not a string: {type(json_str)}"
-            )
+            raise TypeError(f"json_str is not a string: {type(json_str)}")
 
         json_data = json.loads(json_str)
         self.advt = json_data["advt"]
         self.as_path = json_data["as_path"]
         self.comm_set = json_data["comm_set"]
-        self.filename = json_data["filename"] if ("filename" in json_data) else None ##### FIX ME
+        self.filename = (
+            json_data["filename"] if ("filename" in json_data) else None
+        )  ##### FIX ME
+        self.med = json_data["med"]
         self.next_hop = json_data["next_hop"]
         self.prefix = json_data["prefix"]
         self.origin_asns = set(json_data["origin_asns"])
         self.peer_asn = json_data["peer_asn"]
-        self.unknown_attrs = set(json_data["unknown_attrs"]) if ("unknown_attrs" in json_data) else set() ##### FIX ME
+        self.unknown_attrs = (
+            set(json_data["unknown_attrs"])
+            if ("unknown_attrs" in json_data)
+            else set()
+        )  ##### FIX ME
         self.timestamp = json_data["timestamp"]
         self.updates = json_data["updates"]
         self.withdraws = json_data["withdraws"]
@@ -132,7 +138,7 @@ class mrt_entry:
         """
         return datetime.datetime.now().strftime(cfg.TIME_FORMAT)
 
-    def to_json(self) -> str:
+    def to_json(self, indent: None | int = None) -> str:
         """
         Return this MRT entry obj serialised to a JSON str.
         """
@@ -141,6 +147,7 @@ class mrt_entry:
             "as_path": self.as_path,
             "comm_set": self.comm_set,
             "filename": self.filename,
+            "med": self.med,
             "next_hop": self.next_hop,
             "origin_asns": list(self.origin_asns),
             "peer_asn": self.peer_asn,
@@ -150,7 +157,7 @@ class mrt_entry:
             "updates": self.updates,
             "withdraws": self.withdraws,
         }
-        return json.dumps(json_data)
+        return json.dumps(json_data, indent=indent)
 
     def print(self):
         """
@@ -160,6 +167,7 @@ class mrt_entry:
         print(f"as_path: {self.as_path}")
         print(f"comm_set: {self.comm_set}")
         print(f"filename: {self.filename}")
+        print(f"med: {self.med}")
         print(f"next_hop: {self.next_hop}")
         print(f"origin_asns: {self.origin_asns}")
         print(f"peer_asn: {self.peer_asn}")

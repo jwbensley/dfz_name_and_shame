@@ -1,5 +1,6 @@
 import os
 
+
 class config:
     """
     Class to store global config options.
@@ -27,7 +28,9 @@ class config:
     # Standard logging format
     LOG_STANDARD = "%(asctime)s|%(levelname)s|%(message)s"
     # Debugging logging formart
-    LOG_DEBUG = "%(asctime)s|%(levelname)s|%(process)d|%(funcName)s|%(message)s"
+    LOG_DEBUG = (
+        "%(asctime)s|%(levelname)s|%(process)d|%(funcName)s|%(message)s"
+    )
     # Log directory for all logs
     LOG_DIR = os.path.join(BASE_DIR, "logs/")
     # Logging from script: get_mrts.py
@@ -47,6 +50,10 @@ class config:
     # Logging from script: tweet.py
     LOG_TWITTER = os.path.join(LOG_DIR, "tweet.log")
 
+    ###################
+    # PARSER SETTINGS #
+    ###################
+
     """
     Max MRT file size to parse using multiple Python processes, files larger
     than this value (in bytes) will be parsed without using multiprocessing
@@ -60,6 +67,9 @@ class config:
     """
     MIN_MRT_SIZE = 64
 
+    # Undefined MED / default when missing
+    MISSING_MED = -1
+
     ################
     # GIT SETTINGS #
     ################
@@ -68,12 +78,13 @@ class config:
     GIT_STAT_CLONE_URL = "git@github.com:DFZ-Name-and-Shame/dnas_stats.git"
 
     # Remote git details
-    GIT_STAT_BASE_URL = "https://github.com/DFZ-Name-and-Shame/dnas_stats/tree/main/"
+    GIT_STAT_BASE_URL = (
+        "https://github.com/DFZ-Name-and-Shame/dnas_stats/tree/main/"
+    )
 
     # Local git repo details
     GIT_BASE = os.path.join(BASE_DIR, "dnas_stats/")
     GIT_REPORT_BRANCH = "main"
-
 
     ####################
     # TWITTER SETTINGS #
@@ -88,38 +99,37 @@ class config:
     #####################
 
     BOGONS_V4 = [
-        "0.0.0.0/8", # RFC 1700
-        "10.0.0.0/8", # RFC 1918 
-        "100.64.0.0/10", # RFC 6598
-        "127.0.0.0/8", # RFC 6890
-        "169.254.0.0/16", # RFC 6890
-        "172.16.0.0/12", # RFC 1918 
-        "192.0.0.0/29", # RFC 6333
-        "192.0.2.0/24",# RFC 5737 IPv4
-        "192.88.99.0/24", # RFC 3068
-        "192.168.0.0/16", #RFC 1918 
-        "198.18.0.0/15", # RFC 2544 
-        "198.51.100.0/24",# RFC 5737 IPv4
-        "203.0.113.0/24",# RFC 5737 IPv4
-        "224.0.0.0/4", # RFC 5771
-        "240.0.0.0/4", # RFC 6890
+        "0.0.0.0/8",  # RFC 1700
+        "10.0.0.0/8",  # RFC 1918
+        "100.64.0.0/10",  # RFC 6598
+        "127.0.0.0/8",  # RFC 6890
+        "169.254.0.0/16",  # RFC 6890
+        "172.16.0.0/12",  # RFC 1918
+        "192.0.0.0/29",  # RFC 6333
+        "192.0.2.0/24",  # RFC 5737 IPv4
+        "192.88.99.0/24",  # RFC 3068
+        "192.168.0.0/16",  # RFC 1918
+        "198.18.0.0/15",  # RFC 2544
+        "198.51.100.0/24",  # RFC 5737 IPv4
+        "203.0.113.0/24",  # RFC 5737 IPv4
+        "224.0.0.0/4",  # RFC 5771
+        "240.0.0.0/4",  # RFC 6890
     ]
 
     BOGONS_V6 = [
-        "::/8", # RFC 4291
-        "0100::/64", # RFC 6666
-        "2001:2::/48", # RFC 5180
-        "2001:10::/28", # RFC 4843
-        "2001:db8::/32", # RFC 3849
-        "2002::/16", # RFC 7526
-        "3ffe::/16", # RFC 3701
-        "fc00::/7", # RFC 4193
-        "fe00::/9", # IETF Reserved
-        "fe80::/10", # RFC 4291
-        "fec0::/10", # RFC 3879
-        "ff00::/8", # RFC 4291
-     ];
-
+        "::/8",  # RFC 4291
+        "0100::/64",  # RFC 6666
+        "2001:2::/48",  # RFC 5180
+        "2001:10::/28",  # RFC 4843
+        "2001:db8::/32",  # RFC 3849
+        "2002::/16",  # RFC 7526
+        "3ffe::/16",  # RFC 3701
+        "fc00::/7",  # RFC 4193
+        "fe00::/9",  # IETF Reserved
+        "fe80::/10",  # RFC 4291
+        "fec0::/10",  # RFC 3879
+        "ff00::/8",  # RFC 4291
+    ]
 
     ########################
     # MRT ARCHIVE SETTINGS #
@@ -129,7 +139,7 @@ class config:
     DL_DIR = os.path.join(BASE_DIR, "downloads/")
 
     # Temporary directory to split MRT files into
-    SPLIT_DIR = "/tmp/" # Set to None to disable
+    SPLIT_DIR = "/tmp/"  # Set to None to disable
 
     # Default interval for downloading and parsing new MRT files (seconds)
     DFT_INTERVAL = 3600
@@ -146,9 +156,9 @@ class config:
     """
     Transit session from @LukaszBromirski
     RIB dumps are every 1 hour. RIB dumps are disabled!
-    RIB dump example: http://192.168.58.8/lukasz/ribs/20211222.0600.dump
+    RIB dump example: http://172.17.0.1/as57355/ribs/20211222.0600.dump
     UPDATE dumps are every 10 minutes
-    UPDATE dump example: http://192.168.58.8/lukasz/updates/20211222.0600.dump
+    UPDATE dump example: http://172.17.0.1/as57355/updates/20211222.0600.dump
     """
     MRT_ARCHIVES.append(
         {
@@ -295,5 +305,93 @@ class config:
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
             "STRIP_COMM": "0:",
+        }
+    )
+
+    ##################################
+    # UNIT TEST MRT ARCHIVE SETTINGS #
+    ##################################
+
+    """
+    Route-Views Sydney/Equinix Sydney
+    Used for unit tests only.
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RV",
+            "NAME": "UNIT_TEST_RV_SYDNEY",
+            "ENABLED": True,
+            "BASE_URL": "http://archive.routeviews.org/route-views.sydney/bgpdata/",
+            "RIB_URL": "/RIBS/",
+            "UPD_URL": "/UPDATES/",
+            "MRT_EXT": "bz2",
+            "MRT_DIR": os.path.join(DL_DIR, "SYDNEY/"),
+            "RIB_GLOB": "rib.*bz2",
+            "UPD_GLOB": "updates.*bz2",
+            "RIB_KEY": "RV_SYDNEY_RIB",
+            "UPD_KEY": "RV_SYDNEY_UPD",
+            "RIB_INTERVAL": 120,
+            "UPD_INTERVAL": 15,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "rib.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "0:",
+        }
+    )
+
+    """
+    RRC1 London
+    Used for unit tests only.
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "UNIT_TEST_RCC_1",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc1/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RCC1/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RCC_1_RIB",
+            "UPD_KEY": "RCC_1_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "8714:",
+        }
+    )
+
+    """
+    RRC23 Singapore
+    Used for unit tests only.
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "UNIT_TEST_RCC_23",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc23/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RCC23/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RCC_23_RIB",
+            "UPD_KEY": "RCC_23_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "24115:",
         }
     )

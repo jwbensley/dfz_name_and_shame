@@ -5,37 +5,39 @@ from typing import Union, Literal
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
 
-class mrt_archives:
 
+class mrt_archives:
     def __init__(self) -> None:
         self.archives = []
 
         for arch in cfg.MRT_ARCHIVES:
             self.archives.append(
                 mrt_archive(
-                    BASE_URL = arch["BASE_URL"],
-                    ENABLED = arch["ENABLED"],
-                    MRT_DIR = arch["MRT_DIR"],
-                    MRT_EXT = arch["MRT_EXT"],
-                    NAME = arch["NAME"],
-                    RIB_GLOB = arch["RIB_GLOB"],
-                    RIB_INTERVAL = arch["RIB_INTERVAL"],
-                    RIB_KEY = arch["RIB_KEY"],
-                    RIB_OFFSET = arch["RIB_OFFSET"],
-                    RIB_PREFIX = arch["RIB_PREFIX"],
-                    RIB_URL = arch["RIB_URL"],
-                    TYPE = arch["TYPE"],
-                    UPD_GLOB = arch["UPD_GLOB"],
-                    UPD_INTERVAL = arch["UPD_INTERVAL"],
-                    UPD_KEY = arch["UPD_KEY"],
-                    UPD_OFFSET = arch["UPD_OFFSET"],
-                    UPD_PREFIX = arch["UPD_PREFIX"],
-                    UPD_URL = arch["UPD_URL"],
-                    STRIP_COMM = arch["STRIP_COMM"],
+                    BASE_URL=arch["BASE_URL"],
+                    ENABLED=arch["ENABLED"],
+                    MRT_DIR=arch["MRT_DIR"],
+                    MRT_EXT=arch["MRT_EXT"],
+                    NAME=arch["NAME"],
+                    RIB_GLOB=arch["RIB_GLOB"],
+                    RIB_INTERVAL=arch["RIB_INTERVAL"],
+                    RIB_KEY=arch["RIB_KEY"],
+                    RIB_OFFSET=arch["RIB_OFFSET"],
+                    RIB_PREFIX=arch["RIB_PREFIX"],
+                    RIB_URL=arch["RIB_URL"],
+                    TYPE=arch["TYPE"],
+                    UPD_GLOB=arch["UPD_GLOB"],
+                    UPD_INTERVAL=arch["UPD_INTERVAL"],
+                    UPD_KEY=arch["UPD_KEY"],
+                    UPD_OFFSET=arch["UPD_OFFSET"],
+                    UPD_PREFIX=arch["UPD_PREFIX"],
+                    UPD_URL=arch["UPD_URL"],
+                    STRIP_COMM=arch["STRIP_COMM"],
                 )
             )
 
-    def arch_from_file_path(self, file_path: str = None) -> Union['mrt_archive', Literal[False]]:
+    def arch_from_file_path(
+        self, file_path: str = None
+    ) -> Union['mrt_archive', Literal[False]]:
         """
         Return the MRT archive the file came from, based on the file path.
         """
@@ -45,37 +47,36 @@ class mrt_archives:
             )
 
         if type(file_path) != str:
-            raise TypeError(
-                f"file_path is not a string: {type(file_path)}"
-            )
+            raise TypeError(f"file_path is not a string: {type(file_path)}")
 
         for arch in self.archives:
-            if (os.path.normpath(os.path.dirname(file_path)) == 
-                os.path.normpath(arch.MRT_DIR)):
+            if os.path.normpath(
+                os.path.dirname(file_path)
+            ) == os.path.normpath(arch.MRT_DIR):
                 logging.debug(f"Assuming file is from {arch.NAME} archive")
                 return arch
         logging.error(f"Couldn't match {file_path} to any MRT archive")
         return False
 
-    def arch_from_url(self, url: str = None) -> Union['mrt_archive', Literal[False]]:
+    def arch_from_url(
+        self, url: str = None
+    ) -> Union['mrt_archive', Literal[False]]:
         """
         Return the MRT archive the URL belongs to, based on the url.
         """
         if not url:
-            raise ValueError(
-                f"Missing required arguments: url={url}."
-            )
+            raise ValueError(f"Missing required arguments: url={url}.")
 
         if type(url) != str:
-            raise TypeError(
-                f"url is not a string: {type(url)}"
-            )
+            raise TypeError(f"url is not a string: {type(url)}")
 
         for arch in self.archives:
             if self.is_rib_from_filename(os.path.basename(url)):
                 try:
                     if arch.gen_rib_url(os.path.basename(url)) == url:
-                        logging.debug(f"Assuming URL is from {arch.NAME} archive")
+                        logging.debug(
+                            f"Assuming URL is from {arch.NAME} archive"
+                        )
                         return arch
                 except ValueError:
                     """
@@ -86,7 +87,9 @@ class mrt_archives:
             else:
                 try:
                     if arch.gen_upd_url(os.path.basename(url)) == url:
-                        logging.debug(f"Assuming URL is from {arch.NAME} archive")
+                        logging.debug(
+                            f"Assuming URL is from {arch.NAME} archive"
+                        )
                         return arch
                 except ValueError:
                     pass
@@ -127,9 +130,7 @@ class mrt_archives:
             )
 
         if type(file_path) != str:
-            raise TypeError(
-                f"file_path is not a string: {type(file_path)}"
-            )
+            raise TypeError(f"file_path is not a string: {type(file_path)}")
 
         # Example: /path/to/route-views/LINX/updates.20220101.0600.bz2
         arch = self.arch_from_file_path(file_path)
@@ -155,9 +156,7 @@ class mrt_archives:
             )
 
         if type(file_path) != str:
-            raise TypeError(
-                f"file_path is not a string: {type(file_path)}"
-            )
+            raise TypeError(f"file_path is not a string: {type(file_path)}")
 
         filename = os.path.basename(file_path)
         for arch in self.archives:

@@ -1,5 +1,5 @@
 import logging
-import tweepy # type: ignore
+import tweepy  # type: ignore
 from typing import List
 
 from dnas.config import config as cfg
@@ -9,6 +9,7 @@ from dnas.report import report
 from dnas.twitter_auth import twitter_auth  # type: ignore
 from dnas.twitter_msg import twitter_msg
 from dnas.whois import whois
+
 
 class twitter:
     """
@@ -21,7 +22,7 @@ class twitter:
             consumer_key=twitter_auth.consumer_key,
             consumer_secret=twitter_auth.consumer_secret,
             access_token=twitter_auth.access_token,
-            access_token_secret=twitter_auth.access_token_secret
+            access_token_secret=twitter_auth.access_token_secret,
         )
 
     def delete(self, tweet_id: int = None):
@@ -34,9 +35,7 @@ class twitter:
             )
 
         if type(tweet_id) != str:
-            raise TypeError(
-                f"tweet_id is not string: {type(tweet_id)}"
-            )
+            raise TypeError(f"tweet_id is not string: {type(tweet_id)}")
 
         r = self.client.delete_tweet(tweet_id)
         if r.data["deleted"]:
@@ -50,24 +49,20 @@ class twitter:
         Generate Tweets using the data in an mrt stats object.
         """
         if not mrt_s:
-            raise ValueError(
-                f"Missing required arguments: mrt_s={mrt_s}"
-            )
+            raise ValueError(f"Missing required arguments: mrt_s={mrt_s}")
 
         if type(mrt_s) != mrt_stats:
-            raise TypeError(
-                f"mrt_s is not an mrt_s object: {type(mrt_s)}"
-            )
+            raise TypeError(f"mrt_s is not an mrt_s object: {type(mrt_s)}")
 
         msg_q = []
 
-        txt_report = report.gen_txt_report(mrt_s =mrt_s, body = False)
+        txt_report = report.gen_txt_report(mrt_s=mrt_s, body=False)
         for hdr in txt_report:
             msg_q.append(
                 twitter_msg(
-                    hdr = hdr,
-                    body = "",
-                    hidden = False,
+                    hdr=hdr,
+                    body="",
+                    hidden=False,
                 )
             )
 
@@ -78,14 +73,10 @@ class twitter:
         Return a Tweet body split into a list of 280 character strings
         """
         if not msg:
-            raise ValueError(
-                f"Missing required arguments: msg={msg}"
-            )
+            raise ValueError(f"Missing required arguments: msg={msg}")
 
         if type(msg) != twitter_msg:
-            raise TypeError(
-                f"msg is not a twitter_msg: {type(msg)}"
-            )
+            raise TypeError(f"msg is not a twitter_msg: {type(msg)}")
 
         if len(msg.body) <= cfg.TWITTER_LEN:
             return [msg.body]
@@ -93,64 +84,54 @@ class twitter:
             chunks = []
             tmp_str = msg.body
 
-            while(len(tmp_str) > cfg.TWITTER_LEN):
+            while len(tmp_str) > cfg.TWITTER_LEN:
                 end = cfg.TWITTER_LEN - 1
 
                 while tmp_str[end] != " ":
                     end -= 1
                     if end == 0:
-                        raise ValueError(
-                            "Reached start of Tweet"
-                        )
+                        raise ValueError("Reached start of Tweet")
 
                 chunks.append(tmp_str[0:end])
-                tmp_str = tmp_str[end + 1:]
+                tmp_str = tmp_str[end + 1 :]
 
             chunks.append(tmp_str)
             return chunks
 
     def tweet(
-            self,
-            body: bool = False,
-            msg: 'twitter_msg' = None,
-            print_only: bool = False
-        ):
+        self,
+        body: bool = False,
+        msg: 'twitter_msg' = None,
+        print_only: bool = False,
+    ):
         """
         Tweet the header of a twitter message obj.
         Then tweet the body as a series of paged replies.
         """
         if not msg:
-            raise ValueError(
-                f"Missing required arguments: msg={msg}"
-            )
+            raise ValueError(f"Missing required arguments: msg={msg}")
 
         if type(msg) != twitter_msg:
-            raise TypeError(
-                f"msg is not a twitter_msg: {type(msg)}"
-            )
+            raise TypeError(f"msg is not a twitter_msg: {type(msg)}")
 
         self.tweet_hdr(msg, print_only)
         if body:
             self.tweet_body(msg, print_only)
 
     def tweet_as_reply(
-            self,
-            msg: 'twitter_msg' = None,
-            print_only: bool = False,
-            tweet_id: int = 0,
-        ):
+        self,
+        msg: 'twitter_msg' = None,
+        print_only: bool = False,
+        tweet_id: int = 0,
+    ):
         """
         Tweet a message in reply to an existing Tweet.
         """
         if not msg:
-            raise ValueError(
-                f"Missing required arguments: msg={msg}"
-            )
+            raise ValueError(f"Missing required arguments: msg={msg}")
 
         if type(msg) != twitter_msg:
-            raise TypeError(
-                f"msg is not a twitter_msg: {type(msg)}"
-            )
+            raise TypeError(f"msg is not a twitter_msg: {type(msg)}")
 
         if msg.hidden:
             logging.debug(f"Skipping hidden Tweet: {msg.hdr}")
@@ -180,14 +161,10 @@ class twitter:
         Tweet a message header.
         """
         if not msg:
-            raise ValueError(
-                f"Missing required arguments: msg={msg}"
-            )
+            raise ValueError(f"Missing required arguments: msg={msg}")
 
         if type(msg) != twitter_msg:
-            raise TypeError(
-                f"msg is not a twitter_msg: {type(msg)}"
-            )
+            raise TypeError(f"msg is not a twitter_msg: {type(msg)}")
 
         if msg.hidden:
             logging.debug(f"Skipping hidden Tweet: {msg.hdr}")
@@ -214,14 +191,10 @@ class twitter:
         Tweet a message body as a series of pages replies to the header.
         """
         if not msg:
-            raise ValueError(
-                f"Missing required arguments: msg={msg}"
-            )
+            raise ValueError(f"Missing required arguments: msg={msg}")
 
         if type(msg) != twitter_msg:
-            raise TypeError(
-                f"msg is not a twitter_msg: {type(msg)}"
-            )
+            raise TypeError(f"msg is not a twitter_msg: {type(msg)}")
 
         if not print_only:
             if not msg.hdr_id:
@@ -243,8 +216,7 @@ class twitter:
                 logging.info(chunk)
             else:
                 r = self.client.create_tweet(
-                    text=chunk,
-                    in_reply_to_tweet_id=msg.hdr_id
+                    text=chunk, in_reply_to_tweet_id=msg.hdr_id
                 )
                 logging.info(
                     f"Replied: "
@@ -258,14 +230,10 @@ class twitter:
         Convert a ymd value to a nice format for Twitter.
         """
         if not ymd:
-            raise ValueError(
-                f"Missing required arguments: ymd={ymd}"
-            )
+            raise ValueError(f"Missing required arguments: ymd={ymd}")
 
         if type(ymd) != str:
-            raise TypeError(
-                f"ymd is not a string: {type(ymd)}"
-            )
+            raise TypeError(f"ymd is not a string: {type(ymd)}")
 
         mrt_archive.valid_ymd(ymd)
         return ymd[0:4] + "/" + ymd[4:6] + "/" + ymd[6:8]
