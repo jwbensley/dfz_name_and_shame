@@ -27,43 +27,54 @@ class test_mrt_stats(unittest.TestCase):
         self.upd_5_fn = "rcc01.updates.20100827.0840.gz"
 
         self.upd_1_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), self.upd_1_fn
+            os.path.dirname(os.path.realpath(__file__)),
+            "RCC23/",
+            self.upd_1_fn,
         )
         if not os.path.isfile(self.upd_1_path):
             raise Exception(f"Test MRT file is not found: {self.upd_1_path}")
 
         self.upd_2_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), self.upd_2_fn
+            os.path.dirname(os.path.realpath(__file__)),
+            "RCC23/",
+            self.upd_2_fn,
         )
         if not os.path.isfile(self.upd_2_path):
             raise Exception(f"Test MRT file is not found: {self.upd_2_path}")
 
         self.upd_3_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), self.upd_3_fn
+            os.path.dirname(os.path.realpath(__file__)),
+            "SYDNEY/",
+            self.upd_3_fn,
         )
         if not os.path.isfile(self.upd_3_path):
             raise Exception(f"Test MRT file is not found: {self.upd_3_path}")
 
         self.upd_4_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), self.upd_4_fn
+            os.path.dirname(os.path.realpath(__file__)),
+            "SYDNEY/",
+            self.upd_4_fn,
         )
         if not os.path.isfile(self.upd_4_path):
             raise Exception(f"Test MRT file is not found: {self.upd_4_path}")
 
         self.upd_5_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), self.upd_5_fn
+            os.path.dirname(os.path.realpath(__file__)), "RCC1/", self.upd_5_fn
         )
         if not os.path.isfile(self.upd_5_path):
             raise Exception(f"Test MRT file is not found: {self.upd_5_path}")
 
         mrt_a = mrt_archives()
         for arch in mrt_a.archives:
-            if arch.NAME == "RCC_23":
+            if arch.NAME == "UNIT_TEST_RCC_1":
+                os.makedirs(arch.MRT_DIR, exist_ok=True)
+                self.upd_5_mrt = os.path.join(arch.MRT_DIR, self.upd_5_fn)
+            if arch.NAME == "UNIT_TEST_RCC_23":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_1_mrt = os.path.join(arch.MRT_DIR, self.upd_1_fn)
                 self.upd_2_mrt = os.path.join(arch.MRT_DIR, self.upd_2_fn)
                 self.upd_5_mrt = os.path.join(arch.MRT_DIR, self.upd_5_fn)
-            if arch.NAME == "RV_SYDNEY":
+            if arch.NAME == "UNIT_TEST_RV_SYDNEY":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_3_mrt = os.path.join(arch.MRT_DIR, self.upd_3_fn)
                 self.upd_4_mrt = os.path.join(arch.MRT_DIR, self.upd_4_fn)
@@ -88,6 +99,7 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_1_json = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
+            "RCC23/",
             self.upd_1_fn + ".json",
         )
         if not os.path.isfile(self.upd_1_json):
@@ -97,6 +109,7 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_3_json = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
+            "SYDNEY/",
             self.upd_3_fn + ".json",
         )
         if not os.path.isfile(self.upd_3_json):
@@ -106,6 +119,7 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_5_json = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
+            "RCC1/",
             self.upd_5_fn + ".json",
         )
         if not os.path.isfile(self.upd_3_json):
@@ -115,6 +129,7 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_1_test = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
+            "RCC23/",
             "rcc23.updates.20220421.0200.gz.test",
         )
 
@@ -127,12 +142,14 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(len(mrt_s.bogon_origin_asns), 0)
         self.assertIsInstance(mrt_s.bogon_prefixes, list)
         self.assertEqual(len(mrt_s.bogon_prefixes), 0)
+        self.assertIsInstance(mrt_s.highest_med_prefixes, list)
+        self.assertEqual(len(mrt_s.highest_med_prefixes), 0)
+        self.assertIsInstance(mrt_s.invalid_len, list)
+        self.assertEqual(len(mrt_s.invalid_len), 0)
         self.assertIsInstance(mrt_s.longest_as_path, list)
         self.assertEqual(len(mrt_s.longest_as_path), 0)
         self.assertIsInstance(mrt_s.longest_comm_set, list)
         self.assertEqual(len(mrt_s.longest_comm_set), 0)
-        self.assertIsInstance(mrt_s.invalid_len, list)
-        self.assertEqual(len(mrt_s.invalid_len), 0)
         self.assertIsInstance(mrt_s.most_advt_prefixes, list)
         self.assertEqual(len(mrt_s.most_advt_prefixes), 0)
         self.assertIsInstance(mrt_s.most_bogon_asns, list)
@@ -255,6 +272,133 @@ class test_mrt_stats(unittest.TestCase):
         )
         self.assertEqual(add_stats_1.bogon_prefixes[1].updates, 0)
         self.assertEqual(add_stats_1.bogon_prefixes[1].withdraws, 0)
+
+        self.assertEqual(len(add_stats_1.highest_med_prefixes), 4)
+        self.assertEqual(add_stats_1.highest_med_prefixes[0].advt, 0)
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[0].as_path,
+            ["16509"],
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[0].comm_set, [])
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[0].filename, self.upd_1_mrt
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[0].med, 1000)
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[0].next_hop,
+            "27.111.228.87",
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[0].origin_asns, set(["16509"])
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[0].peer_asn, "16509")
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[0].prefix, "130.137.111.0/24"
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[0].unknown_attrs, set()
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[0].timestamp, "20220421.0200"
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[0].updates, 0)
+        self.assertEqual(add_stats_1.highest_med_prefixes[0].withdraws, 0)
+
+        self.assertEqual(len(add_stats_1.highest_med_prefixes), 4)
+        self.assertEqual(add_stats_1.highest_med_prefixes[1].advt, 0)
+
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[1].as_path,
+            ["16509"],
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[1].comm_set, [])
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[1].filename, self.upd_2_mrt
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[1].med, 1000)
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[1].next_hop,
+            "27.111.228.87",
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[1].origin_asns, set(["16509"])
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[1].peer_asn, "16509")
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[1].prefix, "130.137.108.0/24"
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[1].unknown_attrs, set()
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[1].timestamp, "20220501.2305"
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[1].updates, 0)
+        self.assertEqual(add_stats_1.highest_med_prefixes[1].withdraws, 0)
+
+        self.assertEqual(len(add_stats_1.highest_med_prefixes), 4)
+
+        self.assertEqual(add_stats_1.highest_med_prefixes[2].advt, 0)
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[2].as_path,
+            ["16509"],
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[2].comm_set, [])
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[2].filename, self.upd_2_mrt
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[2].med, 1000)
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[2].next_hop,
+            "27.111.228.87",
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[2].origin_asns, set(["16509"])
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[2].peer_asn, "16509")
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[2].prefix, "130.137.130.0/24"
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[2].unknown_attrs, set()
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[2].timestamp, "20220501.2307"
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[2].updates, 0)
+        self.assertEqual(add_stats_1.highest_med_prefixes[2].withdraws, 0)
+
+        self.assertEqual(len(add_stats_1.highest_med_prefixes), 4)
+
+        self.assertEqual(add_stats_1.highest_med_prefixes[3].advt, 0)
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[3].as_path,
+            ["16509"],
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[3].comm_set, [])
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[3].filename, self.upd_2_mrt
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[3].med, 1000)
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[3].next_hop,
+            "27.111.228.87",
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[3].origin_asns, set(["16509"])
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[3].peer_asn, "16509")
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[3].prefix, "130.137.105.0/24"
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[3].unknown_attrs, set()
+        )
+        self.assertEqual(
+            add_stats_1.highest_med_prefixes[3].timestamp, "20220501.2309"
+        )
+        self.assertEqual(add_stats_1.highest_med_prefixes[3].updates, 0)
+        self.assertEqual(add_stats_1.highest_med_prefixes[3].withdraws, 0)
 
         self.assertEqual(len(add_stats_1.longest_as_path), 1)
         self.assertEqual(add_stats_1.longest_as_path[0].advt, 0)
@@ -821,7 +965,16 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             add_stats_1.longest_comm_set[3].origin_asns, set(["52543"])
         )
+        self.assertEqual(
+            add_stats_1.longest_comm_set[3].origin_asns, set(["52543"])
+        )
         self.assertEqual(add_stats_1.longest_comm_set[3].peer_asn, "133210")
+        self.assertEqual(
+            add_stats_1.longest_comm_set[3].prefix, "2804:e14:4000::/34"
+        )
+        self.assertEqual(
+            add_stats_1.longest_comm_set[3].timestamp, "20220421.0201"
+        )
         self.assertEqual(
             add_stats_1.longest_comm_set[3].prefix, "2804:e14:4000::/34"
         )
@@ -1734,12 +1887,11 @@ class test_mrt_stats(unittest.TestCase):
         diff_3 = self.upd_3_stats.get_diff(self.upd_4_stats)
         self.assertIsInstance(diff_3, mrt_stats)
 
-        """
-        MRT file 5 is the only one with unknown attribiutes,
-        make an extra diff just for this test case
-        """
         diff_1_5 = self.upd_1_stats.get_diff(self.upd_5_stats)
         self.assertIsInstance(diff_1_5, mrt_stats)
+
+        diff_5 = self.upd_1_stats.get_diff(self.upd_5_stats)
+        self.assertIsInstance(diff_5, mrt_stats)
 
         self.assertEqual(len(diff_1.bogon_prefixes), 1)
         self.assertEqual(diff_1.bogon_prefixes[0].advt, 0)
@@ -1747,6 +1899,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff_1.bogon_prefixes[0].comm_set, [])
         self.assertEqual(
             os.path.basename(diff_1.bogon_prefixes[0].filename),
+            os.path.basename(self.upd_2_mrt),
             os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.bogon_prefixes[0].next_hop, "27.111.228.81")
@@ -1756,6 +1909,31 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff_1.bogon_prefixes[0].timestamp, "20220501.2309")
         self.assertEqual(diff_1.bogon_prefixes[0].updates, 0)
         self.assertEqual(diff_1.bogon_prefixes[0].withdraws, 0)
+
+        self.assertEqual(len(diff_1.highest_med_prefixes), 3)
+        self.assertEqual(diff_1.highest_med_prefixes[0].advt, 0)
+        self.assertEqual(diff_1.highest_med_prefixes[0].as_path, ["16509"])
+        self.assertEqual(diff_1.highest_med_prefixes[0].comm_set, [])
+        self.assertEqual(
+            os.path.basename(diff_1.highest_med_prefixes[0].filename),
+            os.path.basename(self.upd_2_mrt),
+        )
+        self.assertEqual(diff_1.highest_med_prefixes[0].med, 1000)
+        self.assertEqual(
+            diff_1.highest_med_prefixes[0].next_hop, "27.111.228.87"
+        )
+        self.assertEqual(
+            diff_1.highest_med_prefixes[0].origin_asns, set(["16509"])
+        )
+        self.assertEqual(diff_1.highest_med_prefixes[0].peer_asn, "16509")
+        self.assertEqual(
+            diff_1.highest_med_prefixes[0].prefix, "130.137.108.0/24"
+        )
+        self.assertEqual(
+            diff_1.highest_med_prefixes[0].timestamp, "20220501.2305"
+        )
+        self.assertEqual(diff_1.highest_med_prefixes[0].updates, 0)
+        self.assertEqual(diff_1.highest_med_prefixes[0].withdraws, 0)
 
         self.assertEqual(len(diff_1.longest_as_path), 1)
         self.assertEqual(diff_1.longest_as_path[0].advt, 0)
@@ -2146,7 +2324,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff_1.longest_comm_set[3].updates, 0)
         self.assertEqual(diff_1.longest_comm_set[3].withdraws, 0)
 
-        self.assertEqual(len(diff_1.invalid_len), 6)
+        self.assertEqual(len(diff_1.invalid_len), 12)
         self.assertEqual(diff_1.invalid_len[0].advt, 0)
         self.assertEqual(diff_1.invalid_len[0].as_path, ["199524", "38082"])
         self.assertEqual(diff_1.invalid_len[0].comm_set, [])
@@ -2548,6 +2726,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_origin_asns[5].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_origin_asns[5].next_hop, None)
         self.assertEqual(
@@ -2582,6 +2761,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_origin_asns[7].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_origin_asns[7].next_hop, None)
         self.assertEqual(
@@ -2599,6 +2779,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_origin_asns[8].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_origin_asns[8].next_hop, None)
         self.assertEqual(
@@ -2610,11 +2791,11 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff_1.most_origin_asns[8].updates, 0)
         self.assertEqual(diff_1.most_origin_asns[8].withdraws, 0)
 
+        self.assertIsInstance(diff_1_5.most_unknown_attrs, list)
         self.assertEqual(len(diff_1_5.most_unknown_attrs), 1)
         self.assertEqual(diff_1_5.most_unknown_attrs[0].advt, 0)
         self.assertEqual(
-            diff_1_5.most_unknown_attrs[0].as_path,
-            ["286", "1103", "12654"],
+            diff_1_5.most_unknown_attrs[0].as_path, ["286", "1103", "12654"]
         )
         self.assertEqual(
             diff_1_5.most_unknown_attrs[0].comm_set,
@@ -2631,17 +2812,18 @@ class test_mrt_stats(unittest.TestCase):
             diff_1_5.most_unknown_attrs[0].origin_asns, set(["12654"])
         )
         self.assertEqual(diff_1_5.most_unknown_attrs[0].peer_asn, "286")
+        self.assertEqual(diff_1_5.most_unknown_attrs[0].peer_asn, "286")
         self.assertEqual(
             diff_1_5.most_unknown_attrs[0].prefix, "93.175.144.0/24"
         )
         self.assertEqual(
             diff_1_5.most_unknown_attrs[0].timestamp, "20100827.0842"
         )
-        self.assertEqual(diff_1_5.most_unknown_attrs[0].updates, 0)
-        self.assertEqual(diff_1_5.most_unknown_attrs[0].withdraws, 0)
         self.assertEqual(
             diff_1_5.most_unknown_attrs[0].unknown_attrs, set([99])
         )
+        self.assertEqual(diff_1_5.most_unknown_attrs[0].updates, 0)
+        self.assertEqual(diff_1_5.most_unknown_attrs[0].withdraws, 0)
 
         self.assertEqual(diff_1.total_upd, 29688)
         self.assertEqual(diff_1.total_advt, 29396)
@@ -2684,11 +2866,15 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_advt_prefixes[0].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_advt_prefixes[0].next_hop, None)
         self.assertEqual(diff_1.most_advt_prefixes[0].origin_asns, set())
         self.assertEqual(diff_1.most_advt_prefixes[0].peer_asn, None)
         self.assertEqual(diff_1.most_advt_prefixes[0].prefix, "89.30.150.0/23")
+        self.assertEqual(
+            diff_1.most_advt_prefixes[0].timestamp, "20220501.2305"
+        )
         self.assertEqual(
             diff_1.most_advt_prefixes[0].timestamp, "20220501.2305"
         )
@@ -2708,11 +2894,15 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_upd_prefixes[0].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_upd_prefixes[0].next_hop, None)
         self.assertEqual(diff_1.most_upd_prefixes[0].origin_asns, set())
         self.assertEqual(diff_1.most_upd_prefixes[0].peer_asn, None)
         self.assertEqual(diff_1.most_upd_prefixes[0].prefix, "89.30.150.0/23")
+        self.assertEqual(
+            diff_1.most_upd_prefixes[0].timestamp, "20220501.2305"
+        )
         self.assertEqual(
             diff_1.most_upd_prefixes[0].timestamp, "20220501.2305"
         )
@@ -2725,6 +2915,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff_1.most_withd_prefixes[0].comm_set, [])
         self.assertEqual(
             os.path.basename(diff_1.most_withd_prefixes[0].filename),
+            os.path.basename(self.upd_2_mrt),
             os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_withd_prefixes[0].next_hop, None)
@@ -2746,6 +2937,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_advt_origin_asn[0].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_advt_origin_asn[0].next_hop, None)
         self.assertEqual(
@@ -2766,11 +2958,15 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_advt_peer_asn[0].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_advt_peer_asn[0].next_hop, None)
         self.assertEqual(diff_1.most_advt_peer_asn[0].origin_asns, set())
         self.assertEqual(diff_1.most_advt_peer_asn[0].peer_asn, "18106")
         self.assertEqual(diff_1.most_advt_peer_asn[0].prefix, None)
+        self.assertEqual(
+            diff_1.most_advt_peer_asn[0].timestamp, "20220501.2305"
+        )
         self.assertEqual(
             diff_1.most_advt_peer_asn[0].timestamp, "20220501.2305"
         )
@@ -2784,11 +2980,15 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(diff_1.most_upd_peer_asn[0].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(diff_1.most_upd_peer_asn[0].next_hop, None)
         self.assertEqual(diff_1.most_upd_peer_asn[0].origin_asns, set())
         self.assertEqual(diff_1.most_upd_peer_asn[0].peer_asn, "18106")
         self.assertEqual(diff_1.most_upd_peer_asn[0].prefix, None)
+        self.assertEqual(
+            diff_1.most_upd_peer_asn[0].timestamp, "20220501.2305"
+        )
         self.assertEqual(
             diff_1.most_upd_peer_asn[0].timestamp, "20220501.2305"
         )
@@ -2814,6 +3014,9 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(diff_1.timestamp, "20220501.2305")
 
     def test_gen_prev_daily_key(self):
+        self.assertRaises(
+            ValueError, self.upd_1_stats.gen_prev_daily_key, None
+        )
         self.assertRaises(
             ValueError, self.upd_1_stats.gen_prev_daily_key, None
         )
@@ -4030,6 +4233,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(stats_1.most_origin_asns[10].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(stats_1.most_origin_asns[10].next_hop, None)
         self.assertEqual(
@@ -4135,6 +4339,7 @@ class test_mrt_stats(unittest.TestCase):
         self.assertEqual(
             os.path.basename(stats_1.most_origin_asns[15].filename),
             os.path.basename(self.upd_2_mrt),
+            os.path.basename(self.upd_2_mrt),
         )
         self.assertEqual(stats_1.most_origin_asns[15].next_hop, None)
         self.assertEqual(
@@ -4191,6 +4396,12 @@ class test_mrt_stats(unittest.TestCase):
                     os.path.basename(self.upd_2_mrt),
                 ]
             ),
+            sorted(
+                [
+                    os.path.basename(self.upd_1_mrt),
+                    os.path.basename(self.upd_2_mrt),
+                ]
+            ),
         )
         self.assertEqual(stats_1.timestamp, "20220501.2305")
 
@@ -4216,9 +4427,10 @@ class test_mrt_stats(unittest.TestCase):
         self.assertTrue("archive_list" in json_str)
         self.assertTrue("bogon_origin_asns" in json_str)
         self.assertTrue("bogon_prefixes" in json_str)
+        self.assertTrue("highest_med_prefixes" in json_str)
+        self.assertTrue("invalid_len" in json_str)
         self.assertTrue("longest_as_path" in json_str)
         self.assertTrue("longest_comm_set" in json_str)
-        self.assertTrue("invalid_len" in json_str)
         self.assertTrue("most_advt_prefixes" in json_str)
         self.assertTrue("most_bogon_asns" in json_str)
         self.assertTrue("most_upd_prefixes" in json_str)
