@@ -28,10 +28,10 @@ jobs:
         run: |
           git config --global user.email "github_actions@example.com"
           git config --global user.name "Github Actions"
-      - name: Install Python 3.8
+      - name: Install Python 3.10
         uses: actions/setup-python@v3
         with:
-          python-version: 3.8
+          python-version: 3.10
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -44,15 +44,15 @@ jobs:
         run: |
           sudo mkdir /media/usb0
           sudo chmod 777 /media/usb0
-          python3 dnas/tests/test_git.py -v
-          python3 dnas/tests/test_bogon_asn.py -v
-          python3 dnas/tests/test_bogon_ip.py -v
-          python3 dnas/tests/test_mrt_archive.py -v
-          python3 dnas/tests/test_mrt_archives.py -v
-          python3 dnas/tests/test_mrt_entry.py -v
-          python3 dnas/tests/test_mrt_getter.py -v
-          python3 dnas/tests/test_mrt_parser.py -v
-          python3 dnas/tests/test_mrt_splitter.py -v
-          python3 dnas/tests/test_mrt_stats.py -v
-          python3 dnas/tests/test_whois.py -v
+          python3 dnas/tests/test_git.py -vv
+          python3 dnas/tests/test_bogon_asn.py -vv
+          python3 dnas/tests/test_bogon_ip.py -vv
+          python3 dnas/tests/test_mrt_archive.py -vv
+          python3 dnas/tests/test_mrt_archives.py -vv
+          python3 dnas/tests/test_mrt_entry.py -vv
+          python3 dnas/tests/test_mrt_getter.py -vv
+          python3 dnas/tests/test_mrt_parser.py -vv
+          python3 dnas/tests/test_mrt_splitter.py -vv
+          python3 dnas/tests/test_mrt_stats.py -vv
+          python3 dnas/tests/test_whois.py -vv
 
