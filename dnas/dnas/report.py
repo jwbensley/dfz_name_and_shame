@@ -130,38 +130,41 @@ class report:
                 txt_report.append(text)
 
         if mrt_s.highest_med_prefixes:
-            text = (
-                f"Prefixes with the highest MED: "
-                f"{len(mrt_s.highest_med_prefixes)} prefix(es) had a MED of "
-                f"{len(mrt_s.highest_med_prefixes[0].med)}.\n"
-            )
+            # Check this isn't an empty mrt_entry
+            if mrt_s.highest_med_prefixes[0].prefix:
 
-            txt_report.append(text)
+                text = (
+                    f"Prefixes with the highest MED: "
+                    f"{len(mrt_s.highest_med_prefixes)} prefix(es) had a MED "
+                    f"of {mrt_s.highest_med_prefixes[0].med}.\n"
+                )
 
-            if body:
-                text = ""
-                for mrt_e in mrt_s.highest_med_prefixes:
-                    text += f"Prefix {mrt_e.prefix} "
-                    peeras = mrt_e.peer_asn
-                    if peeras not in whois_cache:
-                        whois_cache[peeras] = whois.as_lookup(int(peeras))
-                    if whois_cache[peeras]:
-                        text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
-                    else:
-                        text += f"via peer AS{peeras} "
-                    text += f"from origin ASN(s)"
-                    for asn in mrt_e.origin_asns:
-                        if asn not in whois_cache:
-                            whois_cache[asn] = whois.as_lookup(int(asn))
-                        as_name = whois_cache[asn]
-                        if as_name:
-                            text += f" AS{asn} ({as_name})"
-                        else:
-                            text += f" AS{asn}"
-                    text += ".\n"
-                text = text[0:-1]
-                text += "\n\n"
                 txt_report.append(text)
+
+                if body:
+                    text = ""
+                    for mrt_e in mrt_s.highest_med_prefixes:
+                        text += f"Prefix {mrt_e.prefix} "
+                        peeras = mrt_e.peer_asn
+                        if peeras not in whois_cache:
+                            whois_cache[peeras] = whois.as_lookup(int(peeras))
+                        if whois_cache[peeras]:
+                            text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                        else:
+                            text += f"via peer AS{peeras} "
+                        text += f"from origin ASN(s)"
+                        for asn in mrt_e.origin_asns:
+                            if asn not in whois_cache:
+                                whois_cache[asn] = whois.as_lookup(int(asn))
+                            as_name = whois_cache[asn]
+                            if as_name:
+                                text += f" AS{asn} ({as_name})"
+                            else:
+                                text += f" AS{asn}"
+                        text += ".\n"
+                    text = text[0:-1]
+                    text += "\n\n"
+                    txt_report.append(text)
 
         if mrt_s.longest_as_path:
             text = (
