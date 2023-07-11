@@ -26,13 +26,14 @@ services:
       dockerfile: docker/dnas.Dockerfile
     volumes:
       - /etc/localtime:/etc/localtime
+      - /opt/dnas/:/opt/dnas/:z
       - /opt/dnas_data/:/opt/dnas_data/
     restart: always
     tty: true
     depends_on:
       - dnas_redis
     command:
-      - /opt/dnas/scripts/get_mrts.py
+      - /opt/dnas/dnas/scripts/get_mrts.py
       - --continuous
       - --update
       - --enabled
@@ -47,13 +48,14 @@ services:
       dockerfile: docker/dnas.Dockerfile
     volumes:
       - /etc/localtime:/etc/localtime
+      - /opt/dnas/:/opt/dnas/:z
       - /opt/dnas_data/:/opt/dnas_data/
     restart: always
     tty: true
     depends_on:
       - dnas_redis
     command:
-      - /opt/dnas/scripts/parse_mrts.py
+      - /opt/dnas/dnas/scripts/parse_mrts.py
       - --continuous
       - --update
       - --enabled
@@ -69,6 +71,7 @@ services:
       dockerfile: docker/dnas.Dockerfile
     volumes:
       - /etc/localtime:/etc/localtime
+      - /opt/dnas/:/opt/dnas/:z
       - /opt/dnas_data/:/opt/dnas_data/
     restart: always
     tty: true
