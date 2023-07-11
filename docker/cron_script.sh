@@ -9,14 +9,15 @@ set -o pipefail
 # Error if any command returns a non-zero exist status
 set -e
 
-pypy="/opt/pypy"
+PYPY="/opt/pypy"
+SCRIPTS="/opt/dnas/dnas/scripts"
 
 # Generate the daily stats for yesterday:
-${pypy} /opt/dnas/scripts/stats.py --yesterday --update --enabled
+${PYPY} ${SCRIPTS}/stats.py --yesterday --update --enabled
 
 # Generate the text report from the generated stats:
-${pypy} /opt/dnas/scripts/git_reports.py --yesterday
+${PYPY} ${SCRIPTS}/git_reports.py --yesterday
 
 # Tweet the report summary and link to full report:
-${pypy} /opt/dnas/scripts/tweet.py --yesterday
+${PYPY} ${SCRIPTS}/tweet.py --yesterday
 

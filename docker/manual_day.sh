@@ -13,17 +13,19 @@ set -o pipefail
 # Error if any command returns a non-zero exist status
 set -e
 
+SCRIPTS="/opt/dnas/dnas/scripts"
+
 docker-compose run --rm --name tmp_getter dnas_getter -- \
-/opt/dnas/scripts/get_mrts.py --backfill --update --enabled -ymd "$1"
+"${SCRIPTS}/get_mrts.py" --backfill --update --enabled -ymd "$1"
 
 docker-compose run --rm --name tmp_parser dnas_parser -- \
-/opt/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "$1"
+"${SCRIPTS}/parse_mrts.py" --update --remove --enabled --ymd "$1"
 
 docker-compose run --rm --name tmp_stats dnas_stats -- \
-/opt/dnas/scripts/stats.py --update --enabled --daily --ymd "$1"
+"${SCRIPTS}/stats.py" --update --enabled --daily --ymd "$1"
 
 docker-compose run --rm --name tmp_report dnas_stats -- \
-/opt/dnas/scripts/git_reports.py --generate --publish --ymd "$1"
+"${SCRIPTS}/git_reports.py" --generate --publish --ymd "$1"
 
 #docker-compose run --rm --name tmp_tweet dnas_stats -- \
-#/opt/dnas/scripts/tweet.py --generate --tweet --ymd "$1"
+#"${SCRIPTS}/tweet.py" --generate --tweet --ymd "$1"
