@@ -320,7 +320,7 @@ class config:
         {
             "TYPE": "RV",
             "NAME": "UNIT_TEST_RV_SYDNEY",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "http://archive.routeviews.org/route-views.sydney/bgpdata/",
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
@@ -348,7 +348,7 @@ class config:
         {
             "TYPE": "RIPE",
             "NAME": "UNIT_TEST_RCC_1",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "https://data.ris.ripe.net/rrc1/",
             "RIB_URL": "/",
             "UPD_URL": "/",
@@ -376,7 +376,7 @@ class config:
         {
             "TYPE": "RIPE",
             "NAME": "UNIT_TEST_RCC_23",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "https://data.ris.ripe.net/rrc23/",
             "RIB_URL": "/",
             "UPD_URL": "/",
