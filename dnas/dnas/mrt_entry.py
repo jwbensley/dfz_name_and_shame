@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import List, Set
+from typing import List, Optional, Set
 
 from dnas.config import config as cfg
 
@@ -140,7 +140,7 @@ class mrt_entry:
         """
         return datetime.datetime.now().strftime(cfg.TIME_FORMAT)
 
-    def to_json(self, indent: None | int = None) -> str:
+    def to_json(self, indent: Optional[int] = None) -> str:
         """
         Return this MRT entry obj serialised to a JSON str.
         """
