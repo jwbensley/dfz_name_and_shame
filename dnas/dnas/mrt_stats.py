@@ -936,7 +936,7 @@ class mrt_stats:
 
     def add_archive(self, name: str = None):
         """
-        Add the name of an MRT archive to the list if it is't already present.
+        Add the name of an MRT archive to the list if it isn't already present.
         """
         self.archive_list.add(name)
 
