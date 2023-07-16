@@ -353,7 +353,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
             if day_stats.add(mrt_s):
                 day_stats.add_archive(arch.NAME)
                 logging.info(f"Added {file} to {day_key}")
-            else:
+            elif file not in day_stats.file_list:
                 logging.info(f"Added {file} to {day_key} file list")
                 day_stats.file_list.append(file)
             rdb.set_stats(day_key, day_stats)
