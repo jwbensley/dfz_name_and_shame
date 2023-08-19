@@ -1,5 +1,5 @@
 async-timeout==4.0.2
-certifi==2022.6.15
+certifi==2023.7.22
 charset-normalizer==2.0.12
 Deprecated==1.2.13
 idna==3.3
