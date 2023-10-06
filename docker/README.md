@@ -109,19 +109,19 @@ done
 
 Generate stats in the DB for a specific day:
 ```shell
-docker-compose run --rm --name tmp_stats dnas_stats -- \
+docker-compose run --rm --name tmp_stats --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/stats.py --update --enabled --daily --ymd "20230101"
 ```
 
 Generate and push a report to git for a specific day:
 ```shell
-docker-compose run --rm --name tmp_report dnas_stats -- \
+docker-compose run --rm --name tmp_report --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/git_reports.py --generate --publish --ymd "20230101"
 ```
 
 Tweet for a specific day:
 ```
-docker-compose run --rm --name tmp_tweet dnas_stats -- \
+docker-compose run --rm --name tmp_tweet --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/tweet.py --generate --tweet --ymd "20230101"
 ```
 
