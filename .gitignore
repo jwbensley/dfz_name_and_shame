@@ -23,6 +23,9 @@ redis/data/*
 # Don't sync pycache
 **/__pycache__/
 
+# Don't sync tox cache
+.tox
+
 # Don't sync virtualenv
 **/venv/
 **/.venv/

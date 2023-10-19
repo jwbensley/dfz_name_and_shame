@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import List
+import typing
 
 from dnas.config import config as cfg
 from dnas.mrt_stats import mrt_stats
@@ -14,9 +14,7 @@ class report:
     """
 
     @staticmethod
-    def gen_txt_report(
-        mrt_s: 'mrt_stats' = None, body: bool = True
-    ) -> List[str]:
+    def gen_txt_report(mrt_s: "mrt_stats", body: bool = True) -> list[str]:
         """
         Generate a text report using the data in an mrt stats object.
         If body == False, only generate the headline info for each stat.
@@ -132,7 +130,6 @@ class report:
         if mrt_s.highest_med_prefixes:
             # Check this isn't an empty mrt_entry
             if mrt_s.highest_med_prefixes[0].prefix:
-
                 text = (
                     f"Prefixes with the highest MED: "
                     f"{len(mrt_s.highest_med_prefixes)} prefix(es) had a MED "
@@ -149,7 +146,9 @@ class report:
                         if peeras not in whois_cache:
                             whois_cache[peeras] = whois.as_lookup(int(peeras))
                         if whois_cache[peeras]:
-                            text += f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                            text += (
+                                f"via peer AS{peeras} ({whois_cache[peeras]}) "
+                            )
                         else:
                             text += f"via peer AS{peeras} "
                         text += f"from origin ASN(s)"
@@ -176,7 +175,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = ""
                 for mrt_e in mrt_s.longest_as_path:
                     text += f"Prefix {mrt_e.prefix} "
@@ -212,7 +210,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = ""
                 for mrt_e in mrt_s.longest_comm_set:
                     text += f"Prefix {mrt_e.prefix} "
@@ -275,7 +272,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = "Prefix(es):"
                 for mrt_e in mrt_s.most_advt_prefixes:
                     text += f" {mrt_e.prefix}"
@@ -293,7 +289,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = "Prefix(es):"
                 for mrt_e in mrt_s.most_upd_prefixes:
                     text += f" {mrt_e.prefix}"
@@ -311,7 +306,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = "Prefix(es):"
                 for mrt_e in mrt_s.most_withd_prefixes:
                     text += f" {mrt_e.prefix}"
@@ -329,7 +323,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = "Origin ASN(s):"
                 for mrt_e in mrt_s.most_advt_origin_asn:
                     for asn in mrt_e.origin_asns:
@@ -356,7 +349,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = "Peer ASN(s):"
                 for mrt_e in mrt_s.most_advt_peer_asn:
                     if mrt_e.peer_asn not in whois_cache:
@@ -384,7 +376,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = "Peer ASN(s):"
                 for mrt_e in mrt_s.most_upd_peer_asn:
                     if mrt_e.peer_asn not in whois_cache:
@@ -412,7 +403,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = "Peer ASN(s):"
                 for mrt_e in mrt_s.most_withd_peer_asn:
                     if mrt_e.peer_asn not in whois_cache:
@@ -440,7 +430,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = ""
                 for mrt_e in mrt_s.most_origin_asns:
                     text += f"Prefix {mrt_e.prefix} from origin ASN(s)"
@@ -469,7 +458,6 @@ class report:
             txt_report.append(text)
 
             if body:
-
                 text = ""
                 for mrt_e in mrt_s.most_unknown_attrs:
                     text += f"Prefix {mrt_e.prefix} from origin ASN(s) "
@@ -490,7 +478,7 @@ class report:
         return txt_report
 
     @staticmethod
-    def gen_txt_report_fn_ymd(ymd: str = None) -> str:
+    def gen_txt_report_fn_ymd(ymd: str) -> str:
         """
         Generate and return the filename for the text file report for a
         specific date.

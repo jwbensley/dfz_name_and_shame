@@ -1,13 +1,12 @@
 import os
-import requests
 import sys
+import typing
 import unittest
 
+import requests
+
 sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__))
-        , "../"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
 from dnas.mrt_getter import mrt_getter
 from dnas.mrt_parser import mrt_parser
@@ -23,7 +22,7 @@ class test_mrt_getter(unittest.TestCase):
     invalid_path = "http://archive.routeviews.org/mQFk79SrBI29HPUg0EgxFC17nkyZP4"
     invalid_domain = "https://mQFk79SrBI29HPUg0EgxFC17nkyZP4.com"
 
-    def test_download_mrt(self):
+    def test_download_mrt(self: "test_mrt_getter") -> None:
 
         with self.assertRaises(ValueError):
             mrt_getter.download_mrt()
@@ -45,7 +44,7 @@ class test_mrt_getter(unittest.TestCase):
                 replace = False,
                 url = self.invalid_domain
             )
-        
+
         mrt_getter.download_mrt(
             filename = self.output_file,
             replace = False,
@@ -55,5 +54,6 @@ class test_mrt_getter(unittest.TestCase):
         self.assertEqual(self.no_records, mrt_parser.mrt_count(self.output_file))
     """
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

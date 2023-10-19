@@ -4,32 +4,29 @@ import argparse
 import datetime
 import glob
 import logging
-import mrtparse # type: ignore
 import multiprocessing
-from multiprocessing import Pool
 import os
 import sys
 import time
-from typing import Any, Dict, List
+import typing
+from multiprocessing import Pool
 
 # Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__))
-        , "../"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
 
 from dnas.config import config as cfg
 from dnas.log import log
-from dnas.mrt_archives import mrt_archives
 from dnas.mrt_archive import mrt_archive
-from dnas.mrt_stats import mrt_stats
+from dnas.mrt_archives import mrt_archives
 from dnas.mrt_parser import mrt_parser
-from dnas.mrt_splitter import mrt_splitter, MrtFormatError
+from dnas.mrt_splitter import MrtFormatError, mrt_splitter
+from dnas.mrt_stats import mrt_stats
 from dnas.redis_db import redis_db
 
-def continuous(args: Dict[str, Any] = None):
+
+def continuous(args: dict) -> None:
     """
     Continuously parse new MRT files as they are download from the configured MRT
     archives. This function simply globs for all MRTs that match todays "ymd"
@@ -39,21 +36,16 @@ def continuous(args: Dict[str, Any] = None):
     previous day up until $delta past midnight each day.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
     if type(args) != dict:
-        raise TypeError(
-            f"args is not a dict: {type(args)}"
-        )
+        raise TypeError(f"args is not a dict: {type(args)}")
 
     mrt_a = mrt_archives()
     min_interval = cfg.DFT_INTERVAL
 
-    while(True):
-
-        delta = datetime.timedelta(minutes = 90)
+    while True:
+        delta = datetime.timedelta(minutes=90)
         glob_ymd = datetime.datetime.strftime(
             datetime.datetime.utcnow() - delta, cfg.DAY_FORMAT
         )
@@ -61,13 +53,16 @@ def continuous(args: Dict[str, Any] = None):
 
         filelist = []
         for arch in mrt_a.archives:
-            if (args["enabled"] and not arch.ENABLED):
+            if args["enabled"] and not arch.ENABLED:
                 continue
             logging.debug(f"Archive {arch.NAME} is enabled")
 
-
             if args["rib"]:
-                glob_str = str(arch.MRT_DIR + "/").replace("///", "/").replace("//", "/")
+                glob_str = (
+                    str(arch.MRT_DIR + "/")
+                    .replace("///", "/")
+                    .replace("//", "/")
+                )
                 glob_str += arch.RIB_PREFIX + "*" + glob_ymd + "*"
                 filelist.extend(glob.glob(glob_str))
 
@@ -76,19 +71,23 @@ def continuous(args: Dict[str, Any] = None):
                 which provides the most frequent dumps:
                 """
                 if (arch.RIB_INTERVAL * 60) < min_interval:
-                    min_interval = (arch.RIB_INTERVAL * 60)
+                    min_interval = arch.RIB_INTERVAL * 60
                     logging.debug(
                         f"Parse interval set to {min_interval} by "
                         f"{arch.NAME} RIB interval"
                     )
 
             if args["update"]:
-                glob_str = str(arch.MRT_DIR + "/").replace("///", "/").replace("//", "/")
+                glob_str = (
+                    str(arch.MRT_DIR + "/")
+                    .replace("///", "/")
+                    .replace("//", "/")
+                )
                 glob_str += arch.UPD_PREFIX + "*" + glob_ymd + "*"
                 filelist.extend(glob.glob(glob_str))
 
                 if (arch.UPD_INTERVAL * 60) < min_interval:
-                    min_interval = (arch.UPD_INTERVAL * 60)
+                    min_interval = arch.UPD_INTERVAL * 60
                     logging.debug(
                         f"Parse interval set to {min_interval} by "
                         f"{arch.NAME} UPD interval"
@@ -100,7 +99,8 @@ def continuous(args: Dict[str, Any] = None):
 
         time.sleep(min_interval)
 
-def parse_args():
+
+def parse_args() -> dict:
     """
     Parse the CLI args to this script.
     """
@@ -219,22 +219,18 @@ def parse_args():
 
     return vars(parser.parse_args())
 
+
 def parse_file(
-    filename: str = None, keep_chunks: bool = False,
-    multi: bool = True
-    ) -> 'mrt_stats':
+    filename: str, keep_chunks: bool = False, multi: bool = True
+) -> "mrt_stats":
     """
     Split and parse an individual MRT file, return the mrt_stats.
     """
     if not filename:
-        raise ValueError(
-            f"Missing required arguments: filename={filename}."
-        )
+        raise ValueError(f"Missing required arguments: filename={filename}.")
 
     if type(filename) != str:
-        raise TypeError(
-            f"filename is not a string: {type(filename)}"
-        )
+        raise TypeError(f"filename is not a string: {type(filename)}")
 
     mrt_a = mrt_archives()
     logging.info(f"Processing {filename}...")
@@ -256,13 +252,12 @@ def parse_file(
         return mrt_stats()
 
     if multi:
-        no_cpu =  multiprocessing.cpu_count()
+        no_cpu = multiprocessing.cpu_count()
         Pool = multiprocessing.Pool(no_cpu)
 
         splitter = mrt_splitter(filename)
         num_entries, file_chunks = splitter.split(
-            no_chunks=no_cpu,
-            outdir=cfg.SPLIT_DIR
+            no_chunks=no_cpu, outdir=cfg.SPLIT_DIR
         )
         try:
             splitter.close()
@@ -299,7 +294,8 @@ def parse_file(
 
     return mrt_s
 
-def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
+
+def parse_files(filelist: list[str], args: dict) -> None:
     """
     A wrapper around the single file parsing function parse_file(), which
     accepts a list of files to parse.
@@ -310,9 +306,7 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
         )
 
     if type(filelist) != list:
-        raise TypeError(
-            f"filelist is not a list: {type(filelist)}"
-        )
+        raise TypeError(f"filelist is not a list: {type(filelist)}")
 
     rdb = redis_db()
     mrt_a = mrt_archives()
@@ -342,16 +336,19 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
             )
             continue
         except EOFError as e:
-            logging.error(
-                f"Unable to split {file}, unexpected EOF: {e}"
-            )
+            logging.error(f"Unable to split {file}, unexpected EOF: {e}")
             os.remove(file)
             logging.error(f"Deleted {file}")
             continue
 
         if day_stats:
             if day_stats.add(mrt_s):
-                day_stats.add_archive(arch.NAME)
+                if arch:
+                    day_stats.add_archive(arch.NAME)
+                else:
+                    logging.warning(
+                        f"Unable to add archive name to stats object"
+                    )
                 logging.info(f"Added {file} to {day_key}")
             elif file not in day_stats.file_list:
                 logging.info(f"Added {file} to {day_key} file list")
@@ -359,7 +356,10 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
             rdb.set_stats(day_key, day_stats)
 
         else:
-            mrt_s.add_archive(arch.NAME)
+            if arch:
+                mrt_s.add_archive(arch.NAME)
+            else:
+                logging.warning(f"Unable to add archive name to stats object")
             rdb.set_stats(day_key, mrt_s)
             logging.info(f"Created new entry {day_key} from {file}")
 
@@ -371,27 +371,24 @@ def parse_files(filelist: List[str] = None, args: Dict[str, Any] = None):
 
     rdb.close()
 
-def process_day(args: Dict[str, Any] = None):
+
+def process_day(args: dict) -> None:
     """
     Build the list of files to be parsed and pass them to the parser function.
     This function builds a list MRT files from a specific day, from eligble MRT
     archives.
     """
-    if (not args):
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+    if not args:
+        raise ValueError(f"Missing required arguments: args={args}")
 
-    if (not args["ymd"]):
-        raise ValueError(
-            f"Missing required arguments: ymd={args['ymd']}"
-        )
+    if not args["ymd"]:
+        raise ValueError(f"Missing required arguments: ymd={args['ymd']}")
 
     mrt_archive.valid_ymd(args["ymd"])
     mrt_a = mrt_archives()
     filelist = []
     for arch in mrt_a.archives:
-        if (args["enabled"] and not arch.ENABLED):
+        if args["enabled"] and not arch.ENABLED:
             continue
         logging.debug(f"Checking archive {arch.NAME}...")
 
@@ -409,21 +406,18 @@ def process_day(args: Dict[str, Any] = None):
 
     parse_files(filelist=filelist, args=args)
 
-def process_mrt_file(args: Dict[str, Any] = None):
+
+def process_mrt_file(args: dict) -> None:
     """
     Pass a single filename to the parser function.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
     filename = args["single"]
 
     if type(filename) != str:
-        raise TypeError(
-            f"filename is not a string: {type(filename)}"
-        )
+        raise TypeError(f"filename is not a string: {type(filename)}")
 
     mrt_a = mrt_archives()
     arch = mrt_a.arch_from_file_path(filename)
@@ -433,26 +427,23 @@ def process_mrt_file(args: Dict[str, Any] = None):
     else:
         exit(1)
 
-def process_mrt_glob(args: Dict[str, Any] = None):
+
+def process_mrt_glob(args: dict) -> None:
     """
     Build the list of files to be parsed based on a file glob, then pass them
     to the parser function. This function builds a list of all available MRT
     files from all eligble MRT archives.
     """
-    if (not args):
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+    if not args:
+        raise ValueError(f"Missing required arguments: args={args}")
 
     if type(args) != dict:
-        raise TypeError(
-            f"args is not a dict: {type(args)}"
-        )
+        raise TypeError(f"args is not a dict: {type(args)}")
 
     mrt_a = mrt_archives()
     filelist = []
     for arch in mrt_a.archives:
-        if (args["enabled"] and not arch.ENABLED):
+        if args["enabled"] and not arch.ENABLED:
             continue
         logging.debug(f"Checking archive {arch.NAME}...")
 
@@ -474,17 +465,16 @@ def process_mrt_glob(args: Dict[str, Any] = None):
 
     parse_files(filelist=filelist, args=args)
 
-def process_range(args: Dict[str, Any] = None):
+
+def process_range(args: dict) -> None:
     """
     Build a list of MRT files between the --start and --end dates inclusive
     to pass to the MRT parser function.
     """
-    if (not args):
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+    if not args:
+        raise ValueError(f"Missing required arguments: args={args}")
 
-    if (not args["start"] and not args["end"]):
+    if not args["start"] and not args["end"]:
         raise ValueError(
             "Both --start and --end must be specified when using --range"
         )
@@ -504,22 +494,20 @@ def process_range(args: Dict[str, Any] = None):
     filelist = []
 
     for i in range(0, diff.days + 1):
-
         delta = datetime.timedelta(days=i)
         ymd = datetime.datetime.strftime(start_time + delta, cfg.DAY_FORMAT)
 
         for arch in mrt_a.archives:
-            if (args["enabled"] and not arch.ENABLED):
+            if args["enabled"] and not arch.ENABLED:
                 continue
             logging.debug(f"Checking archive {arch.NAME} on {ymd}...")
 
             if args["rib"]:
-
                 rib_filenames = arch.gen_rib_fns_day(ymd)
 
                 for filename in rib_filenames[:]:
                     timestamp = arch.ts_from_filename(filename)
-                    if (timestamp < start_time or timestamp > end_time):
+                    if timestamp < start_time or timestamp > end_time:
                         rib_filenames.remove(filename)
 
                 if not rib_filenames:
@@ -531,15 +519,16 @@ def process_range(args: Dict[str, Any] = None):
                 )
                 logging.debug(f"Adding {rib_filenames}")
                 for file in rib_filenames:
-                    filelist.append(os.path.normpath(arch.MRT_DIR + "/" + file))
+                    filelist.append(
+                        os.path.normpath(arch.MRT_DIR + "/" + file)
+                    )
 
             if args["update"]:
-
                 upd_filenames = arch.gen_upd_fns_day(ymd)
 
                 for filename in upd_filenames[:]:
                     timestamp = arch.ts_from_filename(filename)
-                    if (timestamp < start_time or timestamp > end_time):
+                    if timestamp < start_time or timestamp > end_time:
                         upd_filenames.remove(filename)
 
                 if not upd_filenames:
@@ -551,7 +540,9 @@ def process_range(args: Dict[str, Any] = None):
                 )
                 logging.debug(f"Adding {upd_filenames}")
                 for file in upd_filenames:
-                    filelist.append(os.path.normpath(arch.MRT_DIR + "/" + file))
+                    filelist.append(
+                        os.path.normpath(arch.MRT_DIR + "/" + file)
+                    )
 
     if not filelist:
         logging.info(f"No files found to process")
@@ -559,17 +550,21 @@ def process_range(args: Dict[str, Any] = None):
 
     parse_files(filelist=filelist, args=args)
 
-def main():
 
+def main():
     args = parse_args()
     log.setup(
-        debug = args["debug"],
-        log_src = "MRT parser script",
-        log_path = cfg.LOG_PARSER,
+        debug=args["debug"],
+        log_src="MRT parser script",
+        log_path=cfg.LOG_PARSER,
     )
 
-    if (not args["continuous"] and not args["range"] and not args["single"] and
-        not args["yesterday"] and not args["ymd"]
+    if (
+        not args["continuous"]
+        and not args["range"]
+        and not args["single"]
+        and not args["yesterday"]
+        and not args["ymd"]
     ):
         raise ValueError(
             "At least one of --continuous, --range, --single, --yesterday, or "
@@ -602,5 +597,6 @@ def main():
     else:
         process_mrt_glob(args)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
