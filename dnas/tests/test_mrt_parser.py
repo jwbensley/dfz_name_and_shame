@@ -1,6 +1,7 @@
 import os
 import shutil
 import sys
+import typing
 import unittest
 
 sys.path.append(
@@ -8,16 +9,15 @@ sys.path.append(
 )
 from dnas.config import config
 from dnas.mrt_archives import mrt_archives
+from dnas.mrt_entry import mrt_entry
 from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
-from dnas.mrt_entry import mrt_entry
 
 
 class test_mrt_parser(unittest.TestCase):
-
     cfg = config()
 
-    def setUp(self):
+    def setUp(self: "test_mrt_parser") -> None:
         """
         Copy the test files to the location they would be in,
         if we had downloaded them from the public archives:
@@ -83,7 +83,7 @@ class test_mrt_parser(unittest.TestCase):
         shutil.copy2(self.upd_3_path, self.upd_3_mrt)
         shutil.copy2(self.upd_4_path, self.upd_4_mrt)
 
-    def test_init(self):
+    def test_init(self: "test_mrt_parser"):
         """
         The mrt_parser class contains only static methods for now, so check
         that nothing is returned and nothing is raised.
@@ -96,7 +96,7 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(type(mrt_p), mrt_parser)
         self.assertEqual(asserted, False)
 
-    def test_parse_upd_dump(self):
+    def test_parse_upd_dump(self: "test_mrt_parser") -> None:
         """
         Throughout this function the MRT file being parsed is alternating,
         because we want to hit all code paths, no one MRT file contains the
@@ -776,9 +776,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_advt_prefixes[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_advt_prefixes[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_advt_prefixes[0].next_hop, "")
         self.assertEqual(upd_2_stats.most_advt_prefixes[0].origin_asns, set())
-        self.assertEqual(upd_2_stats.most_advt_prefixes[0].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_advt_prefixes[0].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_advt_prefixes[0].prefix, "89.30.150.0/23"
         )
@@ -791,6 +791,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertIsInstance(upd_3_stats.most_bogon_asns, list)
         self.assertEqual(len(upd_3_stats.most_bogon_asns), 2)
         for i in range(0, len(upd_3_stats.most_bogon_asns)):
+            print(f"comparing {i}")
+            upd_3_stats.most_bogon_asns[i].print()
+            test_3_stats.most_bogon_asns[i].print()
             self.assertTrue(
                 upd_3_stats.most_bogon_asns[i].equal_to(
                     test_3_stats.most_bogon_asns[i], meta=True
@@ -806,9 +809,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_upd_prefixes[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_upd_prefixes[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_upd_prefixes[0].next_hop, "")
         self.assertEqual(upd_2_stats.most_upd_prefixes[0].origin_asns, set())
-        self.assertEqual(upd_2_stats.most_upd_prefixes[0].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_upd_prefixes[0].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_upd_prefixes[0].prefix, "89.30.150.0/23"
         )
@@ -827,9 +830,9 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_withd_prefixes[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_withd_prefixes[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_withd_prefixes[0].next_hop, "")
         self.assertEqual(upd_2_stats.most_withd_prefixes[0].origin_asns, set())
-        self.assertEqual(upd_2_stats.most_withd_prefixes[0].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_withd_prefixes[0].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_withd_prefixes[0].prefix, "2a01:9e00:4279::/48"
         )
@@ -848,12 +851,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_advt_origin_asn[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_advt_origin_asn[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_advt_origin_asn[0].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_advt_origin_asn[0].origin_asns, set(["20473"])
         )
-        self.assertEqual(upd_2_stats.most_advt_origin_asn[0].peer_asn, None)
-        self.assertEqual(upd_2_stats.most_advt_origin_asn[0].prefix, None)
+        self.assertEqual(upd_2_stats.most_advt_origin_asn[0].peer_asn, "")
+        self.assertEqual(upd_2_stats.most_advt_origin_asn[0].prefix, "")
         self.assertEqual(
             upd_2_stats.most_advt_origin_asn[0].timestamp, "20220501.2305"
         )
@@ -869,10 +872,10 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_advt_peer_asn[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_advt_peer_asn[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_advt_peer_asn[0].next_hop, "")
         self.assertEqual(upd_2_stats.most_advt_peer_asn[0].origin_asns, set())
         self.assertEqual(upd_2_stats.most_advt_peer_asn[0].peer_asn, "18106")
-        self.assertEqual(upd_2_stats.most_advt_peer_asn[0].prefix, None)
+        self.assertEqual(upd_2_stats.most_advt_peer_asn[0].prefix, "")
         self.assertEqual(
             upd_2_stats.most_advt_peer_asn[0].timestamp, "20220501.2305"
         )
@@ -888,10 +891,10 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_upd_peer_asn[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_upd_peer_asn[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_upd_peer_asn[0].next_hop, "")
         self.assertEqual(upd_2_stats.most_upd_peer_asn[0].origin_asns, set())
         self.assertEqual(upd_2_stats.most_upd_peer_asn[0].peer_asn, "18106")
-        self.assertEqual(upd_2_stats.most_upd_peer_asn[0].prefix, None)
+        self.assertEqual(upd_2_stats.most_upd_peer_asn[0].prefix, "")
         self.assertEqual(
             upd_2_stats.most_upd_peer_asn[0].timestamp, "20220501.2305"
         )
@@ -907,10 +910,10 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_withd_peer_asn[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_withd_peer_asn[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_withd_peer_asn[0].next_hop, "")
         self.assertEqual(upd_2_stats.most_withd_peer_asn[0].origin_asns, set())
         self.assertEqual(upd_2_stats.most_withd_peer_asn[0].peer_asn, "18106")
-        self.assertEqual(upd_2_stats.most_withd_peer_asn[0].prefix, None)
+        self.assertEqual(upd_2_stats.most_withd_peer_asn[0].prefix, "")
         self.assertEqual(
             upd_2_stats.most_withd_peer_asn[0].timestamp, "20220501.2305"
         )
@@ -926,12 +929,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[0].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[0].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[0].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[0].origin_asns,
             set(["28198", "262375"]),
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[0].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[0].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[0].prefix, "177.131.0.0/21"
         )
@@ -947,12 +950,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[1].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[1].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[1].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[1].origin_asns,
             set(["271204", "266181"]),
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[1].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[1].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[1].prefix, "179.49.190.0/23"
         )
@@ -968,12 +971,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[2].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[2].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[2].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[2].origin_asns,
             set(["396559", "396542"]),
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[2].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[2].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[2].prefix, "2620:74:2a::/48"
         )
@@ -989,11 +992,11 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[3].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[3].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[3].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[3].origin_asns, set(["7420", "37154"])
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[3].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[3].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[3].prefix, "196.46.192.0/19"
         )
@@ -1009,11 +1012,11 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[4].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[4].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[4].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[4].origin_asns, set(["7487", "54396"])
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[4].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[4].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[4].prefix, "205.197.192.0/21"
         )
@@ -1029,12 +1032,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[5].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[5].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[5].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[5].origin_asns,
             set(["203020", "29802"]),
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[5].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[5].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[5].prefix, "206.123.159.0/24"
         )
@@ -1050,12 +1053,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[6].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[6].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[6].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[6].origin_asns,
             set(["52000", "19318"]),
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[6].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[6].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[6].prefix, "68.168.210.0/24"
         )
@@ -1071,12 +1074,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[7].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[7].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[7].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[7].origin_asns,
             set(["55020", "137951"]),
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[7].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[7].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[7].prefix, "156.241.128.0/22"
         )
@@ -1092,12 +1095,12 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(
             upd_2_stats.most_origin_asns[8].filename, self.upd_2_mrt
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[8].next_hop, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[8].next_hop, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[8].origin_asns,
             set(["269208", "268347"]),
         )
-        self.assertEqual(upd_2_stats.most_origin_asns[8].peer_asn, None)
+        self.assertEqual(upd_2_stats.most_origin_asns[8].peer_asn, "")
         self.assertEqual(
             upd_2_stats.most_origin_asns[8].prefix, "2804:610c::/32"
         )
@@ -1152,5 +1155,5 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(upd_2_stats.timestamp, "20220501.2305")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

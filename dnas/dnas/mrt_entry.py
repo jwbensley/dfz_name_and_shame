@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import List, Optional, Set
+import typing
 
 from dnas.config import config as cfg
 
@@ -14,20 +14,19 @@ class mrt_entry:
     def __init__(
         self,
         advt: int = 0,
-        as_path: List[str] = [],
-        comm_set: List[str] = [],
-        filename: str = None,
+        as_path: list[str] = [],
+        comm_set: list[str] = [],
+        filename: str = "",
         med: int = cfg.MISSING_MED,
-        next_hop: str = None,
-        prefix: str = None,
-        origin_asns: Set[str] = set(),
-        peer_asn: str = None,
-        unknown_attrs: Set[int] = set(),
-        timestamp: str = None,
+        next_hop: str = "",
+        prefix: str = "",
+        origin_asns: set[str] = set(),
+        peer_asn: str = "",
+        unknown_attrs: set[int] = set(),
+        timestamp: str = "",
         updates: int = 0,
         withdraws: int = 0,
     ) -> None:
-
         self.advt = advt
         self.as_path = as_path
         self.comm_set = comm_set
@@ -42,13 +41,15 @@ class mrt_entry:
         self.withdraws = withdraws
         self.unknown_attrs = unknown_attrs
 
-    def equal_to(self, mrt_e: 'mrt_entry' = None, meta: bool = False) -> bool:
+    def equal_to(
+        self: "mrt_entry", mrt_e: "mrt_entry", meta: bool = False
+    ) -> bool:
         """
         Return True if this MRT stat entry obj is the same as mrt_e, else False.
         Comparing meta data like filename and timestamp is option.
         """
         if not mrt_e:
-            raise ValueError(f"Missing required arguments: mrt_e={mrt_e}")
+            raise ValueError(f"Missing required arguments: mrt_e")
 
         if type(mrt_e) != mrt_entry:
             raise TypeError(f"mrt_e is not a stats entry: {type(mrt_e)}")
@@ -98,14 +99,12 @@ class mrt_entry:
 
         return True
 
-    def from_json(self, json_str: str = None):
+    def from_json(self: "mrt_entry", json_str: str) -> None:
         """
         Parse a JSON str into this MRT stats entry obj.
         """
         if not json_str:
-            raise ValueError(
-                f"Missing required arguments: json_str={json_str}"
-            )
+            raise ValueError(f"Missing required arguments: json_str")
 
         if type(json_str) != str:
             raise TypeError(f"json_str is not a string: {type(json_str)}")
@@ -114,22 +113,27 @@ class mrt_entry:
         self.advt = json_data["advt"]
         self.as_path = json_data["as_path"]
         self.comm_set = json_data["comm_set"]
+        """
+        Convert between JSON "null" and empty string ""
+        In the past we used str or None (which was serialsed as null),
+        not str only.
+        """
         self.filename = (
-            json_data["filename"] if ("filename" in json_data) else None
-        )  ##### FIX ME
-        self.med = (
-            json_data["med"] if ("med" in json_data) else None
-        ) ##### FIX ME
-        self.next_hop = json_data["next_hop"]
-        self.prefix = json_data["prefix"]
+            json_data["filename"] if ("filename" in json_data) else ""
+        )
+        self.med = json_data["med"] if ("med" in json_data) else None
+        self.next_hop = json_data["next_hop"] if json_data["next_hop"] else ""
+        self.prefix = json_data["prefix"] if json_data["prefix"] else ""
         self.origin_asns = set(json_data["origin_asns"])
-        self.peer_asn = json_data["peer_asn"]
+        self.peer_asn = json_data["peer_asn"] if json_data["peer_asn"] else ""
         self.unknown_attrs = (
             set(json_data["unknown_attrs"])
             if ("unknown_attrs" in json_data)
             else set()
-        )  ##### FIX ME
-        self.timestamp = json_data["timestamp"]
+        )
+        self.timestamp = (
+            json_data["timestamp"] if json_data["timestamp"] else ""
+        )
         self.updates = json_data["updates"]
         self.withdraws = json_data["withdraws"]
 
@@ -140,7 +144,9 @@ class mrt_entry:
         """
         return datetime.datetime.now().strftime(cfg.TIME_FORMAT)
 
-    def to_json(self, indent: Optional[int] = None) -> str:
+    def to_json(
+        self: "mrt_entry", indent: int = cfg.MRT_ENTRY_JSON_INDENT
+    ) -> str:
         """
         Return this MRT entry obj serialised to a JSON str.
         """
@@ -161,7 +167,7 @@ class mrt_entry:
         }
         return json.dumps(json_data, indent=indent)
 
-    def print(self):
+    def print(self: "mrt_entry") -> None:
         """
         Ugly print this MRT stats entry.
         """

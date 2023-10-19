@@ -5,19 +5,15 @@ import typing
 
 from dnas.bogon_asn import bogon_asn
 
-class whois:
 
+class whois:
     @staticmethod
     def as_lookup(asn: int = -1) -> str:
         if asn < 0:
-            raise ValueError(
-                f"Missing required arguments: asn={asn}"
-            )
+            raise ValueError(f"Missing required arguments: asn={asn}")
 
         if type(asn) != int:
-            raise TypeError(
-                f"asn is not string: {type(asn)}"
-            )
+            raise TypeError(f"asn is not string: {type(asn)}")
 
         if bogon_asn.is_bogon(asn):
             return ""
@@ -60,7 +56,7 @@ class whois:
 
         for line in output.split("\n"):
             if "owner:" in line:
-                tmp = ' '.join(line.split()[1:])
+                tmp = " ".join(line.split()[1:])
                 if tmp.strip():
                     as_name = tmp
                     break
@@ -69,7 +65,7 @@ class whois:
 
         for line in output.split("\n"):
             if "ASName:" in line:
-                tmp = ' '.join(line.split()[1:])
+                tmp = " ".join(line.split()[1:])
                 if tmp.strip():
                     as_name = tmp
                     break
@@ -78,7 +74,7 @@ class whois:
 
         for line in output.split("\n"):
             if "OrgName:" in line:
-                tmp = ' '.join(line.split()[1:])
+                tmp = " ".join(line.split()[1:])
                 if tmp.strip():
                     as_name = tmp
                     break

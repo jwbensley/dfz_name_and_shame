@@ -1,6 +1,6 @@
 import datetime
 import json
-from typing import Dict, List, Set
+import typing
 
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
@@ -13,33 +13,33 @@ class mrt_stats:
     This stores the starts from a parsed data source (i.e. a BGP MRT dump).
     """
 
-    def __init__(self) -> None:
-        self.archive_list: Set[
+    def __init__(self: "mrt_stats") -> None:
+        self.archive_list: set[
             str
         ] = set()  # Archives from which this stats object was populated
-        self.bogon_origin_asns: List[mrt_entry] = []
-        self.bogon_prefixes: List[mrt_entry] = []
-        self.highest_med_prefixes: List[mrt_entry] = []
-        self.invalid_len: List[mrt_entry] = []
-        self.longest_as_path: List[mrt_entry] = []
-        self.longest_comm_set: List[mrt_entry] = []
-        self.most_advt_prefixes: List[mrt_entry] = []
-        self.most_bogon_asns: List[mrt_entry] = []
-        self.most_upd_prefixes: List[mrt_entry] = []
-        self.most_withd_prefixes: List[mrt_entry] = []
-        self.most_advt_origin_asn: List[mrt_entry] = []
-        self.most_advt_peer_asn: List[mrt_entry] = []
-        self.most_upd_peer_asn: List[mrt_entry] = []
-        self.most_withd_peer_asn: List[mrt_entry] = []
-        self.most_origin_asns: List[mrt_entry] = []
-        self.most_unknown_attrs: List[mrt_entry] = []
-        self.file_list: List[str] = []
+        self.bogon_origin_asns: list[mrt_entry] = []
+        self.bogon_prefixes: list[mrt_entry] = []
+        self.highest_med_prefixes: list[mrt_entry] = []
+        self.invalid_len: list[mrt_entry] = []
+        self.longest_as_path: list[mrt_entry] = []
+        self.longest_comm_set: list[mrt_entry] = []
+        self.most_advt_prefixes: list[mrt_entry] = []
+        self.most_bogon_asns: list[mrt_entry] = []
+        self.most_upd_prefixes: list[mrt_entry] = []
+        self.most_withd_prefixes: list[mrt_entry] = []
+        self.most_advt_origin_asn: list[mrt_entry] = []
+        self.most_advt_peer_asn: list[mrt_entry] = []
+        self.most_upd_peer_asn: list[mrt_entry] = []
+        self.most_withd_peer_asn: list[mrt_entry] = []
+        self.most_origin_asns: list[mrt_entry] = []
+        self.most_unknown_attrs: list[mrt_entry] = []
+        self.file_list: list[str] = []
         self.timestamp: str = ""
         self.total_upd: int = 0  # All updates received/parsed
         self.total_advt: int = 0  # Updates signalling prefix avertisement
         self.total_withd: int = 0  # Updates signalling prefix withdrawal
 
-    def add(self, merge_data: 'mrt_stats' = None) -> bool:
+    def add(self: "mrt_stats", merge_data: "mrt_stats") -> bool:
         """
         This function adds another MRT stats object into this one.
         This means that values which are equal in both objects are added and
@@ -784,7 +784,7 @@ class mrt_stats:
         # Most origin ASNs per prefix
         tmp = []
 
-        self_prefixes: Dict[str, None] = {}
+        self_prefixes: dict[str, None] = {}
         for mrt_e in self.most_origin_asns:
             self_prefixes[mrt_e.prefix] = None
         # ^ This is a hack to speed up this section up:
@@ -934,13 +934,17 @@ class mrt_stats:
 
         return changed
 
-    def add_archive(self, name: str = None):
+    def add_archive(self: "mrt_stats", name: str) -> None:
         """
         Add the name of an MRT archive to the list if it isn't already present.
         """
+        if not name:
+            raise ValueError(f"name is required for")
         self.archive_list.add(name)
 
-    def equal_to(self, mrt_s: 'mrt_stats' = None, meta: bool = False) -> bool:
+    def equal_to(
+        self: "mrt_stats", mrt_s: "mrt_stats", meta: bool = False
+    ) -> bool:
         """
         Return True if this MRT stats obj is the same as mrt_s, else False.
         Comparing meta data like file list or timestamp is optional.
@@ -1145,7 +1149,7 @@ class mrt_stats:
 
         return True
 
-    def from_file(self, filename: str = None):
+    def from_file(self: "mrt_stats", filename: str) -> None:
         """
         Load and parse MRT stats obj from a JSON text file.
         """
@@ -1158,7 +1162,7 @@ class mrt_stats:
         with open(filename, "r") as f:
             self.from_json(f.read())
 
-    def from_json(self, json_str: str = None):
+    def from_json(self: "mrt_stats", json_str: str) -> None:
         """
         Parse the JSON string as MRT stats data.
         To provide backward connectivity with old data in Redis, need to check
@@ -1308,7 +1312,7 @@ class mrt_stats:
             self.total_withd = int(json_dict["total_withd"])
 
     @staticmethod
-    def gen_ts_from_ymd(ymd: str = None) -> str:
+    def gen_ts_from_ymd(ymd: str) -> str:
         """
         Generate and return the timestamp for a specific day, for use when
         creating an mrt_stats objects which contains the summary data for a
@@ -1327,7 +1331,7 @@ class mrt_stats:
         )
 
     @staticmethod
-    def gen_daily_key(ymd: str = None) -> str:
+    def gen_daily_key(ymd: str) -> str:
         """
         Generate the redis key used to store the global stats obj for a
         specific day.
@@ -1343,7 +1347,7 @@ class mrt_stats:
         return "DAILY:" + ymd
 
     @staticmethod
-    def gen_diff_key(ymd: str = None) -> str:
+    def gen_diff_key(ymd: str) -> str:
         """
         Generate the redis key used to store the diff stats obj for a
         specific day.
@@ -1365,7 +1369,7 @@ class mrt_stats:
         """
         return "GLOBAL"
 
-    def get_diff(self, mrt_s: 'mrt_stats' = None) -> 'mrt_stats':
+    def get_diff(self: "mrt_stats", mrt_s: "mrt_stats") -> "mrt_stats":
         """
         Generate an mrt_stats obj with entries unique to mrt_s.
         Don't diff meta data like timestamp or file list.
@@ -1558,7 +1562,7 @@ class mrt_stats:
 
         return diff
 
-    def get_diff_larger(self, mrt_s: 'mrt_stats' = None) -> 'mrt_stats':
+    def get_diff_larger(self: "mrt_stats", mrt_s: "mrt_stats") -> "mrt_stats":
         """
         Generate an mrt_stats obj with entries which are unique to mrt_s, and
         are larger than the equivilent values in this obj. For example, only
@@ -1890,7 +1894,7 @@ class mrt_stats:
         return diff
 
     @staticmethod
-    def gen_prev_daily_key(ymd: str = None) -> str:
+    def gen_prev_daily_key(ymd: str) -> str:
         """
         Generate the redis key used to store the global stats obj for the
         day before a specific day.
@@ -1909,7 +1913,7 @@ class mrt_stats:
             cfg.DAY_FORMAT,
         )
 
-    def is_empty(self) -> bool:
+    def is_empty(self: "mrt_stats") -> bool:
         """
         Check if an mrt_stats object is empty. Don't check meta data like
         file list or timestamp.
@@ -1941,7 +1945,7 @@ class mrt_stats:
         else:
             return False
 
-    def merge(self, merge_data: 'mrt_stats' = None) -> bool:
+    def merge(self: "mrt_stats", merge_data: "mrt_stats") -> bool:
         """
         This functions takes the bigger stat from the local object and
         merge_data object, and stores the bigger of the two back in this object.
@@ -2453,14 +2457,16 @@ class mrt_stats:
 
         return changed
 
-    def merge_archives(self, mrt_s: 'mrt_stats' = None):
+    def merge_archives(self: "mrt_stats", mrt_s: "mrt_stats"):
         """
         Add MRT archive names from mrt_s to this stats object, only if they
         are missing.
         """
+        if not mrt_s:
+            raise ValueError("mrt_s is required")
         self.archive_list.update(mrt_s.archive_list)
 
-    def print(self):
+    def print(self: "mrt_stats") -> None:
         """
         Ugly print the stats in this obj.
         """
@@ -2751,7 +2757,7 @@ class mrt_stats:
         if self.timestamp:
             print(f"timestamp: {self.timestamp}")
 
-    def to_file(self, filename: str = None):
+    def to_file(self: "mrt_stats", filename: str) -> None:
         """
         Serialise the MRT stats obj to JSON, save JSON as text file.
         """
@@ -2764,7 +2770,9 @@ class mrt_stats:
         with open(filename, "w") as f:
             f.write(self.to_json())
 
-    def to_json(self) -> str:
+    def to_json(
+        self: "mrt_stats", indent: int = cfg.MRT_STATS_JSON_INDENT
+    ) -> str:
         """
         Serialise the MRT stats obj to JSON, and returns the JSON string.
         """
@@ -2822,9 +2830,9 @@ class mrt_stats:
             "file_list": self.file_list,
             "timestamp": self.timestamp,
         }
-        return json.dumps(json_data, indent=2)
+        return json.dumps(json_data, indent=indent)
 
-    def ts_ymd(self) -> str:
+    def ts_ymd(self: "mrt_stats") -> str:
         """
         Return only the YMD from this obj's timestamp raw e.g. YYYYMMDD
         """
@@ -2833,7 +2841,7 @@ class mrt_stats:
 
         return self.timestamp.split(".")[0]
 
-    def ts_ymd_format(self) -> str:
+    def ts_ymd_format(self: "mrt_stats") -> str:
         """
         Return only the YMD from this obj's timestamp formatted e.g. YYYY/MM/DD
         """

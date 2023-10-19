@@ -36,23 +36,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r dnas/requirements.txt
-          sudo apt-get install -y whois
-      - name: Run the Python unit tests
+          sudo apt-get install -y whois shellcheck
+      - name: Run the tox tests
         working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/
         env:
             SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          sudo mkdir /media/usb0
-          sudo chmod 777 /media/usb0
-          python3 dnas/tests/test_git.py -vv
-          python3 dnas/tests/test_bogon_asn.py -vv
-          python3 dnas/tests/test_bogon_ip.py -vv
-          python3 dnas/tests/test_mrt_archive.py -vv
-          python3 dnas/tests/test_mrt_archives.py -vv
-          python3 dnas/tests/test_mrt_entry.py -vv
-          python3 dnas/tests/test_mrt_getter.py -vv
-          python3 dnas/tests/test_mrt_parser.py -vv
-          python3 dnas/tests/test_mrt_splitter.py -vv
-          python3 dnas/tests/test_mrt_stats.py -vv
-          python3 dnas/tests/test_whois.py -vv
-
+            tox
