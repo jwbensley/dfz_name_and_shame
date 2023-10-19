@@ -2,64 +2,59 @@
 
 import argparse
 import logging
-import pprint
 import os
+import pprint
 import sys
-from typing import List
+import typing
 
 # Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__))
-        , "../"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
 
 from dnas.config import config as cfg
 from dnas.log import log
-from dnas.redis_db import redis_db
 from dnas.mrt_stats import mrt_stats
+from dnas.redis_db import redis_db
 
 rdb = redis_db()
 
-def delete(key: str = None):
+
+def delete(key: str) -> None:
     """
     Delete they key/value pair from redis stored under key.
     """
     if not key:
-        raise ValueError(
-            f"Missing required arguments: key={key}"
-        )
+        raise ValueError(f"Missing required arguments: key={key}")
 
     if rdb.delete(key):
         logging.info(f"Deleted {key}")
     else:
         logging.info(f"Nothing to delete for {key}")
 
-def dump_json(filename: str = None):
+
+def dump_json(filename: str) -> None:
     """
     Dump the entire redis DB to a JSON file.
     """
     if not filename:
-        raise ValueError(
-            f"Missing required arguments: filename={filename}"
-        )
+        raise ValueError(f"Missing required arguments: filename={filename}")
 
     rdb.to_file(filename)
     logging.info(f"Written DB dump to {filename}")
 
-def load_json(filename: str = None):
+
+def load_json(filename: str) -> None:
     """
     Import a JOSN dump into redis.
     """
     if not filename:
-        raise ValueError(
-            f"Missing required arguments: filename={filename}"
-        )
+        raise ValueError(f"Missing required arguments: filename={filename}")
 
     rdb.from_file(filename)
 
-def parse_args():
+
+def parse_args() -> dict:
     """
     Parse the CLI args to this script.
     """
@@ -166,42 +161,40 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def pprint_key(key: str = None):
+
+def pprint_key(key: str) -> None:
     """
     Print the value stored in redis at the given key.
     """
     if not key:
-        raise ValueError(
-            f"Missing required arguments: key={key}"
-        )
+        raise ValueError(f"Missing required arguments: key={key}")
 
     pp = pprint.PrettyPrinter(indent=2)
     pp.pprint(rdb.get(key))
 
-def print_key(key: str = None):
+
+def print_key(key: str) -> None:
     """
     Print the value stored in redis at the given key.
     """
     if not key:
-        raise ValueError(
-            f"Missing required arguments: key={key}"
-        )
+        raise ValueError(f"Missing required arguments: key={key}")
     print(rdb.get(key))
 
-def print_keys():
+
+def print_keys() -> None:
     """
     Print all the keys in the redis DB.
     """
     print(rdb.get_keys("*"))
 
-def print_stats(key: str = None):
+
+def print_stats(key: str) -> None:
     """
     Print an mrt stats object stored in redis, based on the passed key.
     """
     if not key:
-        raise ValueError(
-            f"Missing required arguments: key={key}"
-        )
+        raise ValueError(f"Missing required arguments: key={key}")
 
     mrt_s = rdb.get_stats(key)
     if mrt_s:
@@ -209,14 +202,13 @@ def print_stats(key: str = None):
     else:
         print(f"No stats stored in redis under key {key}")
 
-def print_stats_daily(ymd: str = None):
+
+def print_stats_daily(ymd: str) -> None:
     """
     Print the mrt stats object from a specific day stored in redis.
     """
     if not ymd:
-        raise ValueError(
-            f"Missing required arguments: ymd={ymd}"
-        )
+        raise ValueError(f"Missing required arguments: ymd={ymd}")
 
     mrt_s = rdb.get_stats(mrt_stats.gen_daily_key(ymd))
     if mrt_s:
@@ -224,20 +216,17 @@ def print_stats_daily(ymd: str = None):
     else:
         print(f"No stats stored in redis for day {ymd}")
 
-def print_stats_diff(keys: List[str] = None):
+
+def print_stats_diff(keys: list[str]) -> None:
     """
     Print the diff of two mrt stats objects stored in redis at the two
     passed keys.
     """
-    if (not keys):
-        raise ValueError(
-            f"Missing required arguments: keys={keys}"
-        )
+    if not keys:
+        raise ValueError(f"Missing required arguments: keys={keys}")
 
     if len(keys) != 2:
-        raise ValueError(
-            f"Exactly two keys must be provided: keys={keys}"
-        )
+        raise ValueError(f"Exactly two keys must be provided: keys={keys}")
 
     mrt_s_1 = rdb.get_stats(keys[0])
     mrt_s_2 = rdb.get_stats(keys[1])
@@ -254,7 +243,8 @@ def print_stats_diff(keys: List[str] = None):
     else:
         print(f"Stats objects are equal")
 
-def print_stats_global():
+
+def print_stats_global() -> None:
     """
     Print the global stats object stored in redis.
     """
@@ -264,7 +254,8 @@ def print_stats_global():
     else:
         print(f"No global stats stored in redis")
 
-def wipe():
+
+def wipe() -> None:
     """
     Wipe the entire redis DB.
     """
@@ -272,13 +263,13 @@ def wipe():
         rdb.delete(k)
     logging.info(f"Database wiped")
 
-def main():
 
+def main():
     args = parse_args()
     log.setup(
-        debug = args["debug"],
-        log_src = "Redis management script",
-        log_path = cfg.LOG_REDIS,
+        debug=args["debug"],
+        log_src="Redis management script",
+        log_path=cfg.LOG_REDIS,
     )
 
     if args["dump"]:
@@ -314,5 +305,6 @@ def main():
 
     rdb.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

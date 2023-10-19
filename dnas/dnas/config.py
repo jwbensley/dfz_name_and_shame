@@ -1,4 +1,5 @@
 import os
+import typing
 
 
 class config:
@@ -22,6 +23,11 @@ class config:
     """
     TIME_FORMAT = "%Y%m%d.%H%M"
     DAY_FORMAT = "%Y%m%d"
+
+    # JSON indent when exporting MRT entry to JSON
+    MRT_ENTRY_JSON_INDENT = 2
+    # JSON indent when exporting MRT stats to JSON
+    MRT_STATS_JSON_INDENT = 2
 
     # Log mode, 'a'ppend or over'w'rite
     LOG_MODE = "a"

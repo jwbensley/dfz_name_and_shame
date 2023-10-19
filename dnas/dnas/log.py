@@ -1,7 +1,9 @@
 import logging
 import os
+import typing
 
 from dnas.config import config as cfg
+
 
 class log:
     """
@@ -9,9 +11,7 @@ class log:
     """
 
     @staticmethod
-    def setup(
-        debug: bool = False, log_src: str = None, log_path: str = None
-    ):
+    def setup(log_src: str, log_path: str, debug: bool = False) -> None:
         """
         Set up logging in a standard format.
         """
@@ -28,8 +28,8 @@ class log:
                 level=logging.DEBUG,
                 handlers=[
                     logging.FileHandler(log_path, mode=cfg.LOG_MODE),
-                    logging.StreamHandler()
-                ]
+                    logging.StreamHandler(),
+                ],
             )
         else:
             logging.basicConfig(
@@ -37,8 +37,8 @@ class log:
                 level=logging.INFO,
                 handlers=[
                     logging.FileHandler(log_path, mode=cfg.LOG_MODE),
-                    logging.StreamHandler()
-                ]
+                    logging.StreamHandler(),
+                ],
             )
 
         logging.info(

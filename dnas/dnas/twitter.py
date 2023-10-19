@@ -1,7 +1,7 @@
 import logging
-import tweepy  # type: ignore
-from typing import List
+import typing
 
+import tweepy  # type: ignore
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
 from dnas.mrt_stats import mrt_stats
@@ -16,8 +16,7 @@ class twitter:
     Class for interacting with Twitter API using Tweepy.
     """
 
-    def __init__(self) -> None:
-
+    def __init__(self: "twitter") -> None:
         self.client = tweepy.Client(
             consumer_key=twitter_auth.consumer_key,
             consumer_secret=twitter_auth.consumer_secret,
@@ -25,7 +24,7 @@ class twitter:
             access_token_secret=twitter_auth.access_token_secret,
         )
 
-    def delete(self, tweet_id: int = None):
+    def delete(self: "twitter", tweet_id: int) -> None:
         """
         Delete a Tweet from twitter.com
         """
@@ -44,7 +43,7 @@ class twitter:
             raise RuntimeError(f"Error deleting Tweet {tweet_id}: {r}")
 
     @staticmethod
-    def gen_tweets(mrt_s: 'mrt_stats' = None) -> List['twitter_msg']:
+    def gen_tweets(mrt_s: "mrt_stats") -> list["twitter_msg"]:
         """
         Generate Tweets using the data in an mrt stats object.
         """
@@ -68,7 +67,7 @@ class twitter:
 
         return msg_q
 
-    def split_tweet(self, msg: 'twitter_msg' = None) -> List[str]:
+    def split_tweet(self: "twitter", msg: "twitter_msg") -> list[str]:
         """
         Return a Tweet body split into a list of 280 character strings
         """
@@ -99,11 +98,11 @@ class twitter:
             return chunks
 
     def tweet(
-        self,
+        self: "twitter",
+        msg: "twitter_msg",
         body: bool = False,
-        msg: 'twitter_msg' = None,
         print_only: bool = False,
-    ):
+    ) -> None:
         """
         Tweet the header of a twitter message obj.
         Then tweet the body as a series of paged replies.
@@ -119,11 +118,11 @@ class twitter:
             self.tweet_body(msg, print_only)
 
     def tweet_as_reply(
-        self,
-        msg: 'twitter_msg' = None,
+        self: "twitter",
+        msg: "twitter_msg",
         print_only: bool = False,
         tweet_id: int = 0,
-    ):
+    ) -> None:
         """
         Tweet a message in reply to an existing Tweet.
         """
@@ -156,7 +155,9 @@ class twitter:
             )
             msg.hdr_id = int(r.data["id"])
 
-    def tweet_hdr(self, msg: 'twitter_msg' = None, print_only: bool = False):
+    def tweet_hdr(
+        self: "twitter", msg: "twitter_msg", print_only: bool = False
+    ) -> None:
         """
         Tweet a message header.
         """
@@ -186,7 +187,9 @@ class twitter:
             )
             msg.hdr_id = int(r.data["id"])
 
-    def tweet_body(self, msg: 'twitter_msg' = None, print_only: bool = False):
+    def tweet_body(
+        self: "twitter", msg: "twitter_msg", print_only: bool = False
+    ) -> None:
         """
         Tweet a message body as a series of pages replies to the header.
         """
@@ -225,7 +228,7 @@ class twitter:
                 msg.body_ids.append(r.data["id"])
 
     @staticmethod
-    def ymd_to_nice(ymd: str = None) -> str:
+    def ymd_to_nice(ymd: str) -> str:
         """
         Convert a ymd value to a nice format for Twitter.
         """

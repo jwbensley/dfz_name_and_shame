@@ -4,6 +4,7 @@ import re
 import shutil
 import subprocess
 import sys
+import typing
 import unittest
 
 sys.path.append(
@@ -14,12 +15,11 @@ from dnas.git import git
 
 
 class test_git(unittest.TestCase):
-
     cfg = config()
     g = git()
     test_filename = "abc123"
 
-    def setUp(self):
+    def setUp(self: "test_git") -> None:
         """
         Ensure a fresh local copy of the git repo is available
         """
@@ -30,7 +30,7 @@ class test_git(unittest.TestCase):
         os.makedirs(self.cfg.GIT_BASE, exist_ok=False)
         self.g.clone()
 
-    def test_add(self):
+    def test_add(self: "test_git") -> None:
         self.assertRaises(ValueError, self.g.add, None)
         self.assertRaises(TypeError, self.g.add, 123)
 
@@ -74,7 +74,7 @@ class test_git(unittest.TestCase):
         os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
         self.g.clear()
 
-    def test_clean(self):
+    def test_clean(self: "test_git") -> None:
         """
         Add an untracked file to the repo and test it is removed
         """
@@ -120,7 +120,7 @@ class test_git(unittest.TestCase):
 
         assert self.test_filename not in ret.stdout.decode()
 
-    def test_clear(self):
+    def test_clear(self: "test_git") -> None:
         """
         Stage, then de-stage a test file, and then check the git stage is empty
         """
@@ -146,24 +146,14 @@ class test_git(unittest.TestCase):
             cwd=self.cfg.GIT_BASE,
             capture_output=True,
         )
+        assert ret.returncode == 0
 
-        if ret.returncode != 0:
-            raise ChildProcessError(
-                f"Couldn't check git index status:\n"
-                f"args: {ret.args}\n"
-                f"stdout: {ret.stdout.decode()}\n"
-                f"stderr: {ret.stderr.decode()}"
-            )
+        en = re.search("nothing added to commit", ret.stdout.decode())
+        de = re.search("nichts zum Commit", ret.stdout.decode())
+        self.assertTrue(de or en)
+        os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
 
-        self.assertTrue(
-            re.search(f"nothing added to commit", ret.stdout.decode())
-        )
-        try:
-            os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
-        except FileNotFoundError:
-            pass
-
-    def test_clone(self):
+    def test_clone(self: "test_git") -> None:
         """
         Git clone should fail if there is an existing directory, that contains a
         different repo. Create the base direcory with an empty .git sub-dir
@@ -190,7 +180,7 @@ class test_git(unittest.TestCase):
             asserted = True
         self.assertEqual(asserted, False)
 
-    def test_commit(self):
+    def test_commit(self: "test_git") -> None:
         self.assertRaises(ValueError, self.g.commit, None)
         self.assertRaises(TypeError, self.g.commit, 123)
 
@@ -213,7 +203,7 @@ class test_git(unittest.TestCase):
         self.assertEqual(asserted, False)
         os.remove(os.path.join(self.cfg.GIT_BASE, self.test_filename))
 
-    def test_git_diff(self):
+    def test_git_diff(self: "test_git") -> None:
         self.assertFalse(self.g.diff())
         f = open(os.path.join(self.cfg.GIT_BASE, "README.md"), "a")
         f.write("abc123")
@@ -236,7 +226,7 @@ class test_git(unittest.TestCase):
                 f"stderr: {ret.stderr.decode()}"
             )
 
-    def test_git_exists(self):
+    def test_git_exists(self: "test_git") -> None:
         # With no directory, exists() should fail
         try:
             shutil.rmtree(self.cfg.GIT_BASE)
@@ -250,7 +240,7 @@ class test_git(unittest.TestCase):
         self.g.clone()
         self.assertTrue(self.g.git_exists())
 
-    def test_gen_git_path_ymd(self):
+    def test_gen_git_path_ymd(self: "test_git") -> None:
         self.assertRaises(ValueError, self.g.gen_git_path_ymd, None)
         self.assertRaises(TypeError, self.g.gen_git_path_ymd, 123)
         self.assertEqual(
@@ -258,7 +248,7 @@ class test_git(unittest.TestCase):
             self.cfg.GIT_BASE + "2022/04/01",
         )
 
-    def test_gen_git_url_ymd(self):
+    def test_gen_git_url_ymd(self: "test_git") -> None:
         self.assertRaises(ValueError, self.g.gen_git_url_ymd, None)
         self.assertRaises(TypeError, self.g.gen_git_url_ymd, 123)
         self.assertEqual(
@@ -266,7 +256,7 @@ class test_git(unittest.TestCase):
             self.cfg.GIT_STAT_BASE_URL + "2022/04/01",
         )
 
-    def test_pull(self):
+    def test_pull(self: "test_git") -> None:
         # Nothing should happen if local is up to date with remote
         self.g.clear()
 
@@ -277,7 +267,7 @@ class test_git(unittest.TestCase):
             asserted = True
         self.assertEqual(asserted, False)
 
-    def test_push(self):
+    def test_push(self: "test_git") -> None:
         # With no new commits to push, nothing should happen
         self.g.clear()
 
@@ -289,5 +279,5 @@ class test_git(unittest.TestCase):
         self.assertEqual(asserted, False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

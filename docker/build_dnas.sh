@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
 cd /opt/dnas/
+# shellcheck disable=SC1091
 source venv/bin/activate
 git checkout main
 git pull

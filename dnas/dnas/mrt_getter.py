@@ -1,11 +1,12 @@
 import datetime
 import logging
 import os
-import requests
-from typing import List, Literal, Tuple, Union
+from typing import Literal, Tuple, Union
 
+import requests
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
+
 
 class mrt_getter:
     """
@@ -14,21 +15,17 @@ class mrt_getter:
 
     @staticmethod
     def get_latest_rib(
-        arch: 'mrt_archive' = None,
+        arch: "mrt_archive",
         replace: bool = False,
     ) -> Tuple[str, str]:
         """
         Download the lastest RIB dump MRT from the given MRT archive.
         """
         if not arch:
-            raise ValueError(
-                f"Missing required options: arch={arch}"
-            )
+            raise ValueError(f"Missing required options: arch={arch}")
 
         if type(arch) != mrt_archive:
-            raise TypeError(
-                f"arch is not an MRT archive: {type(arch)}"
-            )
+            raise TypeError(f"arch is not an MRT archive: {type(arch)}")
 
         filename = arch.gen_latest_rib_fn()
         url = arch.gen_rib_url(filename)
@@ -38,21 +35,17 @@ class mrt_getter:
 
     @staticmethod
     def get_latest_upd(
-        arch: 'mrt_archive' = None,
+        arch: "mrt_archive",
         replace: bool = False,
     ) -> Tuple[str, str]:
         """
         Download the lastest update MRT file from the given MRT archive.
         """
         if not arch:
-            raise ValueError(
-                f"Missing required options: arch={arch}"
-            )
+            raise ValueError(f"Missing required options: arch={arch}")
 
         if type(arch) != mrt_archive:
-            raise TypeError(
-                f"arch is not an MRT archive: {type(arch)}"
-            )
+            raise TypeError(f"arch is not an MRT archive: {type(arch)}")
 
         filename = arch.gen_latest_upd_fn()
         url = arch.gen_upd_url(filename)
@@ -62,11 +55,11 @@ class mrt_getter:
 
     @staticmethod
     def get_range_rib(
-        arch: 'mrt_archive' = None,
-        end_date: str = None,
+        arch: "mrt_archive",
+        end_date: str,
+        start_date: str,
         replace: bool = False,
-        start_date: str = None,
-    ) -> List[Tuple[str, str]]:
+    ) -> list[Tuple[str, str]]:
         """
         Download a range of RIB MRT dump files from an archive.
         All RIB MRT files from and inclusive of start_date to and inclusive
@@ -75,16 +68,14 @@ class mrt_getter:
         start_date: In the MRT date format yyyymmdd.hhmm "20220129.0000"
         end_date: In the MRT date format yyyymmdd.hhmm "20220129.1230"
         """
-        if (not arch or not start_date or not end_date):
+        if not arch or not start_date or not end_date:
             raise ValueError(
                 f"Missing required options: arch={arch}, "
                 f"start_date={start_date}, end_date={end_date}"
             )
 
         if type(arch) != mrt_archive:
-            raise TypeError(
-                f"arch is not an MRT archive: {type(arch)}"
-            )
+            raise TypeError(f"arch is not an MRT archive: {type(arch)}")
 
         start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
         end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
@@ -100,7 +91,9 @@ class mrt_getter:
 
         for filename in filenames:
             url = arch.gen_rib_url(filename)
-            outfile = os.path.normpath(arch.MRT_DIR + "/" + os.path.basename(url))
+            outfile = os.path.normpath(
+                arch.MRT_DIR + "/" + os.path.basename(url)
+            )
 
             if mrt_getter.download_mrt(
                 filename=outfile, replace=replace, url=url
@@ -112,11 +105,11 @@ class mrt_getter:
 
     @staticmethod
     def get_range_upd(
-        arch: 'mrt_archive' = None,
-        end_date: str = None,
+        arch: "mrt_archive",
+        end_date: str,
+        start_date: str,
         replace: bool = False,
-        start_date: str = None,
-    ) -> List[Tuple[str, str]]:
+    ) -> list[Tuple[str, str]]:
         """
         Download a range of MRT update dump files from an MRT archive.
         All update MRT files from and inclusive of start_date to and inclusive
@@ -126,16 +119,14 @@ class mrt_getter:
         end_date: In the MRT date format yyyymmdd.hhmm "20220129.1230"
         """
 
-        if (not arch or not start_date or not end_date):
+        if not arch or not start_date or not end_date:
             raise ValueError(
                 f"Missing required options: arch={arch}, "
                 f"start_date={start_date}, end_date={end_date}"
             )
 
         if type(arch) != mrt_archive:
-            raise TypeError(
-                f"arch is not an MRT archive: {type(arch)}"
-            )
+            raise TypeError(f"arch is not an MRT archive: {type(arch)}")
 
         start = datetime.datetime.strptime(start_date, cfg.TIME_FORMAT)
         end = datetime.datetime.strptime(end_date, cfg.TIME_FORMAT)
@@ -151,7 +142,9 @@ class mrt_getter:
 
         for filename in filenames:
             url = arch.gen_upd_url(filename)
-            outfile = os.path.normpath(arch.MRT_DIR + "/" + os.path.basename(url))
+            outfile = os.path.normpath(
+                arch.MRT_DIR + "/" + os.path.basename(url)
+            )
 
             if mrt_getter.download_mrt(
                 filename=outfile, replace=replace, url=url
@@ -162,7 +155,9 @@ class mrt_getter:
         return downloaded
 
     @staticmethod
-    def download_mrt(filename: str = None, replace: bool = False, url: str = None) -> Union[str, Literal[False]]:
+    def download_mrt(
+        filename: str, url: str, replace: bool = False
+    ) -> Union[str, Literal[False]]:
         """
         Download an MRT file from the given url,
         and save it as the given filename.
@@ -175,7 +170,7 @@ class mrt_getter:
 
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-        if (not replace and os.path.exists(filename)):
+        if not replace and os.path.exists(filename):
             logging.info(f"Not overwriting existing file {filename}")
             return False
 
@@ -191,7 +186,6 @@ class mrt_getter:
         except requests.exceptions.ConnectionError as e:
             logging.info(f"Couldn't connect to MRT server: {e}")
             raise requests.exceptions.ConnectionError
-        
 
         if req.status_code != 200:
             logging.info(f"HTTP error: {req.status_code}")
@@ -200,7 +194,7 @@ class mrt_getter:
             logging.error(req.content)
             req.raise_for_status()
 
-        file_len = int(req.headers['Content-length'])
+        file_len = int(req.headers["Content-length"])
 
         if file_len is None or file_len == 0:
             logging.error(req.url)
@@ -227,9 +221,13 @@ class mrt_getter:
                 f.flush()
 
                 if rcvd == file_len:
-                    logging.debug(f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)")
-                elif ((rcvd/file_len)*100)//10 > progress:
-                    logging.debug(f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)")
-                    progress = ((rcvd/file_len)*100)//10
+                    logging.debug(
+                        f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)"
+                    )
+                elif ((rcvd / file_len) * 100) // 10 > progress:
+                    logging.debug(
+                        f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)"
+                    )
+                    progress = ((rcvd / file_len) * 100) // 10
 
         return filename

@@ -3,24 +3,27 @@ import errno
 import gzip
 import logging
 import os
-from typing import Any, List, NoReturn, Tuple
+from io import BufferedReader
+from typing import NoReturn, Tuple, Union
 
 from dnas.mrt_archives import mrt_archives
+
 
 class MrtFormatError(Exception):
     """
     Exception for invalid MRT formatted data.
     """
 
-    def __init__(self, message: str = ""):
+    def __init__(self: "MrtFormatError", message: str = "") -> None:
         Exception.__init__(self)
         self.message = message
 
-    def __str__(self) -> str:
+    def __str__(self: "MrtFormatError") -> str:
         if self.message:
             return self.message
         else:
             return "MrtFormatError"
+
 
 class mrt_splitter:
     """
@@ -28,15 +31,12 @@ class mrt_splitter:
     Copy-pasta of the original mrtparer lib to split an MRT file into N files.
     """
 
-    def __init__(self, filename: str = None) -> None:
-
+    def __init__(self: "mrt_splitter", filename: str) -> None:
         if not filename:
             raise ValueError("MRT filename missing")
 
         if type(filename) != str:
-            raise TypeError(
-                f"filename is not a string: {type(filename)}"
-            )
+            raise TypeError(f"filename is not a string: {type(filename)}")
 
         if not os.path.isfile(filename):
             raise FileNotFoundError(
@@ -44,38 +44,38 @@ class mrt_splitter:
             )
 
         self.data: bytearray
-        self.f: Any
+        self.f: Union[bz2.BZ2File, gzip.GzipFile, BufferedReader]
         self.filename = filename
 
         # Magic Number
-        GZIP_MAGIC = b'\x1f\x8b'
-        BZ2_MAGIC = b'\x42\x5a\x68'
+        GZIP_MAGIC = b"\x1f\x8b"
+        BZ2_MAGIC = b"\x42\x5a\x68"
 
-        f = open(filename, 'rb')
+        f = open(filename, "rb")
         hdr = f.read(max(len(BZ2_MAGIC), len(GZIP_MAGIC)))
         f.close()
 
         if hdr.startswith(BZ2_MAGIC):
-            self.f = bz2.BZ2File(filename, 'rb')
+            self.f = bz2.BZ2File(filename, "rb")
             logging.debug("Assuming BZ2 file")
         elif hdr.startswith(GZIP_MAGIC):
-            self.f = gzip.GzipFile(filename, 'rb')
+            self.f = gzip.GzipFile(filename, "rb")
             logging.debug("Assuming GZIP file")
         else:
-            self.f = open(filename, 'rb')
+            self.f = open(filename, "rb")
             logging.debug("Assuming binary file")
 
-    def close(self) -> NoReturn:
+    def close(self: "mrt_splitter") -> NoReturn:
         """
         Close the open MRT file.
         """
         self.f.close()
         raise StopIteration
 
-    def __iter__(self) -> 'mrt_splitter':
+    def __iter__(self: "mrt_splitter") -> "mrt_splitter":
         return self
 
-    def __next__(self) -> 'mrt_splitter':
+    def __next__(self: "mrt_splitter") -> "mrt_splitter":
         """
         Move to the next entry in the MRT file.
         """
@@ -102,7 +102,9 @@ class mrt_splitter:
 
         return self
 
-    def split(self, no_chunks: int = None, outdir: str = None) -> Tuple[int, List[str]]:
+    def split(
+        self: "mrt_splitter", no_chunks: int, outdir: str
+    ) -> Tuple[int, list[str]]:
         """
         Split the MRT data into N equal sized chunks written to disk.
         Return the total number of MRT entries and the list of chunk filenames.
@@ -110,9 +112,7 @@ class mrt_splitter:
         if not self.f:
             raise AttributeError("No MRT file is currently open")
 
-        if (not no_chunks or
-            not isinstance(no_chunks, int) or
-            no_chunks < 1):
+        if not no_chunks or not isinstance(no_chunks, int) or no_chunks < 1:
             raise ValueError(
                 f"Number of chunks to split MRT file into must be a positive "
                 f"integer, not {no_chunks}"
@@ -133,8 +133,7 @@ class mrt_splitter:
             chunk_name = self.filename + "_" + str(i)
             chunk_filenames.append(chunk_name)
             chunk_outpath = os.path.join(
-                outdir,
-                os.path.basename(self.filename) + "_" + str(i)
+                outdir, os.path.basename(self.filename) + "_" + str(i)
             )
             logging.debug(f"Opening {chunk_outpath} for output")
             f = open(chunk_outpath, "wb")

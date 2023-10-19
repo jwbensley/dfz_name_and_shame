@@ -7,13 +7,14 @@ import urllib.parse
 
 from dnas.config import config as cfg
 
+
 class git:
     """
     A class for commiting and pushing files to GitHub.
     """
 
     @staticmethod
-    def add(filename: str = None):
+    def add(filename: str) -> None:
         """
         Add files to the git index, to be commited.
         """
@@ -23,9 +24,7 @@ class git:
             )
 
         if type(filename) != str:
-            raise TypeError(
-                f"filename is not a string: {type(filename)}"
-            )
+            raise TypeError(f"filename is not a string: {type(filename)}")
 
         ret = subprocess.run(
             ["git", "add", filename],
@@ -42,7 +41,7 @@ class git:
         logging.debug(f"Added {filename} to git index")
 
     @staticmethod
-    def clean():
+    def clean() -> None:
         """
         Remove any untracked files
         """
@@ -61,7 +60,7 @@ class git:
         logging.debug(f"Removed untracked fit files in {cfg.GIT_BASE}")
 
     @staticmethod
-    def clear():
+    def clear() -> None:
         """
         Remove all files currently in the git index for commit.
         """
@@ -80,11 +79,11 @@ class git:
         logging.debug(f"Cleared git index in {cfg.GIT_BASE}")
 
     @staticmethod
-    def clone():
+    def clone() -> None:
         """
         Clone the DNS Stats repo.
         """
-        os.makedirs(cfg.GIT_BASE, exist_ok = True)
+        os.makedirs(cfg.GIT_BASE, exist_ok=True)
 
         ret = subprocess.run(
             ["git", "clone", cfg.GIT_STAT_CLONE_URL],
@@ -103,20 +102,16 @@ class git:
             f"Cloned git repo {cfg.GIT_STAT_CLONE_URL} to {cfg.BASE_DIR}"
         )
 
-    @staticmethod        
-    def commit(msg: str = None):
+    @staticmethod
+    def commit(msg: str) -> None:
         """
         Commit staged changes to git with commit message "msg".
         """
         if not msg:
-            raise ValueError(
-                f"Missing required arguments: msg={msg}."
-            )
+            raise ValueError(f"Missing required arguments: msg={msg}.")
 
         if type(msg) != str:
-            raise TypeError(
-                f"msg is not a string: {type(msg)}"
-            )
+            raise TypeError(f"msg is not a string: {type(msg)}")
 
         ret = subprocess.run(
             ["git", "commit", "-m", msg],
@@ -138,7 +133,7 @@ class git:
         logging.debug(f"Committed to git in {cfg.GIT_BASE}: {msg}")
 
     @staticmethod
-    def diff():
+    def diff() -> bool:
         """
         Return True if there are files in the git index, with uncommitted
         changes, else False.
@@ -159,12 +154,11 @@ class git:
             logging.debug(f"No changes staged in git cache in {cfg.GIT_BASE}")
             return False
         else:
-            logging.debug(
-                f"Changes are staged git in cache in {cfg.GIT_BASE}")
+            logging.debug(f"Changes are staged git in cache in {cfg.GIT_BASE}")
             return True
 
     @staticmethod
-    def git_exists():
+    def git_exists() -> bool:
         """
         Return True if DNAS Stats repo exists locally.
         """
@@ -185,19 +179,15 @@ class git:
         return True
 
     @staticmethod
-    def gen_git_path_ymd(ymd: str = None) -> str:
+    def gen_git_path_ymd(ymd: str) -> str:
         """
         Generate and return the path to the report files for a specific date.
         """
         if not ymd:
-            raise ValueError(
-                f"Missing required arguments: ymd={ymd}."
-            )
+            raise ValueError(f"Missing required arguments: ymd={ymd}.")
 
         if type(ymd) != str:
-            raise TypeError(
-                f"ymd is not a string: {type(ymd)}"
-            )
+            raise TypeError(f"ymd is not a string: {type(ymd)}")
 
         day = datetime.datetime.strptime(ymd, cfg.DAY_FORMAT)
 
@@ -208,19 +198,15 @@ class git:
         return git_dir
 
     @staticmethod
-    def gen_git_url_ymd(ymd: str = None) -> str:
+    def gen_git_url_ymd(ymd: str) -> str:
         """
         Generate and return the URL to the report files for a specific date.
         """
         if not ymd:
-            raise ValueError(
-                f"Missing required arguments: ymd={ymd}."
-            )
+            raise ValueError(f"Missing required arguments: ymd={ymd}.")
 
         if type(ymd) != str:
-            raise TypeError(
-                f"ymd is not a string: {type(ymd)}"
-            )
+            raise TypeError(f"ymd is not a string: {type(ymd)}")
 
         day = datetime.datetime.strptime(ymd, cfg.DAY_FORMAT)
 
@@ -231,7 +217,7 @@ class git:
         return git_url
 
     @staticmethod
-    def pull():
+    def pull() -> None:
         """
         Perform a git pull to make sure the local repo is up to date
         """
@@ -248,12 +234,10 @@ class git:
                 f"stdout: {ret.stdout.decode()}\n"
                 f"stderr: {ret.stderr.decode()}"
             )
-        logging.debug(
-            f"Git pull succeeded"
-        )
+        logging.debug(f"Git pull succeeded")
 
     @staticmethod
-    def push():
+    def push() -> None:
         """
         Push commits to GitHub.
         """

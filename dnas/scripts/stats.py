@@ -5,40 +5,36 @@ import datetime
 import logging
 import os
 import sys
-from typing import Any, Dict
+import typing
 
 # Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__))
-        , "../"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
 
 from dnas.config import config as cfg
 from dnas.log import log
-from dnas.redis_db import redis_db
-from dnas.mrt_archives import mrt_archives
 from dnas.mrt_archive import mrt_archive
-from dnas.mrt_stats import mrt_stats
+from dnas.mrt_archives import mrt_archives
 from dnas.mrt_entry import mrt_entry
+from dnas.mrt_stats import mrt_stats
+from dnas.redis_db import redis_db
+
 
 def gen_day_stats(
-        enabled: bool = False,
-        rib: bool = False,
-        update: bool = False,
-        ymd: str = None
-    ):
+    ymd: str,
+    enabled: bool = False,
+    rib: bool = False,
+    update: bool = False,
+) -> None:
     """
     Generate the global stats for a specific day, by merging the stats obj from
     each MRT archive of that day.
     """
     if not ymd:
-        raise ValueError(
-            f"Missing required arguments: ymd={ymd}, use --ymd"
-        )
+        raise ValueError(f"Missing required arguments: ymd={ymd}, use --ymd")
 
-    if (not rib and not update):
+    if not rib and not update:
         raise ValueError(
             "At least one of --rib and/or --update must be used with "
             "--daily"
@@ -51,7 +47,7 @@ def gen_day_stats(
     day_keys = []
 
     for arch in mrt_a.archives:
-        if (enabled and not arch.ENABLED):
+        if enabled and not arch.ENABLED:
             continue
         logging.debug(f"Archive {arch.NAME} is enabled")
 
@@ -113,21 +109,18 @@ def gen_day_stats(
                 f"{day_key}"
             )
         else:
-            logging.info(
-                f"No update to exsiting {ymd} stats under {day_key}"
-            )
+            logging.info(f"No update to exsiting {ymd} stats under {day_key}")
 
     rdb.close()
 
-def gen_diff(ymd: str = None):
+
+def gen_diff(ymd: str) -> None:
     """
     Generate and store the diff of a daily stats object, with the daily stats
     from the day before.
     """
     if not ymd:
-        raise ValueError(
-            f"Missing required arguments: ymd={ymd}, use --ymd"
-        )
+        raise ValueError(f"Missing required arguments: ymd={ymd}, use --ymd")
 
     rdb = redis_db()
 
@@ -177,21 +170,20 @@ def gen_diff(ymd: str = None):
 
     rdb.close()
 
-def gen_range(args: Dict[str, Any] = None):
+
+def gen_range(args: dict) -> None:
     """
     Generate global stats for a range of days from --start to --end inclusive.
     """
-    if (not args):
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+    if not args:
+        raise ValueError(f"Missing required arguments: args={args}")
 
-    if (not args["start"] and not args["end"]):
+    if not args["start"] and not args["end"]:
         raise ValueError(
             "Both --start and --end must be specified when using --range"
         )
 
-    if (type(args["end"]) != str and type(args["start"]) != str):
+    if type(args["end"]) != str and type(args["start"]) != str:
         raise TypeError(
             f"Both end and start must be strings, not: {type(args['end'])} "
             f"and {type(args['start'])}"
@@ -216,15 +208,14 @@ def gen_range(args: Dict[str, Any] = None):
         ymd = datetime.datetime.strftime(start_day + delta, cfg.DAY_FORMAT)
 
         if args["daily"]:
-            gen_day_stats(
-                rib = args["rib"], update = args["update"], ymd = ymd
-            )
+            gen_day_stats(rib=args["rib"], update=args["update"], ymd=ymd)
         if args["diff"]:
             gen_diff(ymd)
         if args["global"]:
             upd_global_with_day(ymd)
 
-def parse_args():
+
+def parse_args() -> dict:
     """
     Parse the CLI args to this script.
     """
@@ -324,15 +315,14 @@ def parse_args():
     )
     return vars(parser.parse_args())
 
-def upd_global_with_day(ymd: str = None):
+
+def upd_global_with_day(ymd: str) -> None:
     """
     Update the running global stats object with the global stats from a
     specific day.
     """
     if not ymd:
-        raise ValueError(
-            f"Missing required arguments: ymd={ymd}, use --ymd"
-        )
+        raise ValueError(f"Missing required arguments: ymd={ymd}, use --ymd")
 
     rdb = redis_db()
     global_key = mrt_stats.gen_global_key()
@@ -343,8 +333,7 @@ def upd_global_with_day(ymd: str = None):
 
     if not day_stats:
         logging.info(
-            f"No existing day stats for {ymd} in redis. Nothing to "
-            "update"
+            f"No existing day stats for {ymd} in redis. Nothing to " "update"
         )
         return
 
@@ -354,14 +343,12 @@ def upd_global_with_day(ymd: str = None):
             f"stats for {ymd}"
         )
         rdb.set_stats(global_key, day_stats)
-    
+
     # Else there are global stats and day stats to merge
     else:
         if global_stats.merge(day_stats):
             global_stats.merge_archives(day_stats)
-            logging.info(
-                f"Global stats merged with day stats from {ymd}"
-            )
+            logging.info(f"Global stats merged with day stats from {ymd}")
             rdb.set_stats(global_key, global_stats)
         else:
             logging.info(
@@ -370,17 +357,20 @@ def upd_global_with_day(ymd: str = None):
 
     rdb.close()
 
-def main():
 
+def main():
     args = parse_args()
     log.setup(
-        debug = args["debug"],
-        log_src = "global stats compiler script",
-        log_path = cfg.LOG_STATS,
+        debug=args["debug"],
+        log_src="global stats compiler script",
+        log_path=cfg.LOG_STATS,
     )
 
-    if (not args["daily"] and not args["diff"] and not args["global"] and
-        not args["yesterday"]
+    if (
+        not args["daily"]
+        and not args["diff"]
+        and not args["global"]
+        and not args["yesterday"]
     ):
         raise ValueError(
             "At least one of --daily, --diff, --global or --yesterday must be "
@@ -389,10 +379,10 @@ def main():
 
     if args["daily"] and not args["range"]:
         gen_day_stats(
-            enabled = args["enabled"],
-            rib = args["rib"],
-            update = args["update"],
-            ymd = args["ymd"]
+            enabled=args["enabled"],
+            rib=args["rib"],
+            update=args["update"],
+            ymd=args["ymd"],
         )
 
     if args["diff"] and not args["range"]:
@@ -410,11 +400,12 @@ def main():
             datetime.datetime.now() - delta, cfg.DAY_FORMAT
         )
         gen_day_stats(
-            enabled = args["enabled"],
-            rib = args["rib"],
-            update = args["update"],
-            ymd = yesterday
+            enabled=args["enabled"],
+            rib=args["rib"],
+            update=args["update"],
+            ymd=yesterday,
         )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

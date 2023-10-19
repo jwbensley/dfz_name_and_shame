@@ -32,11 +32,11 @@ EY="${4}"
 EM="${5}"
 ED="${6}"
 
-for year in $(seq -w $SY $EY)
+for year in $(seq -w "$SY" "$EY")
 do
-  for month in $(seq -w $SM $EM)
+  for month in $(seq -w "$SM" "$EM")
   do
-    for day in $(seq -w $SD $ED)
+    for day in $(seq -w "$SD" "$ED")
     do
       echo "doing ${year}${month}${day}:"
       docker-compose run --rm --name tmp_getter --entrypoint /opt/pypy dnas_getter -- \

@@ -1,16 +1,16 @@
 import datetime
 import errno
 import logging
-import mrtparse  # type: ignore
 import operator
 import os
 import traceback
-from typing import Dict, List, Set
+import typing
 
-from dnas.config import config as cfg
+import mrtparse  # type: ignore
 from dnas.bogon_asn import bogon_asn
 from dnas.bogon_attr import bogon_attr
 from dnas.bogon_ip import bogon_ip
+from dnas.config import config as cfg
 from dnas.mrt_archives import mrt_archives
 from dnas.mrt_entry import mrt_entry
 from dnas.mrt_stats import mrt_stats
@@ -22,7 +22,7 @@ class mrt_parser:
     """
 
     @staticmethod
-    def get_timestamp(filename: str = None) -> str:
+    def get_timestamp(filename: str) -> str:
         """
         Return the timestamp from the start of an MRT file.
         """
@@ -48,7 +48,7 @@ class mrt_parser:
         return timestamp
 
     @staticmethod
-    def posix_to_ts(posix: int = None) -> str:
+    def posix_to_ts(posix: int) -> str:
         """
         Convert the posix timestamp in an MRT dump, to the UTC time in the
         standard format of MRTs.
@@ -61,7 +61,7 @@ class mrt_parser:
         )
 
     @staticmethod
-    def parse_rib_dump(filename: str = None) -> 'mrt_stats':
+    def parse_rib_dump(filename: str) -> "mrt_stats":
         """
         Take filename of RIB dump MRT as input and return an MRT stats obj.
         """
@@ -83,7 +83,7 @@ class mrt_parser:
         return mrt_s
 
     @staticmethod
-    def parse_upd_dump(filename: str = None) -> 'mrt_stats':
+    def parse_upd_dump(filename: str) -> "mrt_stats":
         """
         Take filename of UPDATE dump MRT as input and return an MRT stats obj.
         """
@@ -99,24 +99,24 @@ class mrt_parser:
         We will see the same data again and again, so cache "seen" data to
         speed up parsing
         """
-        non_bogon_asns: Dict[str, None] = {}
-        bogon_origin_asns: List[mrt_entry] = []
-        bogon_prefix_entries: List[mrt_entry] = []
-        highest_med_prefixes: List[mrt_entry] = []
-        invalid_len_entries: List[mrt_entry] = []
-        longest_as_path: List[mrt_entry] = []
-        longest_comm_set: List[mrt_entry] = []
-        most_bogon_asns: Dict[str, set] = {}
-        most_unknown_attrs: List[mrt_entry] = []
-        origin_asns_prefix: Dict[str, set] = {}
-        upd_prefix: Dict[str, dict] = {}
-        advt_per_origin_asn: Dict[str, int] = {}
-        upd_peer_asn: Dict[str, dict] = {}
+        non_bogon_asns: dict[str, None] = {}
+        bogon_origin_asns: list[mrt_entry] = []
+        bogon_prefix_entries: list[mrt_entry] = []
+        highest_med_prefixes: list[mrt_entry] = []
+        invalid_len_entries: list[mrt_entry] = []
+        longest_as_path: list[mrt_entry] = []
+        longest_comm_set: list[mrt_entry] = []
+        most_bogon_asns: dict[str, set] = {}
+        most_unknown_attrs: list[mrt_entry] = []
+        origin_asns_prefix: dict[str, set] = {}
+        upd_prefix: dict[str, dict] = {}
+        advt_per_origin_asn: dict[str, int] = {}
+        upd_peer_asn: dict[str, dict] = {}
 
         # If parsing a chunk of an MRT file, try to work out the orig filename
         orig_filename = ""
         if cfg.SPLIT_DIR:
-            orig_filename = '_'.join(filename.split("_")[:-1])
+            orig_filename = "_".join(filename.split("_")[:-1])
             if not os.path.isfile(orig_filename):
                 orig_filename = filename
         if not orig_filename:
@@ -142,7 +142,6 @@ class mrt_parser:
         # Sometimes the MRT files contain corrupt BGP UPDATES
         try:
             for idx, mrt_e in enumerate(mrt_entries):
-
                 """
                 Some RIPE UPDATE MRTs contain the BGP state change events,
                 whereas Route-Views don't.
@@ -177,12 +176,12 @@ class mrt_parser:
                     next(iter(mrt_e.data["timestamp"].items()))[0]
                 )  # E.g., 1486801684
 
-                bogon_prefixes: List[str] = []
-                comm_set: List[str] = []
-                invalid_len: List[str] = []
+                bogon_prefixes: list[str] = []
+                comm_set: list[str] = []
+                invalid_len: list[str] = []
                 med = cfg.MISSING_MED
-                prefixes: List[str] = []
-                unknown_attrs: Set[int] = set()
+                prefixes: list[str] = []
+                unknown_attrs: set[int] = set()
 
                 peer_asn = mrt_e.data["peer_as"]
                 if peer_asn not in upd_peer_asn:
@@ -995,7 +994,7 @@ class mrt_parser:
         return mrt_s
 
     @staticmethod
-    def mrt_count(filename: str = None) -> int:
+    def mrt_count(filename: str) -> int:
         """
         Return the total number of MRT records in an MRT file.
         """
