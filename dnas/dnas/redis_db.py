@@ -1,10 +1,13 @@
+import base64
+import gzip
 import json
 from typing import Union
 
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_auth import redis_auth  # type: ignore
 from dnas.twitter_msg import twitter_msg
-from redis.client import Redis
+
+from redis import Redis
 
 
 class redis_db:
@@ -13,7 +16,7 @@ class redis_db:
     """
 
     def __init__(self: "redis_db") -> None:
-        self.r = Redis(
+        self.r: Redis = Redis(
             host=redis_auth.host,
             port=redis_auth.port,
             password=redis_auth.password,
@@ -32,13 +35,35 @@ class redis_db:
         if type(json_str) != str:
             raise TypeError(f"json_str is not a string: {type(json_str)}")
 
-        self.r.lpush(key, json_str)
+        self.r.lpush(key, redis_db.compress(json_str))
 
     def close(self: "redis_db") -> None:
         """
         Close the redis connection.
         """
         self.r.close()
+
+    @staticmethod
+    def compress(data: str) -> str:
+        """
+        Gzip compress the import data (result in compressed binary data)
+        Return a base85 encoded string of the compressed binary data.
+        """
+        compressed = gzip.compress(
+            data=bytes(data, encoding="utf-8"), compresslevel=9
+        )
+        b85 = base64.b85encode(compressed)
+        return b85.decode("utf-8")
+
+    @staticmethod
+    def decompress(data: str) -> str:
+        """
+        Take in a base85 encoded string, decompress it to the original gzip
+        binary data, and then decompress that to the original string
+        """
+        compressed = base64.b85decode(data)
+        uncompressed = gzip.decompress(compressed)
+        return uncompressed.decode("utf-8")
 
     def del_from_queue(self: "redis_db", key: str, elem: str) -> None:
         """
@@ -52,7 +77,7 @@ class redis_db:
         if type(elem) != str:
             raise TypeError(f"elem is not a string: {type(elem)}")
 
-        self.r.lrem(key, 0, elem)
+        self.r.lrem(key, 0, redis_db.compress(elem))
 
     def delete(self: "redis_db", key: str) -> int:
         """
@@ -75,6 +100,9 @@ class redis_db:
         with open(filename, "r") as f:
             self.from_json(f.read())
 
+    def from_file_stream(self: "redis_db", filename: str) -> None:
+        raise NotImplementedError
+
     def from_json(self: "redis_db", json_str: str):
         """
         Restore redis DB from a JSON string
@@ -86,7 +114,7 @@ class redis_db:
 
         json_dict = json.loads(json_str)
         for k in json_dict.keys():
-            self.r.set(k, json_dict[k])
+            self.r.set(k, redis_db.compress(json_dict[k]))
 
     def get(self: "redis_db", key: str) -> Union[str, list]:
         """
@@ -99,13 +127,16 @@ class redis_db:
         if t == "string":
             val = self.r.get(key)
             if val:
-                return val.decode("utf-8")
+                return self.decompress(val.decode("utf-8"))
             else:
                 raise ValueError(
                     f"Couldn't decode data stored under key {key}"
                 )
         elif t == "list":
-            return [x.decode("utf-8") for x in self.r.lrange(key, 0, -1)]
+            return [
+                redis_db.compress(x.decode("utf-8"))
+                for x in self.r.lrange(key, 0, -1)
+            ]
         else:
             raise TypeError(f"Unknown redis data type stored under {key}: {t}")
 
@@ -136,7 +167,7 @@ class redis_db:
         for msg in db_q:
             if msg:
                 t_m = twitter_msg()
-                t_m.from_json(msg.decode("utf-8"))
+                t_m.from_json(self.decompress(msg.decode("utf-8")))
                 msgs.append(t_m)
 
         return msgs
@@ -153,7 +184,7 @@ class redis_db:
         if not json_str:
             return None
         else:
-            mrt_s.from_json(json_str.decode("utf-8"))
+            mrt_s.from_json(redis_db.decompress(json_str.decode("utf-8")))
             return mrt_s
 
     def set_stats(self: "redis_db", key: str, mrt_s: "mrt_stats"):
@@ -165,7 +196,7 @@ class redis_db:
                 f"Missing required arguments: key={key}, mrt_s={mrt_s}"
             )
 
-        self.r.set(key, mrt_s.to_json())
+        self.r.set(key, redis_db.compress(mrt_s.to_json()))
 
     def set_stats_json(self: "redis_db", key: str, json_str: str):
         """
@@ -179,7 +210,7 @@ class redis_db:
                 f"Missing required arguments: json_str={json_str}"
             )
 
-        self.r.set(key, json_str)
+        self.r.set(key, redis_db.compress(json_str))
 
     def to_file(self: "redis_db", filename: str):
         """
@@ -193,29 +224,36 @@ class redis_db:
         with open(filename, "w") as f:
             f.write(self.to_json())
 
+    def to_file_stream(self: "redis_db", filename: str):
+        """
+        to_json returns a giant dict of the entire DB which can be serialised
+        as a JSON string. The DB is now too big for this (the server runs out
+        of memory). Instead, write the DB to file, one key at a time:
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
+        with open(filename, "w") as f:
+            f.write("{")
+            keys = self.r.keys("*")
+            for idx, key in enumerate(keys):
+                k = key.decode("utf-8")
+                d = json.dumps({k: self.get(key=k)})
+                if idx == len(keys) - 1:
+                    f.write(f"{d[1:-1]}")
+                else:
+                    f.write(f"{d[1:-1]},")
+            f.write("}")
+
     def to_json(self: "redis_db") -> str:
         """
         Dump the entire redis DB to JSON
         """
         d: dict = {}
         for k in self.r.keys("*"):
-            t = self.r.type(k).decode("utf-8")
-            if t == "string":
-                val = self.r.get(k)
-                if val:
-                    d[k.decode("utf-8")] = val.decode("utf-8")
-                else:
-                    raise ValueError(
-                        f"Couldn't decode data stored under key {k.decode('utf-8')}"
-                    )
-            elif t == "list":
-                d[k.decode("utf-8")] = [
-                    x.decode("utf-8") for x in self.r.lrange(k, 0, -1)
-                ]
-            else:
-                raise TypeError(
-                    f"Unsupported data type {t} stored under key {k.decode('utf-8')}"
-                )
+            d[k.decode("utf-8")] = self.get(key=k)
 
         if d:
             return json.dumps(d)

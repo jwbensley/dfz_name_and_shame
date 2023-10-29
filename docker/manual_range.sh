@@ -24,6 +24,10 @@ then
   exit 1
 fi
 
+# shellcheck disable=SC1091
+source /opt/dnas/venv/bin/activate
+cd "/opt/dnas/docker/"
+
 SCRIPTS="/opt/dnas/dnas/scripts"
 SY="${1}"
 SM="${2}"
