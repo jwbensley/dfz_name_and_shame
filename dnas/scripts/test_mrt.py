@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-from enum import Enum
 import errno
 import json
 import logging
 import os
 import sys
 import typing
+from enum import Enum
 
 import mrtparse  # type: ignore
 
@@ -21,12 +21,14 @@ from dnas.log import log
 from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
 
+
 class MrtType(str, Enum):
     RIB = "rib"
     UPDATE = "udpate"
     UNKNOWN = "unknown"
 
-def check_rib_dump(filename: str = None):
+
+def check_rib_dump(filename: str) -> None:
     """
     Perform some basic checks to determin if this is a valid MRT RIB dump.
     """
@@ -116,12 +118,12 @@ def get_stats(filename: str) -> None:
 
     attrs = {}
     e_types = {}
-    e_subtypes = {}
-    e_msgtypes = {}
-    as_paths = []
-    origin_asns = set()
-    prefixes = set()
-    peers = {}
+    e_subtypes: dict[str, int] = {}
+    e_msgtypes: dict[str, int] = {}
+    as_paths: list[list[str]] = []
+    origin_asns: set[str] = set()
+    prefixes: set[str] = set()
+    peers: dict[int, dict] = {}
 
     mrt_entries = mrtparse.Reader(filename)
     """
@@ -167,16 +169,19 @@ def get_stats(filename: str) -> None:
             e_subtypes[e_subtype] += 1
 
         if mrt_type == MrtType.RIB:
-            if list(mrt_e.data["subtype"].keys())[0] == 2: # RIB_IPV4_UNICAST
+            if list(mrt_e.data["subtype"].keys())[0] == 2:  # RIB_IPV4_UNICAST
                 key = "v4_count"
-            elif list(mrt_e.data["subtype"].keys())[0] == 4: # RIB_IPV6_UNICAST
+            elif (
+                list(mrt_e.data["subtype"].keys())[0] == 4
+            ):  # RIB_IPV6_UNICAST
                 key = "v6_count"
             else:
-                logging.warning(f"Unknown MRT entry subtype: {mrt_e.data['subtype']}")
+                logging.warning(
+                    f"Unknown MRT entry subtype: {mrt_e.data['subtype']}"
+                )
                 continue
             for entry in mrt_e.data["rib_entries"]:
                 peers[entry["peer_index"]][key] += 1
-
 
         if mrt_type == MrtType.UPDATE:
             """
@@ -194,29 +199,32 @@ def get_stats(filename: str) -> None:
             """
             Some MRTs contain the BGP messages types (OPEN, KEEPALIVE, etc)
             """
-            e_msgtype = next(iter(mrt_e.data["bgp_message"]["type"]))
+            e_msgtype: str = next(iter(mrt_e.data["bgp_message"]["type"]))
             if e_msgtype not in e_msgtypes:
                 e_msgtypes[e_msgtype] = 1
             else:
                 e_msgtypes[e_msgtype] += 1
 
-            if e_msgtype != 2: # UPDATE
+            if e_msgtype != 2:  # UPDATE
                 continue
 
             if len(mrt_e.data["bgp_message"]["nlri"]) > 0:
                 for nlri in mrt_e.data["bgp_message"]["nlri"]:
-                    prefixes.add(
-                        nlri["prefix"] + "/" + str(nlri["length"])
-                    )
+                    prefixes.add(nlri["prefix"] + "/" + str(nlri["length"]))
 
-            if withdrawn_routes := mrt_e.data["bgp_message"].get("withdrawn_routes"):
+            if withdrawn_routes := mrt_e.data["bgp_message"].get(
+                "withdrawn_routes"
+            ):
                 for withdrawn_route in withdrawn_routes:
                     prefixes.add(
-                        withdrawn_route["prefix"] + "/"
+                        withdrawn_route["prefix"]
+                        + "/"
                         + str(withdrawn_route["length"])
                     )
 
-            if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
+            if path_attributes := mrt_e.data["bgp_message"].get(
+                "path_attributes"
+            ):
                 for attr in path_attributes:
                     attr_t = next(iter(attr["type"]))
 
@@ -225,22 +233,26 @@ def get_stats(filename: str) -> None:
                     else:
                         attrs[attr_t] += 1
 
-                    if attr_t == 2: # AS_PATH
-                        if attr["value"][0]["value"] not in as_paths:
-                            as_paths.append(attr["value"][0]["value"])
-                        origin_asns.add(attr["value"][0]["value"][-1])
+                    if attr_t == 2:  # AS_PATH
+                        as_path: list[str] = attr["value"][0]["value"]
+                        if as_path not in as_paths:
+                            as_paths.append(as_path)
+                        origin_asns.add(as_path[-1])
 
-                    if attr_t == 14: # MP_REACH_NLRI -> IPV6_UNICAST
+                    if attr_t == 14:  # MP_REACH_NLRI -> IPV6_UNICAST
                         for nlri in attr["value"]["nlri"]:
                             prefixes.add(
                                 nlri["prefix"] + "/" + str(nlri["length"])
                             )
 
-                    elif attr_t == 15: # MP_UNREACH_NLRI -> IPV6_UNICAST
-                        if withdrawn_routes := attr["value"].get("withdrawn_routes"):
+                    elif attr_t == 15:  # MP_UNREACH_NLRI -> IPV6_UNICAST
+                        if withdrawn_routes := attr["value"].get(
+                            "withdrawn_routes"
+                        ):
                             for withdrawn_route in withdrawn_routes:
                                 prefixes.add(
-                                    withdrawn_route["prefix"] + "/"
+                                    withdrawn_route["prefix"]
+                                    + "/"
                                     + str(withdrawn_route["length"])
                                 )
 
@@ -268,7 +280,7 @@ def get_stats(filename: str) -> None:
 
     if mrt_type == MrtType.RIB:
         # Sort peers by AS number:
-        sorted_peers = []
+        sorted_peers: list[dict] = []
         for peer in peers.values():
             for idx, sorted_peer in enumerate(sorted_peers):
                 if peer["peer_as"] <= sorted_peer["peer_as"]:
@@ -279,10 +291,13 @@ def get_stats(filename: str) -> None:
         sorted_peers.reverse()
 
         logging.info("Peer list:")
-        logging.info(f"| {'Peer AS': <12} | {'Peer IP': <40} | {'v4 Count': <8} | {'v6 Count': <8} |")
+        logging.info(
+            f"| {'Peer AS': <12} | {'Peer IP': <40} | {'v4 Count': <8} | {'v6 Count': <8} |"
+        )
         for peer in sorted_peers:
-            logging.info(f"| {peer['peer_as']: <12} | {peer['peer_ip']: <40} | {peer['v4_count']: <8} | {peer['v6_count']: <8} |")
-
+            logging.info(
+                f"| {peer['peer_as']: <12} | {peer['peer_ip']: <40} | {peer['v4_count']: <8} | {peer['v6_count']: <8} |"
+            )
 
 
 def parse_args() -> dict:
