@@ -1,5 +1,6 @@
 import json
-from typing import List
+import typing
+
 
 class twitter_msg:
     """
@@ -7,13 +8,13 @@ class twitter_msg:
     """
 
     def __init__(
-            self,
-            hdr: str = "",
-            hdr_id: int = 0,
-            body: str = "",
-            body_ids: List[int] = [],
-            hidden: bool = True,
-        ) -> None:
+        self: "twitter_msg",
+        hdr: str = "",
+        hdr_id: int = 0,
+        body: str = "",
+        body_ids: list[int] = [],
+        hidden: bool = True,
+    ) -> None:
         """
         The header contains the main message to be tweeted.
         It must be is <= cfg.TWITTER_LEN
@@ -42,7 +43,7 @@ class twitter_msg:
         """
         self.hidden = hidden
 
-    def from_json(self, json_str: str = None):
+    def from_json(self: "twitter_msg", json_str: str) -> None:
         """
         Populate this object with data from a JSON string.
         """
@@ -52,9 +53,7 @@ class twitter_msg:
             )
 
         if type(json_str) != str:
-            raise TypeError(
-                f"json_str is not a string: {type(json_str)}"
-            )
+            raise TypeError(f"json_str is not a string: {type(json_str)}")
 
         json_data = json.loads(json_str)
         self.hdr = json_data["hdr"]
@@ -64,40 +63,32 @@ class twitter_msg:
         self.hidden = json_data["hidden"]
 
     @staticmethod
-    def gen_tweeted_q_key(ymd: str = None):
+    def gen_tweeted_q_key(ymd: str) -> str:
         """
         Return the redis key for the tweeted queue, for a specific day.
         """
         if not ymd:
-            raise ValueError(
-                f"Missing required arguments: ymd={ymd}"
-            )
+            raise ValueError(f"Missing required arguments: ymd={ymd}")
 
         if type(ymd) != str:
-            raise TypeError(
-                f"ymd is not an str: {type(ymd)}"
-            )
+            raise TypeError(f"ymd is not an str: {type(ymd)}")
 
         return "TWEETED:" + ymd
 
     @staticmethod
-    def gen_tweet_q_key(ymd: str = None):
+    def gen_tweet_q_key(ymd: str) -> str:
         """
         Return the redis key for the tweet queue, for a days tweets.
         """
         if not ymd:
-            raise ValueError(
-                f"Missing required arguments: ymd={ymd}"
-            )
+            raise ValueError(f"Missing required arguments: ymd={ymd}")
 
         if type(ymd) != str:
-            raise TypeError(
-                f"ymd is not an str: {type(ymd)}"
-            )
+            raise TypeError(f"ymd is not an str: {type(ymd)}")
 
         return "TWEET_Q:" + ymd
 
-    def to_json(self) -> str:
+    def to_json(self: "twitter_msg") -> str:
         """
         Return the twitter message serialised as a json string.
         """

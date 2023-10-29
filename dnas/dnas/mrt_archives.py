@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Union, Literal
+from typing import Literal, Union
 
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
@@ -10,34 +10,13 @@ class mrt_archives:
     def __init__(self) -> None:
         self.archives = []
 
+        arch: dict
         for arch in cfg.MRT_ARCHIVES:
-            self.archives.append(
-                mrt_archive(
-                    BASE_URL=arch["BASE_URL"],
-                    ENABLED=arch["ENABLED"],
-                    MRT_DIR=arch["MRT_DIR"],
-                    MRT_EXT=arch["MRT_EXT"],
-                    NAME=arch["NAME"],
-                    RIB_GLOB=arch["RIB_GLOB"],
-                    RIB_INTERVAL=arch["RIB_INTERVAL"],
-                    RIB_KEY=arch["RIB_KEY"],
-                    RIB_OFFSET=arch["RIB_OFFSET"],
-                    RIB_PREFIX=arch["RIB_PREFIX"],
-                    RIB_URL=arch["RIB_URL"],
-                    TYPE=arch["TYPE"],
-                    UPD_GLOB=arch["UPD_GLOB"],
-                    UPD_INTERVAL=arch["UPD_INTERVAL"],
-                    UPD_KEY=arch["UPD_KEY"],
-                    UPD_OFFSET=arch["UPD_OFFSET"],
-                    UPD_PREFIX=arch["UPD_PREFIX"],
-                    UPD_URL=arch["UPD_URL"],
-                    STRIP_COMM=arch["STRIP_COMM"],
-                )
-            )
+            self.archives.append(mrt_archive.from_dict(args=arch))
 
     def arch_from_file_path(
-        self, file_path: str = None
-    ) -> Union['mrt_archive', Literal[False]]:
+        self: "mrt_archives", file_path: str
+    ) -> Union["mrt_archive", Literal[False]]:
         """
         Return the MRT archive the file came from, based on the file path.
         """
@@ -59,8 +38,8 @@ class mrt_archives:
         return False
 
     def arch_from_url(
-        self, url: str = None
-    ) -> Union['mrt_archive', Literal[False]]:
+        self: "mrt_archives", url: str
+    ) -> Union["mrt_archive", Literal[False]]:
         """
         Return the MRT archive the URL belongs to, based on the url.
         """
@@ -96,7 +75,7 @@ class mrt_archives:
         logging.error(f"Couldn't match {url} to any MRT archive")
         return False
 
-    def get_arch_option(self, file_path: str = None, opt: str = None) -> str:
+    def get_arch_option(self: "mrt_archives", file_path: str, opt: str) -> str:
         """
         Return the value of an MRT archive attribute, based on the file name.
         """
@@ -119,7 +98,7 @@ class mrt_archives:
 
         return getattr(arch, opt)
 
-    def get_day_key(self, file_path: str = None) -> str:
+    def get_day_key(self: "mrt_archives", file_path: str) -> str:
         """
         Return the redis DB key for the specific MRT archive and specific day
         the file path relates to.
@@ -146,7 +125,7 @@ class mrt_archives:
         else:
             return arch.gen_upd_key(ymd)
 
-    def is_rib_from_filename(self, file_path: str = None) -> bool:
+    def is_rib_from_filename(self: "mrt_archives", file_path: str) -> bool:
         """
         Return True if this is a RIB dump, else False to indicate UPDATE dump.
         """

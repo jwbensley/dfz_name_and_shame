@@ -4,46 +4,41 @@ import argparse
 import datetime
 import logging
 import os
-import requests
 import sys
 import time
-from typing import Any, Dict, List
+import typing
+
+import requests
 
 # Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__))
-        , "../"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
 
 from dnas.config import config as cfg
 from dnas.log import log
 from dnas.mrt_archives import mrt_archives
-from dnas.redis_db import redis_db
 from dnas.mrt_getter import mrt_getter
+from dnas.redis_db import redis_db
 
-def continuous(args: Dict[str, Any] = None):
+
+def continuous(args: dict) -> None:
     """
     Continuous check for new MRT files and download them from the configured MRT
     archives.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
     if type(args) != dict:
-        raise TypeError(
-            f"args is not a dict: {type(args)}"
-        )
+        raise TypeError(f"args is not a dict: {type(args)}")
 
     mrt_a = mrt_archives()
     min_interval = cfg.DFT_INTERVAL
 
-    while(True):
+    while True:
         for arch in mrt_a.archives:
-            if (args["enabled"] and not arch.ENABLED):
+            if args["enabled"] and not arch.ENABLED:
                 continue
             logging.debug(f"Archive {arch.NAME} is enabled")
 
@@ -67,7 +62,7 @@ def continuous(args: Dict[str, Any] = None):
                 which provides the most frequent dumps:
                 """
                 if (arch.RIB_INTERVAL * 60) < min_interval:
-                    min_interval = (arch.RIB_INTERVAL * 60)
+                    min_interval = arch.RIB_INTERVAL * 60
                     logging.debug(
                         f"Get interval set to {min_interval} by "
                         f"{arch.NAME} RIB interval"
@@ -84,7 +79,7 @@ def continuous(args: Dict[str, Any] = None):
                     pass
 
                 if (arch.UPD_INTERVAL * 60) < min_interval:
-                    min_interval = (arch.UPD_INTERVAL * 60)
+                    min_interval = arch.UPD_INTERVAL * 60
                     logging.debug(
                         f"Get interval set to {min_interval} by "
                         f"{arch.NAME} UPD interval"
@@ -92,19 +87,16 @@ def continuous(args: Dict[str, Any] = None):
 
         time.sleep(min_interval)
 
-def get_day(args: Dict[str, Any] = None):
+
+def get_day(args: dict) -> None:
     """
     Download all the MRTs for a specific day.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
     if not args["ymd"]:
-        raise ValueError(
-            f"Missing required arguments: ymd={args['ymd']}"
-        )
+        raise ValueError(f"Missing required arguments: ymd={args['ymd']}")
 
     url_list = gen_urls_day(args)
     if not url_list:
@@ -112,14 +104,13 @@ def get_day(args: Dict[str, Any] = None):
     else:
         get_mrts(replace=args["replace"], url_list=url_list)
 
-def get_latest(args: Dict[str, Any] = None):
+
+def get_latest(args: dict) -> None:
     """
     Get the latest MRT file from each archive.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
     url_list = gen_urls_latest(args)
     if not url_list:
@@ -127,19 +118,16 @@ def get_latest(args: Dict[str, Any] = None):
     else:
         get_mrts(replace=args["replace"], url_list=url_list)
 
-def get_mrts(replace: bool = False, url_list: List[str] = None):
+
+def get_mrts(url_list: list[str], replace: bool = False) -> None:
     """
     Download the list of MRTs from the passed URL list.
     """
     if not url_list:
-        raise ValueError(
-            f"Missing required arguments: url_list={url_list}"
-        )
+        raise ValueError(f"Missing required arguments: url_list={url_list}")
 
     if type(url_list) != list:
-        raise TypeError(
-            f"url_list is not a list: {type(url_list)}"
-        )
+        raise TypeError(f"url_list is not a list: {type(url_list)}")
 
     mrt_a = mrt_archives()
     logging.info(f"Downloading {len(url_list)} MRT files")
@@ -155,11 +143,7 @@ def get_mrts(replace: bool = False, url_list: List[str] = None):
         outage. For this reason, ignore HTTP erros like 404s.
         """
         try:
-            mrt_getter.download_mrt(
-                filename=outfile,
-                replace=replace,
-                url=url
-            )
+            mrt_getter.download_mrt(filename=outfile, replace=replace, url=url)
             i += 1
             logging.info(f"Downloaded {i}/{len(url_list)}")
         except requests.exceptions.HTTPError as e:
@@ -171,16 +155,15 @@ def get_mrts(replace: bool = False, url_list: List[str] = None):
 
     logging.info(f"Finished, downloaded {i}/{len(url_list)}")
 
-def get_range(args: Dict[str, Any] = None):
+
+def get_range(args: dict) -> None:
     """
     Download all the MRTs for between a specific start and end date inclusive.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
-    if (not args["start"] or not args["end"]):
+    if not args["start"] or not args["end"]:
         raise ValueError(
             f"Missing required options: start={args['start']}, "
             f"end={args['end']}"
@@ -192,68 +175,55 @@ def get_range(args: Dict[str, Any] = None):
     else:
         get_mrts(replace=args["replace"], url_list=url_list)
 
-def gen_urls_day(args: Dict[str, Any] = None) -> List[str]:
+
+def gen_urls_day(args: dict) -> list[str]:
     """
     Return a list of URLs for all the MRTs for a specific day.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
     if not args["ymd"]:
-        raise ValueError(
-            f"Missing required arguments: ymd={args['ymd']}"
-        )
+        raise ValueError(f"Missing required arguments: ymd={args['ymd']}")
 
     args["start"] = args["ymd"] + ".0000"
     args["end"] = args["ymd"] + ".2359"
     return gen_urls_range(args)
 
-def gen_urls_latest(args: Dict[str, Any] = None) -> List[str]:
+
+def gen_urls_latest(args: dict) -> list[str]:
     """
     Return a list of URLs for the latest MRT file for each archive
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
     mrt_a = mrt_archives()
     url_list = []
 
     for arch in mrt_a.archives:
-        if (args["enabled"] and not arch.ENABLED):
+        if args["enabled"] and not arch.ENABLED:
             continue
         logging.debug(f"Checking archive {arch.NAME}...")
 
         if args["rib"]:
-            url_list.append(
-                arch.gen_rib_url(
-                    arch.gen_latest_rib_fn()
-                )
-            )
+            url_list.append(arch.gen_rib_url(arch.gen_latest_rib_fn()))
 
         if args["update"]:
-            url_list.append(
-                arch.gen_upd_url(
-                    arch.gen_latest_upd_fn()
-                )
-            )
+            url_list.append(arch.gen_upd_url(arch.gen_latest_upd_fn()))
 
     return url_list
 
-def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
+
+def gen_urls_range(args: dict) -> list[str]:
     """
     Generate and return a list of URLs for all MRTs betwen a start and end date
     inclusive.
     """
     if not args:
-        raise ValueError(
-            f"Missing required arguments: args={args}"
-        )
+        raise ValueError(f"Missing required arguments: args={args}")
 
-    if (not args["start"] or not args["end"]):
+    if not args["start"] or not args["end"]:
         raise ValueError(
             f"Missing required options: start={args['start']}, "
             f"end={args['end']}"
@@ -263,9 +233,7 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
     end = datetime.datetime.strptime(args["end"], cfg.TIME_FORMAT)
 
     if end < start:
-        raise ValueError(
-            f"End date {end} is before start date {start}"
-        )
+        raise ValueError(f"End date {end} is before start date {start}")
 
     diff = end - start
     no_days = int(diff.total_seconds() // 86400)
@@ -274,25 +242,23 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
     url_list = []
 
     for i in range(0, no_days + 1):
-
         delta = datetime.timedelta(days=i)
         ymd = datetime.datetime.strftime(start + delta, cfg.DAY_FORMAT)
 
         for arch in mrt_a.archives:
-            if (args["enabled"] and not arch.ENABLED):
+            if args["enabled"] and not arch.ENABLED:
                 continue
             logging.debug(f"Checking archive {arch.NAME}...")
 
             if args["rib"]:
-
                 all_rib_filenames = arch.gen_rib_fns_day(ymd)
 
                 for filename in all_rib_filenames[:]:
-                    raw_ts = '.'.join(filename.split(".")[1:3])
+                    raw_ts = ".".join(filename.split(".")[1:3])
                     timestamp = datetime.datetime.strptime(
                         raw_ts, cfg.TIME_FORMAT
                     )
-                    if (timestamp < start or timestamp > end):
+                    if timestamp < start or timestamp > end:
                         all_rib_filenames.remove(filename)
 
                 if not all_rib_filenames:
@@ -317,7 +283,10 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
                             f"Need to backfill {len(all_rib_filenames)} RIB "
                             f"dumps for archive {arch.NAME} on {ymd}"
                         )
-                        urls = [arch.gen_rib_url(filename) for filename in all_rib_filenames]
+                        urls = [
+                            arch.gen_rib_url(filename)
+                            for filename in all_rib_filenames
+                        ]
                         logging.debug(f"Adding {urls}")
                         url_list.extend(urls)
                     else:
@@ -335,17 +304,19 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
                         f"Adding {len(all_rib_filenames)} RIB dumps for "
                         f"archive {arch.NAME} on {ymd}"
                     )
-                    urls = [arch.gen_rib_url(filename) for filename in all_rib_filenames]
+                    urls = [
+                        arch.gen_rib_url(filename)
+                        for filename in all_rib_filenames
+                    ]
                     logging.debug(f"Adding {urls}")
                     url_list.extend(urls)
 
             if args["update"]:
-
                 all_upd_filenames = arch.gen_upd_fns_day(ymd)
 
                 for filename in all_upd_filenames[:]:
                     timestamp = arch.ts_from_filename(filename)
-                    if (timestamp < start or timestamp > end):
+                    if timestamp < start or timestamp > end:
                         all_upd_filenames.remove(filename)
 
                 if not all_upd_filenames:
@@ -366,7 +337,10 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
                             f"Need to backfill {len(all_upd_filenames)} UPDATE "
                             f"dumps for archive {arch.NAME} on {ymd}"
                         )
-                        urls = [arch.gen_upd_url(filename) for filename in all_upd_filenames]
+                        urls = [
+                            arch.gen_upd_url(filename)
+                            for filename in all_upd_filenames
+                        ]
                         logging.debug(f"Adding {urls}")
                         url_list.extend(urls)
                     else:
@@ -380,14 +354,18 @@ def gen_urls_range(args: Dict[str, Any] = None) -> List[str]:
                         f"Adding {len(all_upd_filenames)} UPDATE dumps for "
                         f"archive {arch.NAME} on {ymd}"
                     )
-                    urls = [arch.gen_upd_url(filename) for filename in all_upd_filenames]
+                    urls = [
+                        arch.gen_upd_url(filename)
+                        for filename in all_upd_filenames
+                    ]
                     logging.debug(f"Adding {urls}")
                     url_list.extend(urls)
 
     rdb.close()
     return url_list
 
-def parse_args():
+
+def parse_args() -> dict:
     """
     Parse the CLI args to this script.
     """
@@ -496,20 +474,21 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def main():
 
+def main():
     args = parse_args()
     log.setup(
-        debug = args["debug"],
-        log_src = "MRT downloader script",
-        log_path = cfg.LOG_GETTER,
+        debug=args["debug"],
+        log_src="MRT downloader script",
+        log_path=cfg.LOG_GETTER,
     )
 
-    if (not args["continuous"] and
-        not args["latest"] and
-        not args["range"] and
-        not args["ymd"] and
-        not args["yesterday"]
+    if (
+        not args["continuous"]
+        and not args["latest"]
+        and not args["range"]
+        and not args["ymd"]
+        and not args["yesterday"]
     ):
         raise ValueError(
             "Exactly one of the four modes must be chosen: --continuous, "
@@ -538,5 +517,5 @@ def main():
         get_day(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

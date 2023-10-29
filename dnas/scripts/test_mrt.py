@@ -5,16 +5,15 @@ from enum import Enum
 import errno
 import json
 import logging
-import mrtparse # type: ignore
 import os
 import sys
+import typing
+
+import mrtparse  # type: ignore
 
 # Accomodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__))
-        , "../"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
 
 from dnas.config import config as cfg
@@ -42,7 +41,7 @@ def check_rib_dump(filename: str = None):
     mrt_entries = mrtparse.Reader(filename)
     for idx, mrt_e in enumerate(mrt_entries):
         rib_type = list(mrt_e.data["type"].keys())[0]
-        if (rib_type != mrtparse.MRT_T['TABLE_DUMP_V2']):
+        if rib_type != mrtparse.MRT_T["TABLE_DUMP_V2"]:
             logging.error(
                 f"Entry {idx} in {filename} is not type TABLE_DUMP_V2: "
                 f"{mrt_e.data['type']}"
@@ -62,7 +61,8 @@ def check_rib_dump(filename: str = None):
 
     logging.info(f"{filename} appears to be a valid RIB dump MRT file.")
 
-def check_update_dump(filename: str = None):
+
+def check_update_dump(filename: str) -> None:
     """
     Perform some basic checks to determin if this is a valid MRT UPDATE
     dump.
@@ -78,8 +78,10 @@ def check_update_dump(filename: str = None):
     mrt_entries = mrtparse.Reader(filename)
     for idx, mrt_e in enumerate(mrt_entries):
         upd_type = list(mrt_e.data["type"].keys())[0]
-        if (upd_type != mrtparse.MRT_T['BGP4MP_ET'] and
-            upd_type != mrtparse.MRT_T['BGP4MP']):
+        if (
+            upd_type != mrtparse.MRT_T["BGP4MP_ET"]
+            and upd_type != mrtparse.MRT_T["BGP4MP"]
+        ):
             logging.error(
                 f"Entry {idx} in {filename} is not type BGP4MP_ET: "
                 f"{mrt_e.data['type']}"
@@ -99,7 +101,8 @@ def check_update_dump(filename: str = None):
 
     logging.info(f"{filename} appears to be a valid UPDATE dump MRT file.")
 
-def get_stats(filename: str = None):
+
+def get_stats(filename: str) -> None:
     """
     Print some basic statis about the entries in an MRT file.
     """
@@ -118,7 +121,6 @@ def get_stats(filename: str = None):
     as_paths = []
     origin_asns = set()
     prefixes = set()
-
     peers = {}
 
     mrt_entries = mrtparse.Reader(filename)
@@ -152,7 +154,6 @@ def get_stats(filename: str = None):
         break
 
     for idx, mrt_e in enumerate(mrt_entries):
-
         e_type = list(mrt_e.data["type"].keys())[0]
         if e_type not in e_types:
             e_types[e_type] = 1
@@ -178,7 +179,6 @@ def get_stats(filename: str = None):
 
 
         if mrt_type == MrtType.UPDATE:
-
             """
             Some UPDATE MRTs contain the BGP state change events
             """
@@ -247,19 +247,19 @@ def get_stats(filename: str = None):
     logging.info(f"File {filename} contains {idx+1} entries")
 
     logging.info("Count per record type:")
-    for k,v in e_types.items():
+    for k, v in e_types.items():
         logging.info(f"{mrtparse.MRT_T[k]}: {v}")
 
     logging.info("Count per record sub-type:")
-    for k,v in e_subtypes.items():
+    for k, v in e_subtypes.items():
         logging.info(f"{mrtparse.BGP4MP_ST[k]}: {v}")
 
     logging.info("Count per BGP message type:")
-    for k,v in e_msgtypes.items():
+    for k, v in e_msgtypes.items():
         logging.info(f"{mrtparse.BGP_MSG_T[k]}: {v}")
 
     logging.info(f"Count per BGP attribute type:")
-    for k,v in attrs.items():
+    for k, v in attrs.items():
         logging.info(f"Attr {mrtparse.BGP_ATTR_T[k]}: {v}")
 
     logging.info(f"Unique AS paths: {len(as_paths)}")
@@ -285,7 +285,7 @@ def get_stats(filename: str = None):
 
 
 
-def parse_args():
+def parse_args() -> dict:
     """
     Parse the CLI args to this script.
     """
@@ -356,7 +356,8 @@ def parse_args():
 
     return vars(parser.parse_args())
 
-def to_json(json_file: str = None, mrt_file: str = None):
+
+def to_json(json_file: str, mrt_file: str) -> None:
     """
     Convert an MRT file to a JSON string and write to a file.
     """
@@ -374,7 +375,8 @@ def to_json(json_file: str = None, mrt_file: str = None):
         f.write(json.dumps(mrt_data, indent=2))
     logging.info(f"Wrote JSON dump to {json_file}")
 
-def to_json_parsed(rib: bool = False, json_file: str = None, mrt_file: str = None):
+
+def to_json_parsed(json_file: str, mrt_file: str, rib: bool = False) -> None:
     """
     Parse an MRT file to generate stats, then write the stats as a JSON string
     to a file.
@@ -388,7 +390,7 @@ def to_json_parsed(rib: bool = False, json_file: str = None, mrt_file: str = Non
     ######## TODO - Fix this hack so that mrt_parser doesn't care about the path
     cfg.SPLIT_DIR = ""
 
-    stats: 'mrt_stats'
+    stats: "mrt_stats"
     if rib:
         stats = mrt_parser.parse_rib_dump(mrt_file)
     else:
@@ -398,13 +400,13 @@ def to_json_parsed(rib: bool = False, json_file: str = None, mrt_file: str = Non
         stats.to_file(json_file)
         logging.info(f"Wrote parsed JSON to {json_file}")
 
-def main():
 
+def main():
     args = parse_args()
     log.setup(
-        debug = args["debug"],
-        log_src = "MRT tester script",
-        log_path = cfg.LOG_TESTER,
+        debug=args["debug"],
+        log_src="MRT tester script",
+        log_path=cfg.LOG_TESTER,
     )
 
     if not os.path.isfile(args["mrt"]):
@@ -428,17 +430,18 @@ def main():
 
     if args["to_json_rib"]:
         to_json_parsed(
-            rib = True,
-            json_file = args["to_json_rib"],
-            mrt_file = args["mrt"],
+            rib=True,
+            json_file=args["to_json_rib"],
+            mrt_file=args["mrt"],
         )
 
     if args["to_json_update"]:
         to_json_parsed(
-            rib = False,
-            json_file = args["to_json_update"],
-            mrt_file = args["mrt"],
+            rib=False,
+            json_file=args["to_json_update"],
+            mrt_file=args["mrt"],
         )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

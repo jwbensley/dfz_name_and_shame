@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import sys
+import typing
 import unittest
 
 sys.path.append(
@@ -14,7 +15,7 @@ from dnas.mrt_parser import mrt_parser
 
 
 class test_mrt_entry(unittest.TestCase):
-    def setUp(self):
+    def setUp(self: "test_mrt_entry") -> None:
         self.mrt_e = mrt_entry()
 
         """
@@ -50,7 +51,7 @@ class test_mrt_entry(unittest.TestCase):
         shutil.copy2(self.upd_1_path, self.upd_1_mrt)
         self.mrt_s = mrt_parser.parse_upd_dump(self.upd_1_mrt)
 
-    def test_init(self):
+    def test_init(self: "test_mrt_entry") -> None:
         self.assertIsInstance(self.mrt_e, mrt_entry)
         self.assertIsInstance(self.mrt_e.advt, int)
         self.assertIsInstance(self.mrt_e.as_path, list)
@@ -59,40 +60,40 @@ class test_mrt_entry(unittest.TestCase):
         self.assertEqual(len(self.mrt_e.comm_set), 0)
         self.assertIsInstance(self.mrt_e.med, int)
         self.assertEqual(self.mrt_e.med, -1)
-        self.assertEqual(self.mrt_e.next_hop, None)
-        self.assertEqual(self.mrt_e.prefix, None)
+        self.assertEqual(self.mrt_e.next_hop, "")
+        self.assertEqual(self.mrt_e.prefix, "")
         self.assertIsInstance(self.mrt_e.origin_asns, set)
         self.assertEqual(len(self.mrt_e.origin_asns), 0)
-        self.assertEqual(self.mrt_e.peer_asn, None)
-        self.assertEqual(self.mrt_e.timestamp, None)
+        self.assertEqual(self.mrt_e.peer_asn, "")
+        self.assertEqual(self.mrt_e.timestamp, "")
         self.assertIsInstance(self.mrt_e.updates, int)
         self.assertIsInstance(self.mrt_e.withdraws, int)
         self.assertIsInstance(self.mrt_e.unknown_attrs, set)
         self.assertEqual(len(self.mrt_e.unknown_attrs), 0)
 
-    def test_equal_to(self):
+    def test_equal_to(self: "test_mrt_entry") -> None:
         e1 = copy.deepcopy(self.mrt_s.longest_as_path[0])
         e2 = copy.deepcopy(self.mrt_s.longest_as_path[0])
 
         self.assertIsInstance(e1, mrt_entry)
         self.assertIsInstance(e2, mrt_entry)
-        self.assertRaises(ValueError, e1.equal_to)
-        self.assertRaises(TypeError, e1.equal_to, 123)
+        self.assertRaises(ValueError, e1.equal_to, "")
+        self.assertRaises(ValueError, e1.equal_to, "", 123)
         self.assertTrue(e1.equal_to(e2))
 
-    def test_from_json(self):
+    def test_from_json(self: "test_mrt_entry") -> None:
         with open(self.entry_1_path) as f:
             json_data = f.read()
         self.assertIsInstance(json_data, str)
 
         e = mrt_entry()
-        self.assertRaises(ValueError, e.from_json)
+        self.assertRaises(ValueError, e.from_json, "")
         self.assertRaises(TypeError, e.from_json, 123)
         e.from_json(json_data)
 
         self.assertTrue(e.equal_to(self.mrt_s.longest_as_path[0], True))
 
-    def test_gen_timestamp(self):
+    def test_gen_timestamp(self: "test_mrt_entry") -> None:
         ret = mrt_entry.gen_timestamp()
         self.assertIsInstance(ret, str)
         self.assertTrue(
@@ -105,7 +106,7 @@ class test_mrt_entry(unittest.TestCase):
             )
         )
 
-    def test_to_json(self):
+    def test_to_json(self: "test_mrt_entry") -> None:
         with open(self.entry_1_path) as f:
             j1 = f.read()
         self.assertIsInstance(j1, str)
@@ -114,9 +115,9 @@ class test_mrt_entry(unittest.TestCase):
         self.assertIsInstance(j2, str)
         self.assertEqual(j1, j2)
 
-    def tearDown(self):
+    def tearDown(self: "test_mrt_entry") -> None:
         os.remove(self.upd_1_mrt)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

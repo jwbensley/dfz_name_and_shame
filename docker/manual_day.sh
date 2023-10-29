@@ -24,7 +24,7 @@ docker-compose run --rm --name tmp_parser dnas_parser -- \
 docker-compose run --rm --name tmp_stats dnas_stats -- \
 "${SCRIPTS}/stats.py" --update --enabled --daily --ymd "$1"
 
-docker-compose run --rm --name tmp_report dnas_stats -- \
+docker-compose run --rm --name tmp_report dnas_git -- \
 "${SCRIPTS}/git_reports.py" --generate --publish --ymd "$1"
 
 #docker-compose run --rm --name tmp_tweet dnas_stats -- \
