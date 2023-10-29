@@ -47,17 +47,13 @@ sudo mv "$pypy_dir" /opt/
 
 ### Testing
 
-MyPy type checking is performed using the following:
+Tox is used to provide linting (black and isort), type checking (mypy), and run unit tests (pyetst):
 
 ```bash
 cd /opt/dnas/
 source venv/bin/activate
-cd ./dnas/
-pip install mypy
-pip install types-redis
-pip install types-requests
-mypy dnas/*.py
-mypy scripts/*.py
+pip install tox
+tox
 ```
 
 ### Coding Style

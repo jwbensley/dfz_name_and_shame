@@ -6,7 +6,7 @@ cd /opt/dnas/
 # shellcheck disable=SC1091
 source venv/bin/activate
 git checkout main
-git pull
+git pull origin main --rebase
 cd docker/
 # Ensure we have latest version of base images
 docker pull ubuntu:22.04

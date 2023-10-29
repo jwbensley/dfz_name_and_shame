@@ -67,6 +67,18 @@ The local time configuration file from the host is shared into the container bec
 
 ### In Retrospective Mode
 
+The following examples show how to run individual containers for a specific date but, scripts are also provided to do this.
+
+#### Using Scripts
+
+One can use the script `manual_day.sh` to run the containers in retrospective mode for a specific day: `/opt/dnas/docker/manual_day.sh 20220228`.
+
+To run the containers in retrospective mode for yesterday one can use `/opt/dnas/docker/manual_day.sh $(date --date="1 day ago" +"%Y%m%d")`
+
+To run the containers for a period of time one ca use `/opt/dnas/docker/manual_range.sh 2023 01 01 2023 01 31`
+
+#### Manually
+
 Pull any missing MRTs for a specific day:
 ```shell
 docker-compose run --rm --name tmp_getter dnas_getter -- \
@@ -91,22 +103,6 @@ docker-compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "20230101"
 ```
 
-Parse multiple days and don't worry about missing MRTs:
-```shell
-for year in {2023..2023}
-do
-  for month in {02..02}
-  do
-    for day in {01..28}
-    do
-      echo "doing ${year}${month}${day}:"
-      docker-compose run --rm --name tmp_parser dnas_parser -- \
-      /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "${year}${month}${day}"
-    done
-  done
-done
-```
-
 Generate stats in the DB for a specific day:
 ```shell
 docker-compose run --rm --name tmp_stats --entrypoint /opt/pypy dnas_stats -- \
@@ -120,14 +116,9 @@ docker-compose run --rm --name tmp_report --entrypoint /opt/pypy dnas_stats -- \
 ```
 
 Tweet for a specific day:
-```
+```shell
 docker-compose run --rm --name tmp_tweet --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/tweet.py --generate --tweet --ymd "20230101"
 ```
 
 The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to run DNAS in a retrospective mode where it generates stats for the previous day in a single run, on a daily basis, instead of continuous mode were it builds up the stats throughout the day. Note that the Redis container must be already running.
-
-One can use the script `manual_day.sh` to run the containers in retrospective mode for a specific day: `/opt/dnas/docker/manual_day.sh 20220228`.
-
-To run the contains in retrospective mode for yesterday one can use `/opt/dnas/docker/manual_day.sh $(date --date="1 day ago" +"%Y%m%d")`
-&nbsp;
