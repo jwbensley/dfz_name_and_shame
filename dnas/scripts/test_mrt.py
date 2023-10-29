@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from enum import Enum
 import errno
 import json
 import logging
@@ -20,6 +21,11 @@ from dnas.config import config as cfg
 from dnas.log import log
 from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
+
+class MrtType(str, Enum):
+    RIB = "rib"
+    UPDATE = "udpate"
+    UNKNOWN = "unknown"
 
 def check_rib_dump(filename: str = None):
     """
@@ -113,7 +119,38 @@ def get_stats(filename: str = None):
     origin_asns = set()
     prefixes = set()
 
+    peers = {}
+
     mrt_entries = mrtparse.Reader(filename)
+    """
+    Check if RIB dump or UPDATE dump
+    """
+
+    mrt_type: str
+    for mrt_e in mrt_entries:
+        if list(mrt_e.data["type"].keys())[0] in [12, 13]:
+            mrt_type = MrtType.RIB
+            logging.info("Assuming MRT is a RIB dump")
+
+            # Build the peer index table
+            mrt_e.data["collector_bgp_id"]
+            mrt_e.data["view_name"]
+            for idx, peer in enumerate(mrt_e.data["peer_entries"]):
+                peers[idx] = {
+                    "peer_ip": peer["peer_ip"],
+                    "peer_as": peer["peer_as"],
+                    "v4_count": 0,
+                    "v6_count": 0,
+                }
+
+        elif list(mrt_e.data["type"].keys())[0] in [16, 17]:
+            mrt_type = MrtType.UPDATE
+            logging.info("Assuming MRT is an UPDATE dump")
+        else:
+            mrt_type = MrtType.UNKNOWN
+            logging.warning(f"Unknown MRT type: {mrt_e.data['type']}")
+        break
+
     for idx, mrt_e in enumerate(mrt_entries):
 
         e_type = list(mrt_e.data["type"].keys())[0]
@@ -128,70 +165,84 @@ def get_stats(filename: str = None):
         else:
             e_subtypes[e_subtype] += 1
 
-        """
-        Some MRTs contain the BGP state change events
-        """
-        if (e_subtype != 1 and e_subtype != 4):
-            continue
+        if mrt_type == MrtType.RIB:
+            if list(mrt_e.data["subtype"].keys())[0] == 2: # RIB_IPV4_UNICAST
+                key = "v4_count"
+            elif list(mrt_e.data["subtype"].keys())[0] == 4: # RIB_IPV6_UNICAST
+                key = "v6_count"
+            else:
+                logging.warning(f"Unknown MRT entry subtype: {mrt_e.data['subtype']}")
+                continue
+            for entry in mrt_e.data["rib_entries"]:
+                peers[entry["peer_index"]][key] += 1
 
-        """
-        Some MRT files contain empty updates
-        """
-        if "bgp_message" not in mrt_e.data:
-            continue
 
-        """
-        Some MRTs contain the BGP messages types (OPEN, KEEPALIVE, etc)
-        """
-        e_msgtype = next(iter(mrt_e.data["bgp_message"]["type"]))
-        if e_msgtype not in e_msgtypes:
-            e_msgtypes[e_msgtype] = 1
-        else:
-            e_msgtypes[e_msgtype] += 1
+        if mrt_type == MrtType.UPDATE:
 
-        if e_msgtype != 2: # UPDATE
-            continue
+            """
+            Some UPDATE MRTs contain the BGP state change events
+            """
+            if e_subtype not in [1, 4]:
+                continue
 
-        if len(mrt_e.data["bgp_message"]["nlri"]) > 0:
-            for nlri in mrt_e.data["bgp_message"]["nlri"]:
-                prefixes.add(
-                    nlri["prefix"] + "/" + str(nlri["length"])
-                )
+            """
+            Some UPDATE MRT files contain empty updates
+            """
+            if "bgp_message" not in mrt_e.data:
+                continue
 
-        if withdrawn_routes := mrt_e.data["bgp_message"].get("withdrawn_routes"):
-            for withdrawn_route in withdrawn_routes:
-                prefixes.add(
-                    withdrawn_route["prefix"] + "/"
-                    + str(withdrawn_route["length"])
-                )
+            """
+            Some MRTs contain the BGP messages types (OPEN, KEEPALIVE, etc)
+            """
+            e_msgtype = next(iter(mrt_e.data["bgp_message"]["type"]))
+            if e_msgtype not in e_msgtypes:
+                e_msgtypes[e_msgtype] = 1
+            else:
+                e_msgtypes[e_msgtype] += 1
 
-        if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
-            for attr in path_attributes:
-                attr_t = next(iter(attr["type"]))
+            if e_msgtype != 2: # UPDATE
+                continue
 
-                if attr_t not in attrs:
-                    attrs[attr_t] = 1
-                else:
-                    attrs[attr_t] += 1
+            if len(mrt_e.data["bgp_message"]["nlri"]) > 0:
+                for nlri in mrt_e.data["bgp_message"]["nlri"]:
+                    prefixes.add(
+                        nlri["prefix"] + "/" + str(nlri["length"])
+                    )
 
-                if attr_t == 2: # AS_PATH
-                    if attr["value"][0]["value"] not in as_paths:
-                        as_paths.append(attr["value"][0]["value"])
-                    origin_asns.add(attr["value"][0]["value"][-1])
+            if withdrawn_routes := mrt_e.data["bgp_message"].get("withdrawn_routes"):
+                for withdrawn_route in withdrawn_routes:
+                    prefixes.add(
+                        withdrawn_route["prefix"] + "/"
+                        + str(withdrawn_route["length"])
+                    )
 
-                if attr_t == 14: # MP_REACH_NLRI -> IPV6_UNICAST
-                    for nlri in attr["value"]["nlri"]:
-                        prefixes.add(
-                            nlri["prefix"] + "/" + str(nlri["length"])
-                        )
+            if path_attributes := mrt_e.data["bgp_message"].get("path_attributes"):
+                for attr in path_attributes:
+                    attr_t = next(iter(attr["type"]))
 
-                elif attr_t == 15: # MP_UNREACH_NLRI -> IPV6_UNICAST
-                    if withdrawn_routes := attr["value"].get("withdrawn_routes"):
-                        for withdrawn_route in withdrawn_routes:
+                    if attr_t not in attrs:
+                        attrs[attr_t] = 1
+                    else:
+                        attrs[attr_t] += 1
+
+                    if attr_t == 2: # AS_PATH
+                        if attr["value"][0]["value"] not in as_paths:
+                            as_paths.append(attr["value"][0]["value"])
+                        origin_asns.add(attr["value"][0]["value"][-1])
+
+                    if attr_t == 14: # MP_REACH_NLRI -> IPV6_UNICAST
+                        for nlri in attr["value"]["nlri"]:
                             prefixes.add(
-                                withdrawn_route["prefix"] + "/"
-                                + str(withdrawn_route["length"])
+                                nlri["prefix"] + "/" + str(nlri["length"])
                             )
+
+                    elif attr_t == 15: # MP_UNREACH_NLRI -> IPV6_UNICAST
+                        if withdrawn_routes := attr["value"].get("withdrawn_routes"):
+                            for withdrawn_route in withdrawn_routes:
+                                prefixes.add(
+                                    withdrawn_route["prefix"] + "/"
+                                    + str(withdrawn_route["length"])
+                                )
 
     logging.info(f"File {filename} contains {idx+1} entries")
 
@@ -214,6 +265,25 @@ def get_stats(filename: str = None):
     logging.info(f"Unique AS paths: {len(as_paths)}")
     logging.info(f"Unique prefixes: {len(prefixes)}")
     logging.info(f"Unique origin ASNs: {len(origin_asns)}")
+
+    if mrt_type == MrtType.RIB:
+        # Sort peers by AS number:
+        sorted_peers = []
+        for peer in peers.values():
+            for idx, sorted_peer in enumerate(sorted_peers):
+                if peer["peer_as"] <= sorted_peer["peer_as"]:
+                    sorted_peers.insert(idx, peer)
+                    break
+            else:
+                sorted_peers.append(peer)
+        sorted_peers.reverse()
+
+        logging.info("Peer list:")
+        logging.info(f"| {'Peer AS': <12} | {'Peer IP': <40} | {'v4 Count': <8} | {'v6 Count': <8} |")
+        for peer in sorted_peers:
+            logging.info(f"| {peer['peer_as']: <12} | {peer['peer_ip']: <40} | {peer['v4_count']: <8} | {peer['v6_count']: <8} |")
+
+
 
 def parse_args():
     """
