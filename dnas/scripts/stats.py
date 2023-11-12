@@ -98,12 +98,12 @@ def gen_day_stats(
             f"No existing global stats obj for day {ymd}, "
             f"storing compiled stats under {day_key}"
         )
-        rdb.set_stats(day_key, day_stats)
+        rdb.set(day_key, day_stats.to_json())
     else:
         logging.debug(f"Retrieved existing day stats from {day_key}")
         if db_day_stats.merge(day_stats):
             db_day_stats.merge_archives(day_stats)
-            rdb.set_stats(day_key, db_day_stats)
+            rdb.set(day_key, db_day_stats.to_json())
             logging.info(
                 f"Merged {ymd} stats with existing day stats under "
                 f"{day_key}"
@@ -155,7 +155,7 @@ def gen_diff(ymd: str) -> None:
             )
         else:
             logging.info(f"Storing new diff stats for {ymd} under {diff_key}")
-        rdb.set_stats(diff_key, new_diff)
+        rdb.set(diff_key, new_diff.to_json())
 
     else:
         if new_diff.is_empty():
@@ -166,7 +166,7 @@ def gen_diff(ymd: str) -> None:
             logging.info(
                 f"Overwitten existing diff for {ymd} under {diff_key}"
             )
-            rdb.set_stats(diff_key, new_diff)
+            rdb.set(diff_key, new_diff.to_json())
 
     rdb.close()
 
@@ -342,14 +342,14 @@ def upd_global_with_day(ymd: str) -> None:
             f"No existing gobal stats in redis, creating new entry with day "
             f"stats for {ymd}"
         )
-        rdb.set_stats(global_key, day_stats)
+        rdb.set(global_key, day_stats.to_json())
 
     # Else there are global stats and day stats to merge
     else:
         if global_stats.merge(day_stats):
             global_stats.merge_archives(day_stats)
             logging.info(f"Global stats merged with day stats from {ymd}")
-            rdb.set_stats(global_key, global_stats)
+            rdb.set(global_key, global_stats.to_json())
         else:
             logging.info(
                 f"No update to global stats with day stats from {ymd}"
