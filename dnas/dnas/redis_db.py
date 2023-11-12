@@ -145,7 +145,7 @@ class redis_db:
                     key += char
                 assert char == '"'
 
-                # Find the start of the value
+                # Scan in the value including the quote marks
                 char = ""
                 while char != "{":
                     char = f.read(1)
@@ -173,7 +173,12 @@ class redis_db:
                 # Compile the loaded value as a string
                 json_str = "{" + key + ": " + value + "}"
                 # Parse the string to check it's valid
-                json_dict: dict = json.loads(json_str)
+                try:
+                    json_dict: dict = json.loads(json_str)
+                except json.decoder.JSONDecodeError as e:
+                    raise ValueError(
+                        f"Failed to decode JSON string {e}\n{json_str}"
+                    )
                 # Load it into REDIS
                 k = list(json_dict.keys())[0]
                 v = list(json_dict.values())[0]
@@ -191,7 +196,10 @@ class redis_db:
                 f"Missing required arguments: json_str={json_str}"
             )
 
-        json_dict = json.loads(json_str)
+        try:
+            json_dict = json.loads(json_str)
+        except json.decoder.JSONDecodeError as e:
+            raise ValueError(f"Failed to decode JSON string {e}\n{json_str}")
         for k in json_dict.keys():
             self.set(key=k, value=json_dict[k], compression=compression)
         logging.info(f"Loaded {len(json_dict)} k/v's")
@@ -331,6 +339,7 @@ class redis_db:
         """
         Dump the entire redis DB to JSON
         """
+        logging.debug(f"Dumping Redis to JSON, {compression=}")
         d: dict = {}
         for k in self.r.keys("*"):
             d[k.decode("utf-8")] = self.get(key=k, compression=compression)
@@ -343,11 +352,11 @@ class redis_db:
             raise ValueError("Database is empty")
 
     def to_json_stream(self: "redis_db", compression: bool = True) -> Iterable:
+        logging.debug(f"Streaming Redis to JSON, {compression=}")
         yield ("{")
-        keys = self.r.keys("*")
+        keys = self.get_keys("*")
         for idx, key in enumerate(keys):
-            k = key.decode("utf-8")
-            d = json.dumps({k: self.get(key=k, compression=compression)})
+            d = json.dumps({key: self.get(key=key, compression=compression)})
             if idx == len(keys) - 1:
                 yield (f"{d[1:-1]}")
             else:
