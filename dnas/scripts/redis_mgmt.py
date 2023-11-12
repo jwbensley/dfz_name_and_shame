@@ -33,25 +33,32 @@ def delete(key: str) -> None:
         logging.info(f"Nothing to delete for {key}")
 
 
-def dump_json(filename: str) -> None:
+def dump_json(filename: str, stream: bool) -> None:
     """
     Dump the entire redis DB to a JSON file.
     """
     if not filename:
         raise ValueError(f"Missing required arguments: filename={filename}")
 
-    rdb.to_file(filename)
+    if stream:
+        rdb.to_file_stream(filename=filename)
+    else:
+        rdb.to_file(filename=filename)
     logging.info(f"Written DB dump to {filename}")
 
 
-def load_json(filename: str) -> None:
+def load_json(filename: str, stream: bool) -> None:
     """
     Import a JOSN dump into redis.
     """
     if not filename:
         raise ValueError(f"Missing required arguments: filename={filename}")
 
-    rdb.from_file(filename)
+    if stream:
+        rdb.from_file_stream(filename=filename)
+    else:
+        rdb.from_file(filename=filename)
+    logging.info(f"Loaded DB dump from {filename}")
 
 
 def parse_args() -> dict:
@@ -150,6 +157,13 @@ def parse_args() -> dict:
         metavar=("key"),
         required=False,
         default=None,
+    )
+    parser.add_argument(
+        "--stream",
+        help="When dumping/loading from a JSON file, stream the data",
+        default=False,
+        action="store_true",
+        required=False,
     )
     parser.add_argument(
         "--wipe",
@@ -273,20 +287,20 @@ def main():
     )
 
     if args["dump"]:
-        dump_json(args["dump"])
+        dump_json(filename=args["dump"], stream=args["stream"])
     elif args["load"]:
-        load_json(args["load"])
+        load_json(filename=args["load"], stream=args["stream"])
     elif args["wipe"]:
         wipe()
 
     if args["daily"]:
-        print_stats_daily(args["daily"])
+        print_stats_daily(ymd=args["daily"])
 
     if args["delete"]:
-        delete(args["delete"])
+        delete(key=args["delete"])
 
     if args["diff"]:
-        print_stats_diff(args["diff"])
+        print_stats_diff(keys=args["diff"])
 
     if args["global"]:
         print_stats_global()
@@ -295,13 +309,13 @@ def main():
         print_keys()
 
     if args["pprint"]:
-        pprint_key(args["pprint"])
+        pprint_keykey = args["pprint"]
 
     if args["print"]:
-        print_key(args["print"])
+        print_key(key=args["print"])
 
     if args["stats"]:
-        print_stats(args["stats"])
+        print_stats(key=args["stats"])
 
     rdb.close()
 

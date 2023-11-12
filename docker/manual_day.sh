@@ -13,6 +13,10 @@ set -o pipefail
 # Error if any command returns a non-zero exist status
 set -e
 
+# shellcheck disable=SC1091
+source /opt/dnas/venv/bin/activate
+cd "/opt/dnas/docker/"
+
 SCRIPTS="/opt/dnas/dnas/scripts"
 
 docker-compose run --rm --name tmp_getter dnas_getter -- \
