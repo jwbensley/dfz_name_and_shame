@@ -33,7 +33,7 @@ def delete(key: str) -> None:
         logging.info(f"Nothing to delete for {key}")
 
 
-def dump_json(filename: str, stream: bool) -> None:
+def dump_json(filename: str, compression: bool, stream: bool) -> None:
     """
     Dump the entire redis DB to a JSON file.
     """
@@ -41,13 +41,13 @@ def dump_json(filename: str, stream: bool) -> None:
         raise ValueError(f"Missing required arguments: filename={filename}")
 
     if stream:
-        rdb.to_file_stream(filename=filename)
+        rdb.to_file_stream(compression=compression, filename=filename)
     else:
-        rdb.to_file(filename=filename)
+        rdb.to_file(compression=compression, filename=filename)
     logging.info(f"Written DB dump to {filename}")
 
 
-def load_json(filename: str, stream: bool) -> None:
+def load_json(filename: str, compression: bool, stream: bool) -> None:
     """
     Import a JOSN dump into redis.
     """
@@ -55,9 +55,9 @@ def load_json(filename: str, stream: bool) -> None:
         raise ValueError(f"Missing required arguments: filename={filename}")
 
     if stream:
-        rdb.from_file_stream(filename=filename)
+        rdb.from_file_stream(compression=compression, filename=filename)
     else:
-        rdb.from_file(filename=filename)
+        rdb.from_file(compression=compression, filename=filename)
     logging.info(f"Loaded DB dump from {filename}")
 
 
@@ -135,6 +135,13 @@ def parse_args() -> dict:
         metavar=("/path/to/input.json"),
         required=False,
         default=None,
+    )
+    parser.add_argument(
+        "--no-compression",
+        help="Disable compression When dumping/loading a JSON file",
+        default=False,
+        action="store_true",
+        required=False,
     )
     parser.add_argument(
         "--pprint",
@@ -287,9 +294,17 @@ def main():
     )
 
     if args["dump"]:
-        dump_json(filename=args["dump"], stream=args["stream"])
+        dump_json(
+            filename=args["dump"],
+            compression=not args["no_compression"],
+            stream=args["stream"],
+        )
     elif args["load"]:
-        load_json(filename=args["load"], stream=args["stream"])
+        load_json(
+            filename=args["load"],
+            compression=not args["no_compression"],
+            stream=args["stream"],
+        )
     elif args["wipe"]:
         wipe()
 
@@ -308,11 +323,11 @@ def main():
     if args["keys"]:
         print_keys()
 
-    if args["pprint"]:
-        pprint_keykey = args["pprint"]
-
     if args["print"]:
         print_key(key=args["print"])
+
+    if args["pprint"]:
+        pprint_key(args["pprint"])
 
     if args["stats"]:
         print_stats(key=args["stats"])

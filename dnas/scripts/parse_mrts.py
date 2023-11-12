@@ -353,14 +353,14 @@ def parse_files(filelist: list[str], args: dict) -> None:
             elif file not in day_stats.file_list:
                 logging.info(f"Added {file} to {day_key} file list")
                 day_stats.file_list.append(file)
-            rdb.set_stats(day_key, day_stats)
+            rdb.set(day_key, day_stats.to_json())
 
         else:
             if arch:
                 mrt_s.add_archive(arch.NAME)
             else:
                 logging.warning(f"Unable to add archive name to stats object")
-            rdb.set_stats(day_key, mrt_s)
+            rdb.set(day_key, mrt_s.to_json())
             logging.info(f"Created new entry {day_key} from {file}")
 
         if args["remove"]:
