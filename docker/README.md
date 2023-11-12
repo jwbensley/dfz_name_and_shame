@@ -2,16 +2,13 @@
 
 ## Building
 
-To build the Redis DB container and DNAS containers use the following:
+To build pull the latest code version, build the DNAS containers, and the Redis DB container, use the following:
 
 ```bash
-cd /opt/dnas/
-source venv/bin/activate
-cd docker/
-docker-compose build
+/opt/dnas/docker/build_dnas.sh
 ```
 
-One can run `docker-compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git. To pull the latest code from the Git repo and rebuild the DNAS container run the build script: `/opt/dnas/docker/build_dnas.sh`
+One can run `docker-compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git.
 
 ### Build Issues
 
