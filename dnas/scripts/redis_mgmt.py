@@ -54,7 +54,11 @@ def load_json(filename: str, stream: bool) -> None:
     if not filename:
         raise ValueError(f"Missing required arguments: filename={filename}")
 
-    rdb.from_file(filename)
+    if stream:
+        rdb.from_file_stream(filename=filename)
+    else:
+        rdb.from_file(filename=filename)
+    logging.info(f"Loaded DB dump from {filename}")
 
 
 def parse_args() -> dict:
@@ -156,7 +160,7 @@ def parse_args() -> dict:
     )
     parser.add_argument(
         "--stream",
-        help="When dump/loading from a JSON file, stream the data",
+        help="When dumping/loading from a JSON file, stream the data",
         default=False,
         action="store_true",
         required=False,
@@ -305,7 +309,7 @@ def main():
         print_keys()
 
     if args["pprint"]:
-        pprint_keykey=(args["pprint"])
+        pprint_keykey = args["pprint"]
 
     if args["print"]:
         print_key(key=args["print"])

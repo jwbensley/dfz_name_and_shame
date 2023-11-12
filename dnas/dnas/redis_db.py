@@ -1,7 +1,8 @@
 import base64
 import gzip
 import json
-from typing import Union
+import logging
+from typing import Iterable, Union
 
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_auth import redis_auth  # type: ignore
@@ -21,6 +22,8 @@ class redis_db:
             port=redis_auth.port,
             password=redis_auth.password,
         )
+        # Check we have connected:
+        self.ping()
 
     def add_to_queue(self: "redis_db", key: str, json_str: str) -> None:
         """
@@ -101,7 +104,79 @@ class redis_db:
             self.from_json(f.read())
 
     def from_file_stream(self: "redis_db", filename: str) -> None:
-        raise NotImplementedError
+        """
+        Restore redis DB from JSON file, loading the content one line at time.
+        """
+        if not filename:
+            raise ValueError(
+                f"Missing required arguments: filename={filename}"
+            )
+
+        loaded_kvs = 0
+        with open(filename, "r") as f:
+            # First character should be "{" to start the dump
+            opening = f.read(1)
+            assert opening == "{"
+
+            end = False
+            while not end:
+                # Find the start of the next key
+                char = ""
+                while char != '"':
+                    char = f.read(1)
+                    # Found the end of the dump
+                    if char == "}":
+                        end = True
+                        break
+                if end:
+                    break
+                # Confirm we didn't scan to the end of the file without a match
+                assert char == '"'
+
+                # Scan in the key name including quote marks
+                key = char
+                char = ""
+                while char != '"':
+                    char = f.read(1)
+                    key += char
+                assert char == '"'
+
+                # Find the start of the value
+                char = ""
+                while char != "{":
+                    char = f.read(1)
+                assert char == "{"
+                dict_depth = 1
+
+                """
+                Scan until the end of this dict.
+                This could be a dict of dicts, so track that the outer most dict
+                is "closed"
+                """
+                value = '"{'
+                while dict_depth != 0:
+                    char = f.read(1)
+                    value += char
+                    if char == "{":
+                        dict_depth += 1
+                    elif char == "}":
+                        dict_depth -= 1
+                assert char == "}"
+                char = f.read(1)
+                assert char == '"'
+                value += char
+
+                # Compile the loaded value as a string
+                json_str = "{" + key + ": " + value + "}"
+                # Parse the string to check it's valid
+                json_dict: dict = json.loads(json_str)
+                # Load it into REDIS
+                k = list(json_dict.keys())[0]
+                v = list(json_dict.values())[0]
+                self.r.set(k, redis_db.compress(v))
+                loaded_kvs += 1
+
+        logging.info(f"Loaded {loaded_kvs} k/v's from stream")
 
     def from_json(self: "redis_db", json_str: str):
         """
@@ -115,6 +190,7 @@ class redis_db:
         json_dict = json.loads(json_str)
         for k in json_dict.keys():
             self.r.set(k, redis_db.compress(json_dict[k]))
+        logging.info(f"Loaded {len(json_dict)} k/v's")
 
     def get(self: "redis_db", key: str) -> Union[str, list]:
         """
@@ -187,6 +263,9 @@ class redis_db:
             mrt_s.from_json(redis_db.decompress(json_str.decode("utf-8")))
             return mrt_s
 
+    def ping(self: "redis_db") -> None:
+        assert self.r.ping()
+
     def set_stats(self: "redis_db", key: str, mrt_s: "mrt_stats"):
         """
         Take an MRT stats object, serialise it to JSON, store in Redis.
@@ -236,16 +315,8 @@ class redis_db:
             )
 
         with open(filename, "w") as f:
-            f.write("{")
-            keys = self.r.keys("*")
-            for idx, key in enumerate(keys):
-                k = key.decode("utf-8")
-                d = json.dumps({k: self.get(key=k)})
-                if idx == len(keys) - 1:
-                    f.write(f"{d[1:-1]}")
-                else:
-                    f.write(f"{d[1:-1]},")
-            f.write("}")
+            for line in self.to_json_stream():
+                f.write(line)
 
     def to_json(self: "redis_db") -> str:
         """
@@ -256,6 +327,21 @@ class redis_db:
             d[k.decode("utf-8")] = self.get(key=k)
 
         if d:
-            return json.dumps(d)
+            json_str = json.dumps(d)
+            logging.info(f"Dumped {len(d)} k/v's")
+            return json_str
         else:
             raise ValueError("Database is empty")
+
+    def to_json_stream(self: "redis_db") -> Iterable:
+        yield ("{")
+        keys = self.r.keys("*")
+        for idx, key in enumerate(keys):
+            k = key.decode("utf-8")
+            d = json.dumps({k: self.get(key=k)})
+            if idx == len(keys) - 1:
+                yield (f"{d[1:-1]}")
+            else:
+                yield (f"{d[1:-1]}, ")
+        yield ("}")
+        logging.info(f"Dumped {len(keys)} k/v's as stream")
