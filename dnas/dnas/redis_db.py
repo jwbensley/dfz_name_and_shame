@@ -25,7 +25,9 @@ class redis_db:
         # Check we have connected:
         self.ping()
 
-    def add_to_queue(self: "redis_db", key: str, json_str: str) -> None:
+    def add_to_queue(
+        self: "redis_db", key: str, json_str: str, compression: bool = True
+    ) -> None:
         """
         Push to a list a strings.
         For example, a Tweet serialised to a JSON string.
@@ -38,7 +40,10 @@ class redis_db:
         if type(json_str) != str:
             raise TypeError(f"json_str is not a string: {type(json_str)}")
 
-        self.r.lpush(key, redis_db.compress(json_str))
+        if compression:
+            self.r.lpush(key, redis_db.compress(json_str))
+        else:
+            self.r.lpush(key, json_str)
 
     def close(self: "redis_db") -> None:
         """
@@ -68,7 +73,9 @@ class redis_db:
         uncompressed = gzip.decompress(compressed)
         return uncompressed.decode("utf-8")
 
-    def del_from_queue(self: "redis_db", key: str, elem: str) -> None:
+    def del_from_queue(
+        self: "redis_db", key: str, elem: str, compression: bool = True
+    ) -> None:
         """
         Delete an entry from a list of strings.
         """
@@ -80,7 +87,10 @@ class redis_db:
         if type(elem) != str:
             raise TypeError(f"elem is not a string: {type(elem)}")
 
-        self.r.lrem(key, 0, redis_db.compress(elem))
+        if compression:
+            self.r.lrem(key, 0, redis_db.compress(elem))
+        else:
+            self.r.lrem(key, 0, elem)
 
     def delete(self: "redis_db", key: str) -> int:
         """
@@ -145,47 +155,90 @@ class redis_db:
                     key += char
                 assert char == '"'
 
-                # Scan in the value including the quote marks
+                """
+                Scan in the value.
+                This could be a dict serialised as a single string,
+                or a list of strings.
+                """
                 char = ""
-                while char != "{":
+                while char != "{" and char != "[":
                     char = f.read(1)
-                assert char == "{"
-                dict_depth = 1
 
-                """
-                Scan until the end of this dict.
-                This could be a dict of dicts, so track that the outer most dict
-                is "closed"
-                """
-                value = '"{'
-                while dict_depth != 0:
+                if char == "{":
+                    """
+                    Scan until the end of this dict.
+                    This could be a dict of dicts, so track that the outer most
+                    dict is "closed"
+                    """
+                    depth = 1
+                    value = '"{'
+                    while depth != 0:
+                        char = f.read(1)
+                        value += char
+                        if char == "{":
+                            depth += 1
+                        elif char == "}":
+                            depth -= 1
+                    assert char == "}"
                     char = f.read(1)
+                    assert char == '"'
                     value += char
-                    if char == "{":
-                        dict_depth += 1
-                    elif char == "}":
-                        dict_depth -= 1
-                assert char == "}"
-                char = f.read(1)
-                assert char == '"'
-                value += char
 
-                # Compile the loaded value as a string
-                json_str = "{" + key + ": " + value + "}"
-                # Parse the string to check it's valid
-                try:
-                    json_dict: dict = json.loads(json_str)
-                except json.decoder.JSONDecodeError as e:
-                    raise ValueError(
-                        f"Failed to decode JSON string {e}\n{json_str}"
-                    )
-                # Load it into REDIS
-                k = list(json_dict.keys())[0]
-                v = list(json_dict.values())[0]
-                self.set(key=k, value=v, compression=compression)
-                loaded_kvs += 1
+                    # Compile the JSON string
+                    json_str = "{" + key + ": " + value + "}"
+                    # Parse the string to check it's valid
+                    try:
+                        json_dict: dict = json.loads(json_str)
+                    except json.decoder.JSONDecodeError as e:
+                        raise ValueError(
+                            f"Failed to decode JSON string {e}\n{json_str}"
+                        )
+                    # Load it into Redis
+                    k = list(json_dict.keys())[0]
+                    v = list(json_dict.values())[0]
+                    self.set(key=k, value=v, compression=compression)
+                    loaded_kvs += 1
 
-        logging.info(f"Loaded {loaded_kvs} k/v's from stream")
+                elif char == "[":
+                    """
+                    Scan until the end of this list.
+                    This could be a list of lists, so track that the outer most
+                    list is "closed"
+                    """
+                    depth = 1
+                    value = "["
+                    while depth != 0:
+                        char = f.read(1)
+                        value += char
+                        if char == "[":
+                            depth += 1
+                        elif char == "]":
+                            depth -= 1
+                    assert char == "]"
+
+                    # Compile the  JSON string
+                    json_str = "{" + key + ": " + value + "}"
+                    # Parse the string to check it's valid
+                    try:
+                        json_dict = json.loads(json_str)
+                    except json.decoder.JSONDecodeError as e:
+                        raise ValueError(
+                            f"Failed to decode JSON string {e}\n{json_str}"
+                        )
+                    # Load each entry in the list into Redis
+                    k = list(json_dict.keys())[0]
+                    for elem in json_dict[k]:
+                        self.add_to_queue(
+                            key=k,
+                            json_str=json.dumps(elem),
+                            compression=compression,
+                        )
+                    loaded_kvs += 1
+
+                else:
+                    raise ValueError(f"Didn't find dict or list")
+
+                logging.info(f"Loaded {loaded_kvs} k/v's from stream")
 
     def from_json(self: "redis_db", json_str: str, compression: bool = True):
         """
@@ -245,7 +298,9 @@ class redis_db:
 
         return [x.decode("utf-8") for x in self.r.keys(pattern)]
 
-    def get_queue_msgs(self: "redis_db", key: str) -> list["twitter_msg"]:
+    def get_queue_msgs(
+        self: "redis_db", key: str, compression: bool = True
+    ) -> list["twitter_msg"]:
         """
         Return the list of Tweets stored under key as Twitter messages objects.
         """
@@ -263,7 +318,10 @@ class redis_db:
         for msg in db_q:
             if msg:
                 t_m = twitter_msg()
-                t_m.from_json(self.decompress(msg.decode("utf-8")))
+                if compression:
+                    t_m.from_json(self.decompress(msg.decode("utf-8")))
+                else:
+                    t_m.from_json(msg.decode("utf-8"))
                 msgs.append(t_m)
 
         return msgs
