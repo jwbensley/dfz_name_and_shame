@@ -281,7 +281,7 @@ class redis_db:
         elif t == "list":
             if compression:
                 return [
-                    redis_db.compress(x.decode("utf-8"))
+                    redis_db.decompress(x.decode("utf-8"))
                     for x in self.r.lrange(key, 0, -1)
                 ]
             else:
@@ -390,8 +390,17 @@ class redis_db:
             )
 
         with open(filename, "w") as f:
+            elem_count = 0
             for line in self.to_json_stream(compression=compression):
                 f.write(line)
+                elem_count += 1
+                logging.debug(
+                    f"Wrote {elem_count} elements to file from stream"
+                )
+        logging.debug(
+            f"Two more elements should be written than the total number of k/v "
+            "pairs"
+        )
 
     def to_json(self: "redis_db", compression: bool = True) -> str:
         """
@@ -414,10 +423,25 @@ class redis_db:
         yield ("{")
         keys = self.get_keys("*")
         for idx, key in enumerate(keys):
-            d = json.dumps({key: self.get(key=key, compression=compression)})
-            if idx == len(keys) - 1:
-                yield (f"{d[1:-1]}")
+            """
+            This could be the key for a string or a list in Redis.
+            """
+            val = self.get(key=key, compression=compression)
+            if type(val) == str:
+                json_str = json.dumps({key: val})
+                # Strip the curly brackets
+                json_str = json_str[1:-1]
+            elif type(val) == list:
+                json_str = f"\"{key}\": {json.dumps(val)}"
             else:
-                yield (f"{d[1:-1]}, ")
+                raise TypeError(
+                    f"Key {key} decoded to type {type(val)} which is "
+                    f"unexpected"
+                )
+            if idx == len(keys) - 1:
+                # Strip the curly brackets
+                yield (json_str)
+            else:
+                yield (json_str + ", ")
         yield ("}")
         logging.info(f"Dumped {len(keys)} k/v's as stream")

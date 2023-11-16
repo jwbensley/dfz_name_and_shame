@@ -183,7 +183,7 @@ def parse_args() -> dict:
     return vars(parser.parse_args())
 
 
-def pprint_key(key: str) -> None:
+def pprint_key(key: str, compression: bool) -> None:
     """
     Print the value stored in redis at the given key.
     """
@@ -191,16 +191,26 @@ def pprint_key(key: str) -> None:
         raise ValueError(f"Missing required arguments: key={key}")
 
     pp = pprint.PrettyPrinter(indent=2)
-    pp.pprint(rdb.get(key))
+    pp.pprint(
+        rdb.get(
+            key=key,
+            compression=compression,
+        )
+    )
 
 
-def print_key(key: str) -> None:
+def print_key(key: str, compression: bool) -> None:
     """
     Print the value stored in redis at the given key.
     """
     if not key:
         raise ValueError(f"Missing required arguments: key={key}")
-    print(rdb.get(key))
+    print(
+        rdb.get(
+            key=key,
+            compression=compression,
+        )
+    )
 
 
 def print_keys() -> None:
@@ -210,35 +220,37 @@ def print_keys() -> None:
     print(rdb.get_keys("*"))
 
 
-def print_stats(key: str) -> None:
+def print_stats(key: str, compression: bool) -> None:
     """
     Print an mrt stats object stored in redis, based on the passed key.
     """
     if not key:
         raise ValueError(f"Missing required arguments: key={key}")
 
-    mrt_s = rdb.get_stats(key)
+    mrt_s = rdb.get_stats(key=key, compression=compression)
     if mrt_s:
         mrt_s.print()
     else:
         print(f"No stats stored in redis under key {key}")
 
 
-def print_stats_daily(ymd: str) -> None:
+def print_stats_daily(ymd: str, compression: bool) -> None:
     """
     Print the mrt stats object from a specific day stored in redis.
     """
     if not ymd:
         raise ValueError(f"Missing required arguments: ymd={ymd}")
 
-    mrt_s = rdb.get_stats(mrt_stats.gen_daily_key(ymd))
+    mrt_s = rdb.get_stats(
+        key=mrt_stats.gen_daily_key(ymd), compression=compression
+    )
     if mrt_s:
         mrt_s.print()
     else:
         print(f"No stats stored in redis for day {ymd}")
 
 
-def print_stats_diff(keys: list[str]) -> None:
+def print_stats_diff(keys: list[str], compression: bool) -> None:
     """
     Print the diff of two mrt stats objects stored in redis at the two
     passed keys.
@@ -249,8 +261,8 @@ def print_stats_diff(keys: list[str]) -> None:
     if len(keys) != 2:
         raise ValueError(f"Exactly two keys must be provided: keys={keys}")
 
-    mrt_s_1 = rdb.get_stats(keys[0])
-    mrt_s_2 = rdb.get_stats(keys[1])
+    mrt_s_1 = rdb.get_stats(key=keys[0], compression=compression)
+    mrt_s_2 = rdb.get_stats(key=keys[1], compression=compression)
     if not mrt_s_1:
         print(f"Not stats stored in redis under {keys[0]}")
         return
@@ -265,11 +277,13 @@ def print_stats_diff(keys: list[str]) -> None:
         print(f"Stats objects are equal")
 
 
-def print_stats_global() -> None:
+def print_stats_global(compression: bool) -> None:
     """
     Print the global stats object stored in redis.
     """
-    mrt_s = rdb.get_stats(mrt_stats.gen_global_key())
+    mrt_s = rdb.get_stats(
+        key=mrt_stats.gen_global_key(), compression=compression
+    )
     if mrt_s:
         mrt_s.print()
     else:
@@ -293,23 +307,25 @@ def main():
         log_path=cfg.LOG_REDIS,
     )
 
+    compression = not args["no_compression"]
+
     if args["dump"]:
         dump_json(
             filename=args["dump"],
-            compression=not args["no_compression"],
+            compression=compression,
             stream=args["stream"],
         )
     elif args["load"]:
         load_json(
             filename=args["load"],
-            compression=not args["no_compression"],
+            compression=compression,
             stream=args["stream"],
         )
     elif args["wipe"]:
         wipe()
 
     if args["daily"]:
-        print_stats_daily(ymd=args["daily"])
+        print_stats_daily(ymd=args["daily"], compression=compression)
 
     if args["delete"]:
         delete(key=args["delete"])
@@ -318,19 +334,25 @@ def main():
         print_stats_diff(keys=args["diff"])
 
     if args["global"]:
-        print_stats_global()
+        print_stats_global(compression=compression)
 
     if args["keys"]:
         print_keys()
 
     if args["print"]:
-        print_key(key=args["print"])
+        print_key(
+            key=args["print"],
+            compression=compression,
+        )
 
     if args["pprint"]:
-        pprint_key(args["pprint"])
+        pprint_key(
+            key=args["pprint"],
+            compression=compression,
+        )
 
     if args["stats"]:
-        print_stats(key=args["stats"])
+        print_stats(key=args["stats"], compression=compression)
 
     rdb.close()
 
