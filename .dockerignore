@@ -1,0 +1,4 @@
+**/.git
+redis/data/**/*
+redis/backups/**/*
+
