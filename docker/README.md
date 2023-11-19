@@ -29,9 +29,9 @@ Update docker on the host machine (`sudo apt-get update && sudo apt-get --no-ins
 
 To run the various scripts, spin up temporary containers:
 
-* Run the MRT getter script: `docker-compose run --rm --name tmp_getter dnas_getter /opt/dnas/dnas/scripts/get_mrts.py --help`
-* Run the MRT parser script: `docker-compose run --rm --name tmp_parser dnas_parser -- /opt/dnas/dnas/scripts/parse_mrts.py`
-* Run the Redis management script `docker-compose run --rm --name tmp_redis dnas_parser /opt/dnas/dnas/scripts/redis_mgmt.py --help`
+* Run the MRT getter script: `docker-compose run --rm --name tmp_getter dnas_getter -- /opt/dnas/dnas/scripts/get_mrts.py --help`
+* Run the MRT parser script: `docker-compose run --rm --name tmp_parser dnas_parser -- /opt/dnas/dnas/scripts/parse_mrts.py --help`
+* Run the Redis management script `docker-compose run --rm --name tmp_redis dnas_parser -- /opt/dnas/dnas/scripts/redis_mgmt.py --help`
 
 ## Running
 
