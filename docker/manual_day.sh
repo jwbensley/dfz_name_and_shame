@@ -13,23 +13,35 @@ set -o pipefail
 # Error if any command returns a non-zero exist status
 set -e
 
+if [[ ${#} -lt 1 ]]
+then
+  echo "Wrong number of args: ${#}"
+  echo "Call the script with at least a ymd value. E.g.,"
+  echo "${0} 20230901"
+  echo ""
+  echo "Any additional arguments are passed to the scripts."
+  exit 1
+fi
+
 # shellcheck disable=SC1091
 source /opt/dnas/venv/bin/activate
 cd "/opt/dnas/docker/"
 
-SCRIPTS="/opt/dnas/dnas/scripts"
+SCRIPTS_DIR="/opt/dnas/dnas/scripts"
+YMD="${1}"
+shift
 
 docker-compose run --rm --name tmp_getter dnas_getter -- \
-"${SCRIPTS}/get_mrts.py" --backfill --update --enabled -ymd "$1"
+"${SCRIPTS_DIR}/get_mrts.py" --backfill --update --enabled --ymd "${YMD}" "${@}"
 
 docker-compose run --rm --name tmp_parser dnas_parser -- \
-"${SCRIPTS}/parse_mrts.py" --update --remove --enabled --ymd "$1"
+"${SCRIPTS_DIR}/parse_mrts.py" --update --remove --enabled --ymd "${YMD}" "${@}"
 
 docker-compose run --rm --name tmp_stats dnas_stats -- \
-"${SCRIPTS}/stats.py" --update --enabled --daily --ymd "$1"
+"${SCRIPTS_DIR}/stats.py" --update --enabled --daily --ymd "${YMD}" "${@}"
 
 docker-compose run --rm --name tmp_report dnas_git -- \
-"${SCRIPTS}/git_reports.py" --generate --publish --ymd "$1"
+"${SCRIPTS_DIR}/git_reports.py" --generate --publish --ymd "${YMD}" "${@}"
 
 #docker-compose run --rm --name tmp_tweet dnas_stats -- \
-#"${SCRIPTS}/tweet.py" --generate --tweet --ymd "$1"
+#"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd "${YMD}" "${@}"
