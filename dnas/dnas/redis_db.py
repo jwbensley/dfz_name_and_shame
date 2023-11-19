@@ -7,9 +7,9 @@ from typing import Iterable, Union
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_auth import redis_auth  # type: ignore
 from dnas.twitter_msg import twitter_msg
+from redis.exceptions import ConnectionError
 
 from redis import Redis
-from redis.exceptions import ConnectionError
 
 
 class redis_db:
@@ -18,6 +18,12 @@ class redis_db:
     """
 
     class RedisConnectFailure(Exception):
+        pass
+
+    class RedisDecompressionFailure(Exception):
+        pass
+
+    class RedisGetFailure(Exception):
         pass
 
     def __init__(self: "redis_db") -> None:
@@ -73,7 +79,12 @@ class redis_db:
         Take in a base85 encoded string, decompress it to the original gzip
         binary data, and then decompress that to the original string
         """
-        compressed = base64.b85decode(data)
+        try:
+            compressed = base64.b85decode(data)
+        except ValueError:
+            raise redis_db.RedisDecompressionFailure(
+                f"Failed to decode base85 str to binary: {data}"
+            )
         uncompressed = gzip.decompress(compressed)
         return uncompressed.decode("utf-8")
 
@@ -275,7 +286,13 @@ class redis_db:
             val = self.r.get(key)
             if val:
                 if compression:
-                    return redis_db.decompress(val.decode("utf-8"))
+                    try:
+                        return redis_db.decompress(val.decode("utf-8"))
+                    except self.RedisDecompressionFailure as e:
+                        raise self.RedisGetFailure(
+                            f"Failed to decompress value stored under key "
+                            f"{key}: {e}"
+                        )
                 else:
                     return val.decode("utf-8")
             else:
@@ -284,14 +301,20 @@ class redis_db:
                 )
         elif t == "list":
             if compression:
-                return [
-                    redis_db.decompress(x.decode("utf-8"))
-                    for x in self.r.lrange(key, 0, -1)
-                ]
+                try:
+                    return [
+                        redis_db.decompress(x.decode("utf-8"))
+                        for x in self.r.lrange(key, 0, -1)
+                    ]
+                except self.RedisDecompressionFailure as e:
+                    raise self.RedisGetFailure(
+                        f"Failed to decompress value stored under key "
+                        f"{key}: {e}"
+                    )
             else:
                 return [x.decode("utf-8") for x in self.r.lrange(key, 0, -1)]
         elif t == "none":
-            # Key doesn't exist
+            logging.debug(f"Key {key} doesn't exist in Redis")
             return ""
         else:
             raise TypeError(f"Unknown redis data type stored under {key}: {t}")
@@ -326,7 +349,13 @@ class redis_db:
             if msg:
                 t_m = twitter_msg()
                 if compression:
-                    t_m.from_json(self.decompress(msg.decode("utf-8")))
+                    try:
+                        t_m.from_json(self.decompress(msg.decode("utf-8")))
+                    except self.RedisDecompressionFailure as e:
+                        raise self.RedisGetFailure(
+                            f"Failed to decompress value stored under key "
+                            f"{key}: {e}"
+                        )
                 else:
                     t_m.from_json(msg.decode("utf-8"))
                 msgs.append(t_m)
@@ -342,17 +371,15 @@ class redis_db:
         if not key:
             raise ValueError(f"Missing required arguments: key={key}")
 
-        mrt_s = mrt_stats()
         json_str = self.get(key, compression=compression)
         assert type(json_str) == str
         if not json_str:
+            logging.debug(f"Empty day stats key {key}")
             return None
-        else:
-            if compression:
-                mrt_s.from_json(redis_db.decompress(json_str))
-            else:
-                mrt_s.from_json(json_str)
-            return mrt_s
+
+        mrt_s = mrt_stats()
+        mrt_s.from_json(json_str)
+        return mrt_s
 
     def ping(self: "redis_db") -> None:
         try:
@@ -445,7 +472,7 @@ class redis_db:
                 # Strip the curly brackets
                 json_str = json_str[1:-1]
             elif type(val) == list:
-                json_str = f"\"{key}\": {json.dumps(val)}"
+                json_str = f'"{key}": {json.dumps(val)}'
             else:
                 raise TypeError(
                     f"Key {key} decoded to type {type(val)} which is "
