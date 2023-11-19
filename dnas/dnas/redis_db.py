@@ -9,12 +9,16 @@ from dnas.redis_auth import redis_auth  # type: ignore
 from dnas.twitter_msg import twitter_msg
 
 from redis import Redis
+from redis.exceptions import ConnectionError
 
 
 class redis_db:
     """
     Class to manage connection to Redis DB and martial data in and out.
     """
+
+    class RedisConnectFailure(Exception):
+        pass
 
     def __init__(self: "redis_db") -> None:
         self.r: Redis = Redis(
@@ -286,6 +290,9 @@ class redis_db:
                 ]
             else:
                 return [x.decode("utf-8") for x in self.r.lrange(key, 0, -1)]
+        elif t == "none":
+            # Key doesn't exist
+            return ""
         else:
             raise TypeError(f"Unknown redis data type stored under {key}: {t}")
 
@@ -348,7 +355,13 @@ class redis_db:
             return mrt_s
 
     def ping(self: "redis_db") -> None:
-        assert self.r.ping()
+        try:
+            assert self.r.ping()
+        except ConnectionError as e:
+            raise self.RedisConnectFailure(
+                f"Unable to PING redis server "
+                f"{redis_auth.host}:{redis_auth.port}\n{e}"
+            )
 
     def set(self: "redis_db", key: str, value: str, compression: bool = True):
         """
