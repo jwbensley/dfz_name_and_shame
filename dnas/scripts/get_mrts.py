@@ -231,6 +231,7 @@ def gen_urls_range(args: dict) -> list[str]:
 
     start = datetime.datetime.strptime(args["start"], cfg.TIME_FORMAT)
     end = datetime.datetime.strptime(args["end"], cfg.TIME_FORMAT)
+    logging.debug(f"Generating URLs for range {start} to {end}")
 
     if end < start:
         raise ValueError(f"End date {end} is before start date {start}")
@@ -247,6 +248,7 @@ def gen_urls_range(args: dict) -> list[str]:
 
         for arch in mrt_a.archives:
             if args["enabled"] and not arch.ENABLED:
+                logging.debug(f"Skipping {arch}, not enabled")
                 continue
             logging.debug(f"Checking archive {arch.NAME}...")
 
@@ -330,7 +332,14 @@ def gen_urls_range(args: dict) -> list[str]:
                         for filename_w_path in day_stats.file_list:
                             filename = os.path.basename(filename_w_path)
                             if filename in all_upd_filenames:
+                                logging.debug(
+                                    f"Don't need to backfill {filename}"
+                                )
                                 all_upd_filenames.remove(filename)
+                    else:
+                        logging.debug(
+                            f"No day stats exist under key {day_key}"
+                        )
 
                     if all_upd_filenames:
                         logging.info(
