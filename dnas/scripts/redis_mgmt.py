@@ -47,6 +47,18 @@ def dump_json(filename: str, compression: bool, stream: bool) -> None:
     logging.info(f"Written DB dump to {filename}")
 
 
+def find_keys(pattern: str) -> None:
+    """
+    Print all the keys in the redis DB.
+    """
+    if not pattern:
+        raise ValueError(f"Missing required arguments: pattern={pattern}")
+
+    keys = rdb.get_keys(pattern)
+    print(keys)
+    print(f"{len(keys)} keys in total")
+
+
 def load_json(filename: str, compression: bool, stream: bool) -> None:
     """
     Import a JOSN dump into redis.
@@ -110,6 +122,14 @@ def parse_args() -> dict:
         help="Specify an output filename to dump the entire redis DB to JSON.",
         type=str,
         metavar=("/path/to/output.json"),
+        required=False,
+        default=None,
+    )
+    parser.add_argument(
+        "--find-keys",
+        help="Search for keys in redis",
+        type=str,
+        metavar=("*20220101"),
         required=False,
         default=None,
     )
@@ -333,7 +353,10 @@ def main():
         delete(key=args["delete"])
 
     if args["diff"]:
-        print_stats_diff(keys=args["diff"])
+        print_stats_diff(keys=args["diff"], compression=compression)
+
+    if args["find_keys"]:
+        find_keys(pattern=args["find_keys"])
 
     if args["global"]:
         print_stats_global(compression=compression)
