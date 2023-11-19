@@ -25,6 +25,14 @@ Ign:5 http://mirror.mythic-beasts.com/mythic mythic InRelease
 
 Update docker on the host machine (`sudo apt-get update && sudo apt-get --no-install-recommends upgrade`)
 
+## Debugging
+
+To run the various scripts, spin up temporary containers:
+
+* Run the MRT getter script: `docker-compose run --rm --name tmp_getter dnas_getter /opt/dnas/dnas/scripts/get_mrts.py --help`
+* Run the MRT parser script: `docker-compose run --rm --name tmp_parser dnas_parser -- /opt/dnas/dnas/scripts/parse_mrts.py`
+* Run the Redis management script `docker-compose run --rm --name tmp_redis dnas_parser /opt/dnas/dnas/scripts/redis_mgmt.py --help`
+
 ## Running
 
 ### In Pipeline Mode
@@ -72,7 +80,7 @@ One can use the script `manual_day.sh` to run the containers in retrospective mo
 
 To run the containers in retrospective mode for yesterday one can use `/opt/dnas/docker/manual_day.sh $(date --date="1 day ago" +"%Y%m%d")`
 
-To run the containers for a period of time one ca use `/opt/dnas/docker/manual_range.sh 2023 01 01 2023 01 31`
+To run the containers for a period of time one ca use `/opt/dnas/docker/manual_range.sh 2023 01 01 2023 01 31` (note: this currently does not work across months, the start and end date must be within the same month!)
 
 #### Manually
 
