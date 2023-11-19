@@ -14,13 +14,15 @@ set -o pipefail
 # Error if any command returns a non-zero exist status
 set -e
 
-if [[ ${#} -ne 6 ]]
+if [[ ${#} -lt 6 ]]
 then
   echo "Wrong number of args ${#}."
-  echo "Call the script with 6 values all space seperated."
-  echo "Start year, month, day, end year, month, day."
+  echo "Call the script with at least 6 values, all space seperated."
+  echo "Start year, start month, start day, end year, end month, end day."
   echo "These should have leading zeros e.g.,"
   echo "${0} 2023 09 01 2023 09 30"
+  echo ""
+  echo "Any additional arguments are passed to the script."
   exit 1
 fi
 
@@ -28,13 +30,19 @@ fi
 source /opt/dnas/venv/bin/activate
 cd "/opt/dnas/docker/"
 
-SCRIPTS="/opt/dnas/dnas/scripts"
+SCRIPTS_DIR="/opt/dnas/dnas/scripts"
 SY="${1}"
-SM="${2}"
-SD="${3}"
-EY="${4}"
-EM="${5}"
-ED="${6}"
+shift
+SM="${1}"
+shift
+SD="${1}"
+shift
+EY="${1}"
+shift
+EM="${1}"
+shift
+ED="${1}"
+shift
 
 for year in $(seq -w "$SY" "$EY")
 do
@@ -44,8 +52,8 @@ do
     do
       echo "doing ${year}${month}${day}:"
       docker-compose run --rm --name tmp_getter --entrypoint /opt/pypy dnas_getter -- \
-      "${SCRIPTS}/get_mrts.py" \
-      --backfill --update --enabled --ymd "${year}${month}${day}"
+      "${SCRIPTS_DIR}/get_mrts.py" \
+      --backfill --update --enabled --ymd "${year}${month}${day}" "${*}"
     done
   done
 done
@@ -58,8 +66,8 @@ do
     do
       echo "doing ${year}${month}${day}:"
       docker-compose run --rm --name tmp_parser --entrypoint /opt/pypy dnas_parser -- \
-      "${SCRIPTS}/parse_mrts.py" \
-      --update --remove --enabled --no-multi --ymd "${year}${month}${day}"
+      "${SCRIPTS_DIR}/parse_mrts.py" \
+      --update --remove --enabled --no-multi --ymd "${year}${month}${day}" "${*}"
     done
   done
 done
@@ -72,8 +80,8 @@ do
     do
       echo "doing ${year}${month}${day}:"
       docker-compose run --rm --name tmp_stats --entrypoint /opt/pypy dnas_stats -- \
-      "${SCRIPTS}/stats.py" \
-      --update --enabled --daily --ymd "${year}${month}${day}"
+      "${SCRIPTS_DIR}/stats.py" \
+      --update --enabled --daily --ymd "${year}${month}${day}" "${*}"
     done
   done
 done
@@ -86,11 +94,11 @@ do
     do
       echo "doing ${year}${month}${day}:"
       docker-compose run --rm --name tmp_git --entrypoint /opt/pypy dnas_stats -- \
-      "${SCRIPTS}/git_reports.py" \
-      --generate --publish --ymd "${year}${month}${day}"
+      "${SCRIPTS_DIR}/git_reports.py" \
+      --generate --publish --ymd "${year}${month}${day}" "${*}"
     done
   done
 done
 
 #docker-compose run --rm --name tmp_tweet dnas_stats -- \
-#"${SCRIPTS}/tweet.py" --generate --tweet --ymd "$1"
+#"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd "$1" "${*}"
