@@ -217,7 +217,9 @@ def print_keys() -> None:
     """
     Print all the keys in the redis DB.
     """
-    print(rdb.get_keys("*"))
+    keys = rdb.get_keys("*")
+    print(keys)
+    print(f"{len(keys)} keys in total")
 
 
 def print_stats(key: str, compression: bool) -> None:
