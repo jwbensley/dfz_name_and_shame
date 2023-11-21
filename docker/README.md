@@ -31,6 +31,8 @@ To run the various scripts, spin up temporary containers:
 
 * Run the MRT getter script: `docker-compose run --rm --name tmp_getter dnas_getter -- /opt/dnas/dnas/scripts/get_mrts.py --help`
 * Run the MRT parser script: `docker-compose run --rm --name tmp_parser dnas_parser -- /opt/dnas/dnas/scripts/parse_mrts.py --help`
+* Run the MRT stats script (don't use the dnas_stats container):  `docker-compose run --rm --name tmp_stats dnas_parser -- /opt/dnas/dnas/scripts/stats.py --help`
+* Run the git script (don't use the dnas_stats container):  `docker-compose run --rm --name tmp_git dnas_parser -- /opt/dnas/dnas/scripts/git_reports.py --help`
 * Run the Redis management script `docker-compose run --rm --name tmp_redis dnas_parser -- /opt/dnas/dnas/scripts/redis_mgmt.py --help`
 
 ## Running
