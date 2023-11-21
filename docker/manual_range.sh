@@ -67,7 +67,7 @@ do
       echo "doing ${year}${month}${day}:"
       docker-compose run --rm --name tmp_parser --entrypoint /opt/pypy dnas_parser -- \
       "${SCRIPTS_DIR}/parse_mrts.py" \
-      --update --remove --enabled --no-multi --ymd "${year}${month}${day}" "${@}"
+      --update --remove --enabled --ymd "${year}${month}${day}" "${@}"
     done
   done
 done
