@@ -31,17 +31,17 @@ SCRIPTS_DIR="/opt/dnas/dnas/scripts"
 YMD="${1}"
 shift
 
-docker-compose run --rm --name tmp_getter dnas_getter -- \
+docker-compose run --rm --name tmp_getter_day dnas_getter -- \
 "${SCRIPTS_DIR}/get_mrts.py" --backfill --update --enabled --ymd "${YMD}" "${@}"
 
-docker-compose run --rm --name tmp_parser dnas_parser -- \
+docker-compose run --rm --name tmp_parser_day dnas_parser -- \
 "${SCRIPTS_DIR}/parse_mrts.py" --update --remove --enabled --ymd "${YMD}" "${@}"
 
-docker-compose run --rm --name tmp_stats dnas_stats -- \
+docker-compose run --rm --name tmp_stats_day --entrypoint /opt/pypy dnas_stats -- \
 "${SCRIPTS_DIR}/stats.py" --update --enabled --daily --ymd "${YMD}" "${@}"
 
-docker-compose run --rm --name tmp_report dnas_git -- \
+docker-compose run --rm --name tmp_report_day --entrypoint /opt/pypy dnas_stats -- \
 "${SCRIPTS_DIR}/git_reports.py" --generate --publish --ymd "${YMD}" "${@}"
 
-#docker-compose run --rm --name tmp_tweet dnas_stats -- \
+#docker-compose run --rm --name tmp_tweet_day --entrypoint /opt/pypydnas_stats -- \
 #"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd "${YMD}" "${@}"
