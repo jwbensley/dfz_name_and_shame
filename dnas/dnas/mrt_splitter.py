@@ -129,6 +129,7 @@ class mrt_splitter:
 
         chunk_filenames = []
         chunk_fds = []
+        total = 0
         for i in range(0, no_chunks):
             chunk_name = self.filename + "_" + str(i)
             chunk_filenames.append(chunk_name)
@@ -141,11 +142,11 @@ class mrt_splitter:
 
         for idx, entry in enumerate(self):
             chunk_fds[idx % no_chunks].write(entry.data)
+            total = idx + 1
 
         for i in range(0, len(chunk_fds)):
             chunk_fds[i].close()
 
-        total = idx + 1
         logging.debug(f"Split {total} mrt_entries into {no_chunks} files.")
 
         return total, chunk_filenames
