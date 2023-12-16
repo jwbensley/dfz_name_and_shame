@@ -51,7 +51,7 @@ do
     for day in $(seq -w "$SD" "$ED")
     do
       echo "doing ${year}${month}${day}:"
-      docker-compose run --rm --name tmp_getter --entrypoint /opt/pypy dnas_getter -- \
+      docker-compose run --rm --name tmp_getter_range --entrypoint /opt/pypy dnas_getter -- \
       "${SCRIPTS_DIR}/get_mrts.py" \
       --backfill --update --enabled --ymd "${year}${month}${day}" "${@}"
     done
@@ -65,7 +65,7 @@ do
     for day in $(seq -w "$SD" "$ED")
     do
       echo "doing ${year}${month}${day}:"
-      docker-compose run --rm --name tmp_parser --entrypoint /opt/pypy dnas_parser -- \
+      docker-compose run --rm --name tmp_parser_range --entrypoint /opt/pypy dnas_parser -- \
       "${SCRIPTS_DIR}/parse_mrts.py" \
       --update --remove --enabled --ymd "${year}${month}${day}" "${@}"
     done
@@ -79,7 +79,7 @@ do
     for day in $(seq -w "$SD" "$ED")
     do
       echo "doing ${year}${month}${day}:"
-      docker-compose run --rm --name tmp_stats --entrypoint /opt/pypy dnas_stats -- \
+      docker-compose run --rm --name tmp_stats_range --entrypoint /opt/pypy dnas_stats -- \
       "${SCRIPTS_DIR}/stats.py" \
       --update --enabled --daily --ymd "${year}${month}${day}" "${@}"
     done
@@ -93,12 +93,14 @@ do
     for day in $(seq -w "$SD" "$ED")
     do
       echo "doing ${year}${month}${day}:"
-      docker-compose run --rm --name tmp_git --entrypoint /opt/pypy dnas_stats -- \
+      docker-compose run --rm --name tmp_git_range --entrypoint /opt/pypy dnas_stats -- \
       "${SCRIPTS_DIR}/git_reports.py" \
       --generate --publish --ymd "${year}${month}${day}" "${@}"
     done
   done
 done
 
-#docker-compose run --rm --name tmp_tweet dnas_stats -- \
-#"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd "$1" "${@}"
+#docker-compose run --rm --name tmp_tweet_range dnas_stats -- \
+#"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd"$1" "${@}"
+
+
