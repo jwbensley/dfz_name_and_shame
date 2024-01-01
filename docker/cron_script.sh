@@ -12,6 +12,12 @@ set -e
 PYPY="/opt/pypy"
 SCRIPTS="/opt/dnas/dnas/scripts"
 
+# Ensure no MRTs are missing for yesterday:
+${PYPY} ${SCRIPTS}/get_mrts.py --yesterday --update --enabled --backfill
+
+# Ensure no stats are missing for yesterday:
+${PYPY} ${SCRIPTS}/parse_mrts.py --yesterday --update --enabled --remove
+
 # Generate the daily stats for yesterday:
 ${PYPY} ${SCRIPTS}/stats.py --yesterday --update --enabled
 
