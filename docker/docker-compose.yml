@@ -26,7 +26,7 @@ services:
       dockerfile: docker/dnas.Dockerfile
     volumes:
       - /etc/localtime:/etc/localtime
-      - /opt/dnas/:/opt/dnas/:z
+      - ../:/opt/dnas/:z
       - /opt/dnas_data/:/opt/dnas_data/
     restart: always
     tty: true
@@ -48,7 +48,7 @@ services:
       dockerfile: docker/dnas.Dockerfile
     volumes:
       - /etc/localtime:/etc/localtime
-      - /opt/dnas/:/opt/dnas/:z
+      - ../:/opt/dnas/:z
       - /opt/dnas_data/:/opt/dnas_data/
     restart: always
     tty: true
@@ -71,7 +71,7 @@ services:
       dockerfile: docker/dnas.Dockerfile
     volumes:
       - /etc/localtime:/etc/localtime
-      - /opt/dnas/:/opt/dnas/:z
+      - ../:/opt/dnas/:z
       - /opt/dnas_data/:/opt/dnas_data/
     restart: always
     tty: true

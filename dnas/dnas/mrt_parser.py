@@ -247,11 +247,12 @@ class mrt_parser:
                         # COMMUNITY or LARGE_COMMUNITY
                         elif attr_t == 8 or attr_t == 32:
                             if strip_comm:
+                                c: str
                                 comm_set.extend(
                                     [
                                         c
                                         for c in attr["value"]
-                                        if strip_comm not in c
+                                        if not c.startswith(strip_comm)
                                     ]
                                 )
                             else:

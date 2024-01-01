@@ -32,7 +32,7 @@
     "comm_set": [
         "13538:3000"
     ],
-    "filename": "/opt/dnas_data/downloads/RCC23/rcc23.updates.20220421.0200.gz",
+    "filename": "/opt/dnas_data/downloads/RRC23/rrc23.updates.20220421.0200.gz",
     "med": -1,
     "next_hop": [
         "2001:de8:4::1:8106:1",
