@@ -41,7 +41,7 @@ To run the various scripts, spin up temporary containers:
 
 Use docker-compose to start the Redis container, and the MRT-getter and MRT-parser containers in continuous mode:
 
-```bash
+```shell
 cd /opt/dnas/
 source venv/bin/activate
 cd docker/
@@ -50,11 +50,6 @@ docker-compose logs -f
 ```
 
 To shut the entire pipeline down simply run: `docker-compose down`
-
-On Ubuntu the `ufw` may block connections between containers.  
-
-* This will allow REDIS access from the other contains: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 6379` (TODO: this should be locked down further. Also, is it even needed now that DNAS is migrated from `docker` to `docker-compose` ?)
-* This will allow access to BIRD: `sudo ufw allow from 172.16.0.0/12 to 172.16.0.0/12 proto tcp port 8000` (TODO: this should be locked down further. Also, is it even needed now that DNAS is migrated from `docker` to `docker-compose` ?)
 
 To start an individual container from the pipeline use: `docker-compose up -d dnas_parser`
 
@@ -95,7 +90,7 @@ docker-compose run --rm --name tmp_getter dnas_getter -- \
 Run the parser for a specfic file:
 ```shell
 docker-compose run --rm --name tmp_parser dnas_parser -- \
-/opt/dnas/dnas/scripts/parse_mrts.py --debug --remove --single /opt/dnas_data/downloads/SYDNEY/updates.20230424.0615.bz2
+/opt/dnas/dnas/scripts/parse_mrts.py --update --remove --single /opt/dnas_data/downloads/SYDNEY/updates.20230424.0615.bz2
 ```
 
 Run the parser for a specific time range (this can be less than a day or longer than a day, also note that this expects all MRTs not currently in the DB to already exist on disk, it will fail if some are missing):
