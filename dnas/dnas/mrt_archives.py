@@ -7,8 +7,8 @@ from dnas.mrt_archive import mrt_archive
 
 
 class mrt_archives:
-    def __init__(self) -> None:
-        self.archives = []
+    def __init__(self: "mrt_archives") -> None:
+        self.archives: list[mrt_archive] = []
 
         arch: dict
         for arch in cfg.MRT_ARCHIVES:

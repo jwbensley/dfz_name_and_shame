@@ -17,8 +17,8 @@ class test_mrt_splitter(unittest.TestCase):
         self.no_of_chunks = 8
         self.gz_filename = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC23/",
-            "rcc23.updates.20220501.2305.gz",
+            "RRC23/",
+            "rrc23.updates.20220501.2305.gz",
         )
         self.file_size = 30285
 

@@ -1,14 +1,22 @@
 # DNAS Code Details
 
-## Requirements
-
+## Running and Testing DNAS
 
 ### Redis
-To run the code locally a redis instance is required. Use the steps below to quickly spin up a Redis container. Note that DNAS expects to authenticate to Redis so set a password:  
+To run the code natively (not inside a container) a Redis instance is required. The best way is to spin up the existing redis container:
 
-```bash
-$ docker run -d -p 6379:6379 --name redis redis:latest
-$ docker exec -it redis_dnas redis-cli
+```shell
+cd /opt/dnas
+source venv/bin/activate
+cd docker/
+docker-compose up -d dnas_redis
+```
+
+If you really need/want to, you can use the steps below to spin up a stand-alone Redis container. Note that DNAS expects to authenticate to Redis so set a password, and update the Redis hostname in redis_auth.py:
+
+```shell
+docker run -d -p 6379:6379 --name redis redis:latest
+docker exec -it redis_dnas redis-cli
 > CONFIG SET requirepass abc123
 > CONFIG REWRITE
 ```
@@ -17,7 +25,7 @@ $ docker exec -it redis_dnas redis-cli
 
 To run the DNAS code natively in Python3 outside of the container, install the required Python modules:
 
-```
+```shell
 cd /opt/dnas/
 source venv/bin/activate
 cd ./dnas/
@@ -26,7 +34,7 @@ pip install -r requirements.txt
 
 The code is developed in Python3 but the DNAS container actually uses PyPy3 to run faster. The following commands manually install PyPy3 and the required modules in PyPy, to manually run the code outside of a container:
 
-```bash
+```shell
 cd /opt/dnas/
 source venv/bin/activate
 cd ./dnas/
@@ -49,7 +57,7 @@ sudo mv "$pypy_dir" /opt/
 
 Tox is used to provide linting (black and isort), type checking (mypy), and run unit tests (pyetst):
 
-```bash
+```shell
 cd /opt/dnas/
 source venv/bin/activate
 pip install tox

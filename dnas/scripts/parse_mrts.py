@@ -105,42 +105,104 @@ def parse_args() -> dict:
     Parse the CLI args to this script.
     """
     parser = argparse.ArgumentParser(
-        description="Parse downloaded MRT files and store the stats in Redis. "
-        "One or both of --rib and --update must be given, to chose the parsing "
-        "of RIB type dumps and/or UPDATE type dumps. By default all MRT files "
-        "of the given types (--rib/--update) will be parsed. To limit this to "
-        "specific MRT files of the given types, use one of --range, --ymd, or "
-        "--single.",
+        description="Parse downloaded MRT files and store the stats in Redis.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
+
+    action_group = parser.add_argument_group(
+        "Action", "Method for getting MRTs"
+    )
+    actions = action_group.add_mutually_exclusive_group(required=True)
+    actions.add_argument(
         "--continuous",
         help="Run in continuous mode - parse available MRT files from each "
-        "archive as they are downloaded. Use with --rib and/or --update.",
+        "archive as they are downloaded.",
         default=False,
         action="store_true",
         required=False,
     )
-    parser.add_argument(
-        "--debug",
-        help="Run with debug level logging.",
+    actions.add_argument(
+        "--range",
+        help="Parse a range of files from --start to --end inclusive.",
         default=False,
         action="store_true",
         required=False,
     )
-    parser.add_argument(
+    actions.add_argument(
+        "--single",
+        help="Specify the path to a single MRT file to parse.",
+        type=str,
+        default=None,
+        required=False,
+    )
+    actions.add_argument(
+        "--yesterday",
+        help="This is a shortcut for --ymd yyyymmdd using yesterdays date.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    actions.add_argument(
+        "--ymd",
+        help="Specify a day to parse all MRT files from that specific day. "
+        "Must use yyyymmdd format e.g., 20220101.",
+        type=str,
+        default=None,
+        required=False,
+    )
+
+    type_group = parser.add_argument_group(
+        "MRT Type", "Type of MRT file(s) to parse"
+    )
+    types = type_group.add_mutually_exclusive_group(required=True)
+    types.add_argument(
+        "--rib",
+        help="Parse RIB dump MRT files.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    types.add_argument(
+        "--update",
+        help="Parse BGP update MRT files.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+
+    filter_group = parser.add_argument_group(
+        "MRT Filters", "Filter which MRT file(s) to parse"
+    )
+    filter_group.add_argument(
         "--enabled",
         help="Only parse MRT files for MRT archives enabled in the config.",
         default=False,
         action="store_true",
         required=False,
     )
-    parser.add_argument(
+    filter_group.add_argument(
         "--end",
-        help="End date in format 'yyyymmdd.hhmm' e.g., '20220101.2359'.",
+        help="End date in format 'yyyymmdd.hhmm' e.g., '20220101.2359'. "
+        "For use with --range.",
         type=str,
         required=False,
         default=None,
+    )
+    filter_group.add_argument(
+        "--start",
+        help="Start date in format 'yyyymmdd.hhmm' e.g., '20220101.0000'. "
+        "For use with --range.",
+        type=str,
+        required=False,
+        default=None,
+    )
+
+    parser.add_argument(
+        "--debug",
+        help="Run with debug level logging.",
+        default=False,
+        action="store_true",
+        required=False,
     )
     parser.add_argument(
         "--no-multi",
@@ -159,61 +221,10 @@ def parse_args() -> dict:
         required=False,
     )
     parser.add_argument(
-        "--range",
-        help="Parse a range up files from --start to --end inclusive. "
-        "Use with --rib and/or --update.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
         "--remove",
         help="Delete MRT files once they have been prased.",
         default=False,
         action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--rib",
-        help="Parse RIB dump MRT files.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--single",
-        help="Specify the path to a single MRT file to parse.",
-        type=str,
-        default=None,
-        required=False,
-    )
-    parser.add_argument(
-        "--start",
-        help="Start date in format 'yyyymmdd.hhmm' e.g., '20220101.0000'.",
-        type=str,
-        required=False,
-        default=None,
-    )
-    parser.add_argument(
-        "--update",
-        help="Parse BGP update MRT files.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--yesterday",
-        help="This is a shortcut for --ymd yyyymmdd using yesterdays date.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--ymd",
-        help="Specify a day to parse all MRT files from that specific day. "
-        "Must use yyyymmdd format e.g., 20220101.",
-        type=str,
-        default=None,
         required=False,
     )
 
@@ -558,24 +569,6 @@ def main():
         log_src="MRT parser script",
         log_path=cfg.LOG_PARSER,
     )
-
-    if (
-        not args["continuous"]
-        and not args["range"]
-        and not args["single"]
-        and not args["yesterday"]
-        and not args["ymd"]
-    ):
-        raise ValueError(
-            "At least one of --continuous, --range, --single, --yesterday, or "
-            "--ymd must be specified!"
-        )
-
-    if not args["single"] and not args["rib"] and not args["update"]:
-        raise ValueError(
-            "At least one of --rib and/or --update must be specified when not "
-            "using --single!"
-        )
 
     args["multi"] = not args["no_multi"]
 

@@ -21,15 +21,15 @@ class test_mrt_stats(unittest.TestCase):
         Copy the test files to the location they would be in,
         if we had downloaded them from the public archives:
         """
-        self.upd_1_fn = "rcc23.updates.20220421.0200.gz"
-        self.upd_2_fn = "rcc23.updates.20220501.2305.gz"
+        self.upd_1_fn = "rrc23.updates.20220421.0200.gz"
+        self.upd_2_fn = "rrc23.updates.20220501.2305.gz"
         self.upd_3_fn = "sydney.updates.20220601.0230.bz2"
         self.upd_4_fn = "sydney.updates.20220601.0415.bz2"
-        self.upd_5_fn = "rcc01.updates.20100827.0840.gz"
+        self.upd_5_fn = "rrc01.updates.20100827.0840.gz"
 
         self.upd_1_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC23/",
+            "RRC23/",
             self.upd_1_fn,
         )
         if not os.path.isfile(self.upd_1_path):
@@ -37,7 +37,7 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_2_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC23/",
+            "RRC23/",
             self.upd_2_fn,
         )
         if not os.path.isfile(self.upd_2_path):
@@ -60,17 +60,17 @@ class test_mrt_stats(unittest.TestCase):
             raise Exception(f"Test MRT file is not found: {self.upd_4_path}")
 
         self.upd_5_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "RCC1/", self.upd_5_fn
+            os.path.dirname(os.path.realpath(__file__)), "RRC1/", self.upd_5_fn
         )
         if not os.path.isfile(self.upd_5_path):
             raise Exception(f"Test MRT file is not found: {self.upd_5_path}")
 
         mrt_a = mrt_archives()
         for arch in mrt_a.archives:
-            if arch.NAME == "UNIT_TEST_RCC_1":
+            if arch.NAME == "UNIT_TEST_RRC_1":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_5_mrt = os.path.join(arch.MRT_DIR, self.upd_5_fn)
-            if arch.NAME == "UNIT_TEST_RCC_23":
+            if arch.NAME == "UNIT_TEST_RRC_23":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_1_mrt = os.path.join(arch.MRT_DIR, self.upd_1_fn)
                 self.upd_2_mrt = os.path.join(arch.MRT_DIR, self.upd_2_fn)
@@ -100,7 +100,7 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_1_json = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC23/",
+            "RRC23/",
             self.upd_1_fn + ".json",
         )
         if not os.path.isfile(self.upd_1_json):
@@ -120,7 +120,7 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_5_json = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC1/",
+            "RRC1/",
             self.upd_5_fn + ".json",
         )
         if not os.path.isfile(self.upd_3_json):
@@ -130,8 +130,8 @@ class test_mrt_stats(unittest.TestCase):
 
         self.upd_1_test = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC23/",
-            "rcc23.updates.20220421.0200.gz.test",
+            "RRC23/",
+            "rrc23.updates.20220421.0200.gz.test",
         )
 
     def test_init(self: "test_mrt_stats") -> None:

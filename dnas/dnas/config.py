@@ -159,6 +159,8 @@ class config:
     the RIB_OFFSET and UPD_INTERVAL values below.
     """
 
+    # DISABLED AS PART OF https://github.com/jwbensley/dfz_name_and_shame/issues/135
+    # This is an example of how to configured a local BIRD instance which is dumping MRTs
     """
     Transit session from @LukaszBromirski
     RIB dumps are every 1 hour. RIB dumps are disabled!
@@ -170,7 +172,7 @@ class config:
         {
             "TYPE": "AS57355",
             "NAME": "AS57355-Lukasz",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "http://172.17.0.1:8000/as57355/",
             "RIB_URL": "/rib/",
             "UPD_URL": "/updates/",
@@ -182,14 +184,16 @@ class config:
             "UPD_KEY": "AS57355_UPD",
             "RIB_INTERVAL": 60,
             "UPD_INTERVAL": 5,
-            "RIB_OFFSET": 0,
-            "UPD_OFFSET": 0,
+            "RIB_OFFSET": 0,  # Offset from UTC0
+            "UPD_OFFSET": 0,  # Offset from UTC0
             "RIB_PREFIX": "rib.",
             "UPD_PREFIX": "",
-            "STRIP_COMM": "",
+            "STRIP_COMM": "",  # To strip the communities from the IXP where the collector is hosted
         }
     )
 
+    # DISABLED AS PART OF https://github.com/jwbensley/dfz_name_and_shame/issues/135
+    # This is an example of how to configure a RouteViews collector
     """
     Route-Views London/LINX
     RIB dumps are every 2 hours
@@ -201,7 +205,7 @@ class config:
         {
             "TYPE": "RV",
             "NAME": "RV_LINX",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "http://archive.routeviews.org/route-views.linx/bgpdata/",
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
@@ -221,6 +225,7 @@ class config:
         }
     )
 
+    # DISABLED AS PART OF https://github.com/jwbensley/dfz_name_and_shame/issues/135
     """
     Route-Views Sydney/Equinix Sydney
     RIB dumps are every 2 hours
@@ -232,7 +237,7 @@ class config:
         {
             "TYPE": "RV",
             "NAME": "RV_SYDNEY",
-            "ENABLED": True,
+            "ENABLED": False,
             "BASE_URL": "http://archive.routeviews.org/route-views.sydney/bgpdata/",
             "RIB_URL": "/RIBS/",
             "UPD_URL": "/UPDATES/",
@@ -253,7 +258,193 @@ class config:
     )
 
     """
-    RRC23 Singapore
+    RRC00 Amsterdam Multihop
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc00/2023.07/bview.20230702.0000.gz
+    UPDATE dumps are every 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc00/2023.07/updates.20230701.1540.gz
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "RRC_00",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc00/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RRC00/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RRC_00_RIB",
+            "UPD_KEY": "RRC_00_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "",
+        }
+    )
+
+    """
+    RRC01 London LINX
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc01/2023.07/bview.20230702.0000.gz
+    UPDATE dumps are every 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc01/2023.07/updates.20230701.1540.gz
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "RRC_01",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc01/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RRC01/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RRC_01_RIB",
+            "UPD_KEY": "RRC_01_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "8714:",
+        }
+    )
+
+    """
+    RRC03 Amsterdam AMS-IX
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc03/2023.07/bview.20230702.0000.gz
+    UPDATE dumps are every 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc03/2023.07/updates.20230701.1540.gz
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "RRC_03",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc03/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RRC03/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RRC_03_RIB",
+            "UPD_KEY": "RRC_03_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "6777:",
+        }
+    )
+
+    """
+    RRC12 Frankfurt DEC-IX
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc12/2023.07/bview.20230702.0000.gz
+    UPDATE dumps are every 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc12/2023.07/updates.20230701.1540.gz
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "RRC_12",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc12/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RRC12/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RRC_12_RIB",
+            "UPD_KEY": "RRC_12_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "6695:",
+        }
+    )
+
+    """
+    RRC15 Sao Paulo PTTMetro
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc15/2021.12/bview.20211206.1600.gz
+    UPDATE dumps are every 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc15/2021.12/updates.20211231.2335.gz
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "RRC_15",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc15/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RRC15/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RRC_15_RIB",
+            "UPD_KEY": "RRC_15_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "26162:",
+        }
+    )
+
+    """
+    RRC19 Johannesburg NAPAfrica
+    RIB dumps are every 8 hours
+    RIB dump example: https://data.ris.ripe.net/rrc19/2021.12/bview.20211206.1600.gz
+    UPDATE dumps are every 5 minutes
+    UPDATE dump example: https://data.ris.ripe.net/rrc19/2021.12/updates.20211231.2335.gz
+    """
+    MRT_ARCHIVES.append(
+        {
+            "TYPE": "RIPE",
+            "NAME": "RRC_19",
+            "ENABLED": True,
+            "BASE_URL": "https://data.ris.ripe.net/rrc19/",
+            "RIB_URL": "/",
+            "UPD_URL": "/",
+            "MRT_EXT": "gz",
+            "MRT_DIR": os.path.join(DL_DIR, "RRC19/"),
+            "RIB_GLOB": "bview.*gz",
+            "UPD_GLOB": "updates.*gz",
+            "RIB_KEY": "RRC_19_RIB",
+            "UPD_KEY": "RRC_19_UPD",
+            "RIB_INTERVAL": 480,
+            "UPD_INTERVAL": 5,
+            "RIB_OFFSET": 60,
+            "UPD_OFFSET": 60,
+            "RIB_PREFIX": "bview.",
+            "UPD_PREFIX": "updates.",
+            "STRIP_COMM": "37195:",
+        }
+    )
+
+    """
+    RRC23 Singapore Equinix-SG
     RIB dumps are every 8 hours
     RIB dump example: https://data.ris.ripe.net/rrc23/2021.12/bview.20211206.1600.gz
     UPDATE dumps are every 5 minutes
@@ -262,17 +453,17 @@ class config:
     MRT_ARCHIVES.append(
         {
             "TYPE": "RIPE",
-            "NAME": "RCC_23",
+            "NAME": "RRC_23",
             "ENABLED": True,
             "BASE_URL": "https://data.ris.ripe.net/rrc23/",
             "RIB_URL": "/",
             "UPD_URL": "/",
             "MRT_EXT": "gz",
-            "MRT_DIR": os.path.join(DL_DIR, "RCC23/"),
+            "MRT_DIR": os.path.join(DL_DIR, "RRC23/"),
             "RIB_GLOB": "bview.*gz",
             "UPD_GLOB": "updates.*gz",
-            "RIB_KEY": "RCC_23_RIB",
-            "UPD_KEY": "RCC_23_UPD",
+            "RIB_KEY": "RRC_23_RIB",
+            "UPD_KEY": "RRC_23_UPD",
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 60,
@@ -284,33 +475,33 @@ class config:
     )
 
     """
-    RRC24 Uruguay
+    RRC25 Amsterdam Multihop
     RIB dumps are every 8 hours
-    RIB dump example: https://data.ris.ripe.net/rrc24/2021.12/bview.20211208.1600.gz
+    RIB dump example: https://data.ris.ripe.net/rrc25/2021.12/bview.20211208.1600.gz
     UPDATE dumps are every 5 minutes
-    UPDATE dump example: https://data.ris.ripe.net/rrc24/2021.12/updates.20211231.1245.gz
+    UPDATE dump example: https://data.ris.ripe.net/rrc25/2021.12/updates.20211231.1245.gz
     """
     MRT_ARCHIVES.append(
         {
             "TYPE": "RIPE",
-            "NAME": "RCC_24",
+            "NAME": "RRC_25",
             "ENABLED": True,
-            "BASE_URL": "https://data.ris.ripe.net/rrc24/",
+            "BASE_URL": "https://data.ris.ripe.net/rrc25/",
             "RIB_URL": "/",
             "UPD_URL": "/",
             "MRT_EXT": "gz",
-            "MRT_DIR": os.path.join(DL_DIR, "RCC24/"),
+            "MRT_DIR": os.path.join(DL_DIR, "RRC25/"),
             "RIB_GLOB": "bview.*gz",
             "UPD_GLOB": "updates.*gz",
-            "RIB_KEY": "RCC_24_RIB",
-            "UPD_KEY": "RCC_24_UPD",
+            "RIB_KEY": "RRC_25_RIB",
+            "UPD_KEY": "RRC_25_UPD",
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 60,
             "UPD_OFFSET": 60,
             "RIB_PREFIX": "bview.",
             "UPD_PREFIX": "updates.",
-            "STRIP_COMM": "0:",
+            "STRIP_COMM": "",
         }
     )
 
@@ -353,17 +544,17 @@ class config:
     MRT_ARCHIVES.append(
         {
             "TYPE": "RIPE",
-            "NAME": "UNIT_TEST_RCC_1",
+            "NAME": "UNIT_TEST_RRC_1",
             "ENABLED": False,
             "BASE_URL": "https://data.ris.ripe.net/rrc1/",
             "RIB_URL": "/",
             "UPD_URL": "/",
             "MRT_EXT": "gz",
-            "MRT_DIR": os.path.join(DL_DIR, "RCC1/"),
+            "MRT_DIR": os.path.join(DL_DIR, "RRC1/"),
             "RIB_GLOB": "bview.*gz",
             "UPD_GLOB": "updates.*gz",
-            "RIB_KEY": "RCC_1_RIB",
-            "UPD_KEY": "RCC_1_UPD",
+            "RIB_KEY": "RRC_1_RIB",
+            "UPD_KEY": "RRC_1_UPD",
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 60,
@@ -381,17 +572,17 @@ class config:
     MRT_ARCHIVES.append(
         {
             "TYPE": "RIPE",
-            "NAME": "UNIT_TEST_RCC_23",
+            "NAME": "UNIT_TEST_RRC_23",
             "ENABLED": False,
             "BASE_URL": "https://data.ris.ripe.net/rrc23/",
             "RIB_URL": "/",
             "UPD_URL": "/",
             "MRT_EXT": "gz",
-            "MRT_DIR": os.path.join(DL_DIR, "RCC23/"),
+            "MRT_DIR": os.path.join(DL_DIR, "RRC23/"),
             "RIB_GLOB": "bview.*gz",
             "UPD_GLOB": "updates.*gz",
-            "RIB_KEY": "RCC_23_RIB",
-            "UPD_KEY": "RCC_23_UPD",
+            "RIB_KEY": "RRC_23_RIB",
+            "UPD_KEY": "RRC_23_UPD",
             "RIB_INTERVAL": 480,
             "UPD_INTERVAL": 5,
             "RIB_OFFSET": 60,

@@ -66,17 +66,27 @@ class test_mrt_archives(unittest.TestCase):
             ValueError, self.mrt_a.get_arch_option, "/tmp/9jw2f8wi", "abc"
         )
 
-        arch = self.mrt_a.archives[0]
-        filename = arch.gen_latest_upd_fn()
-        filepath = os.path.normpath(arch.MRT_DIR + "/" + filename)
+        for arch in self.mrt_a.archives:
+            # Find an enabled archive to test with:
+            if arch.ENABLED:
+                filename = arch.gen_latest_upd_fn()
+                filepath = os.path.normpath(arch.MRT_DIR + "/" + filename)
 
-        ret = self.mrt_a.get_arch_option(filepath, "ENABLED")
-        self.assertIsInstance(ret, bool)
-        self.assertEqual(ret, True)
+                # Try to get a valid archive option
+                ret = self.mrt_a.get_arch_option(filepath, "ENABLED")
+                self.assertIsInstance(ret, bool)
+                self.assertEqual(ret, True)
 
-        self.assertRaises(
-            AttributeError, self.mrt_a.get_arch_option, filepath, "hwiwewohh7"
-        )
+                # Try to get an invalid one
+                self.assertRaises(
+                    AttributeError,
+                    self.mrt_a.get_arch_option,
+                    filepath,
+                    "hwiwewohh7",
+                )
+                break
+        else:
+            raise AssertionError(f"Couldn't find enabled MRT archive")
 
     def test_get_day_key(self: "test_mrt_archives") -> None:
         self.assertRaises(ValueError, self.mrt_a.get_day_key, "")

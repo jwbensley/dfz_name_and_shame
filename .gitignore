@@ -23,6 +23,9 @@ redis/data/*
 # Don't sync pycache
 **/__pycache__/
 
+# Dont sync Pytest cache
+.pytest_cache/
+
 # Don't sync tox cache
 .tox
 

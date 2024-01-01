@@ -22,19 +22,19 @@ class test_mrt_entry(unittest.TestCase):
         Copy the test files to the location they would be in,
         if we had downloaded them from the public archives:
         """
-        self.upd_1_fn = "rcc23.updates.20220421.0200.gz"
+        self.upd_1_fn = "rrc23.updates.20220421.0200.gz"
         self.upd_1_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC23/",
+            "RRC23/",
             self.upd_1_fn,
         )
         if not os.path.isfile(self.upd_1_path):
             raise Exception(f"Test MRT file is not found: {self.upd_1_path}")
 
-        self.entry_1_fn = "rcc23.updates.20220421.0200.mrt_entry.json"
+        self.entry_1_fn = "rrc23.updates.20220421.0200.mrt_entry.json"
         self.entry_1_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "RCC23/",
+            "RRC23/",
             self.entry_1_fn,
         )
         if not os.path.isfile(self.entry_1_path):
@@ -44,7 +44,7 @@ class test_mrt_entry(unittest.TestCase):
 
         mrt_a = mrt_archives()
         for arch in mrt_a.archives:
-            if arch.NAME == "UNIT_TEST_RCC_23":
+            if arch.NAME == "UNIT_TEST_RRC_23":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_1_mrt = os.path.join(arch.MRT_DIR, self.upd_1_fn)
 

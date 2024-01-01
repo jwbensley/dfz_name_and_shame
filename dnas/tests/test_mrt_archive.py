@@ -100,13 +100,13 @@ class test_mrt_archive(unittest.TestCase):
     )
 
     RIPE_TYPE = "RIPE"
-    RIPE_NAME = "RCC_23"
+    RIPE_NAME = "RRC_23"
     RIPE_ENABLED = False
     RIPE_BASE_URL = "https://data.ris.ripe.net/rrc23/"
     RIPE_RIB_URL = "/"
     RIPE_UPD_URL = "/"
     RIPE_MRT_EXT = "gz"
-    RIPE_MRT_DIR = os.path.join(cfg.DL_DIR, "RCC23/")
+    RIPE_MRT_DIR = os.path.join(cfg.DL_DIR, "RRC23/")
     RIPE_RIB_GLOB = "bview.*gz"
     RIPE_UPD_GLOB = "updates.*gz"
     RIPE_RIB_KEY = "UNIT_TEST_RIPE_RIB"

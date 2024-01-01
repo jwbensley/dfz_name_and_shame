@@ -1,4 +1,7 @@
 **/.git
 redis/data/**/*
 redis/backups/**/*
-
+**/.mypy_cache/
+**/__pycache__/
+.pytest_cache/
+.tox
