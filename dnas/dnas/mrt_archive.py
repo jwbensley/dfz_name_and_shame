@@ -8,7 +8,7 @@ from dnas.config import config as cfg
 
 class mrt_archive:
     def __init__(
-        self,
+        self: "mrt_archive",
         BASE_URL: str,
         ENABLED: bool,
         MRT_DIR: str,
@@ -101,6 +101,9 @@ class mrt_archive:
         self.UPD_PREFIX = UPD_PREFIX
         self.UPD_URL = UPD_URL
         self.STRIP_COMM = STRIP_COMM
+
+    def __str__(self: "mrt_archive") -> str:
+        return self.NAME
 
     @staticmethod
     def concat_url(url_chunks: list[str]) -> str:
