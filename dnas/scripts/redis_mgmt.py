@@ -55,7 +55,8 @@ def find_keys(pattern: str) -> None:
         raise ValueError(f"Missing required arguments: pattern={pattern}")
 
     keys = rdb.get_keys(pattern)
-    print(keys)
+    for key in keys:
+        print(key)
     print(f"{len(keys)} keys in total")
 
 
