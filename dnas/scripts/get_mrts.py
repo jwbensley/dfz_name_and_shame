@@ -40,6 +40,11 @@ def continuous(args: dict) -> None:
         for arch in mrt_a.archives:
             if args["enabled"] and not arch.ENABLED:
                 continue
+            elif args["archive"] and arch.NAME != args["archive"]:
+                logging.debug(
+                    f"Skipping {arch.NAME}, doesn't match {args['archive']}"
+                )
+                continue
             logging.debug(f"Archive {arch.NAME} is enabled")
 
             if args["rib"]:
@@ -204,6 +209,11 @@ def gen_urls_latest(args: dict) -> list[str]:
     for arch in mrt_a.archives:
         if args["enabled"] and not arch.ENABLED:
             continue
+        elif args["archive"] and arch.NAME != args["archive"]:
+            logging.debug(
+                f"Skipping {arch.NAME}, doesn't match {args['archive']}"
+            )
+            continue
         logging.debug(f"Checking archive {arch.NAME}...")
 
         if args["rib"]:
@@ -248,7 +258,12 @@ def gen_urls_range(args: dict) -> list[str]:
 
         for arch in mrt_a.archives:
             if args["enabled"] and not arch.ENABLED:
-                logging.debug(f"Skipping {arch}, not enabled")
+                logging.debug(f"Skipping {arch.NAME}, not enabled")
+                continue
+            elif args["archive"] and arch.NAME != args["archive"]:
+                logging.debug(
+                    f"Skipping {arch.NAME}, doesn't match {args['archive']}"
+                )
                 continue
             logging.debug(f"Checking archive {arch.NAME}...")
 
@@ -380,22 +395,120 @@ def parse_args() -> dict:
     """
     parser = argparse.ArgumentParser(
         description="Download MRT files from public MRT archives. "
-        "One of three modes must be chosen: --continuous, --range, or --ymd. "
         "One or both of --rib and --update must be chosen.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+
+    action_group = parser.add_argument_group(
+        "Action", "Method for getting MRTs"
+    )
+    actions = action_group.add_mutually_exclusive_group(required=True)
+    actions.add_argument(
+        "--continuous",
+        help="Run in continuous mode - download the latest MRT file from each "
+        "archive as it becomes available.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    actions.add_argument(
+        "--latest",
+        help="Download the single latest MRT file.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    actions.add_argument(
+        "--range",
+        help="Download a range up files from --start to --end inclusive.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    actions.add_argument(
+        "--yesterday",
+        help="This is a shortcut for --ymd yyyymmdd using yesterdays date.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    actions.add_argument(
+        "--ymd",
+        help="Specify a day to download all MRT files from, for that specific "
+        "day. Must use yyyymmdd format e.g., 20220101.",
+        type=str,
+        default=None,
+        required=False,
+    )
+
+    type_group = parser.add_argument_group(
+        "MRT Type", "Type of MRT file(s) to get"
+    )
+    types = type_group.add_mutually_exclusive_group(required=True)
+    types.add_argument(
+        "--rib",
+        help="Download RIB dump MRT files.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    types.add_argument(
+        "--update",
+        help="Download BGP update MRT files.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+
+    filter_group = parser.add_argument_group(
+        "MRT Filters", "Filter which MRT file(s) to get"
+    )
+    filter_group.add_argument(
+        "--archive",
+        help="Only download MRTs from an MRT archive, defined in the config, "
+        "with the specified name.",
+        type=str,
+        required=False,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--enabled",
+        help="Only download MRTs from archives enabled in the config. "
+        "Otherwise MRT files from all MRT archives in the config are "
+        "downloaded.",
+        default=False,
+        action="store_true",
+        required=False,
+    )
+    filter_group.add_argument(
+        "--start",
+        help="Start date in format 'yyyymmdd.hhmm' e.g., '20220101.0000'. "
+        "For use with --range.",
+        type=str,
+        required=False,
+        default=None,
+    )
+    filter_group.add_argument(
+        "--end",
+        help="End date in format 'yyyymmdd.hhmm' e.g., '20220101.2359'. "
+        "For use with --range.",
+        type=str,
+        required=False,
+        default=None,
+    )
+
     parser.add_argument(
         "--backfill",
         help="Only download files if they are missing from stats entries stored"
-        "in Redis.",
+        " in Redis.",
         default=False,
         action="store_true",
         required=False,
     )
     parser.add_argument(
-        "--continuous",
-        help="Run in continuous mode - download the latest MRT file from each "
-        "archive as it becomes available. Use with --rib and/or --update.",
+        "--replace",
+        help="Replace/overwrite existing MRT files, even if they have been "
+        "downloaded already.",
         default=False,
         action="store_true",
         required=False,
@@ -405,79 +518,6 @@ def parse_args() -> dict:
         help="Run with debug level logging.",
         default=False,
         action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--enabled",
-        help="Only download MRT files for MRT archives enabled in the config.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--end",
-        help="End date in format 'yyyymmdd.hhmm' e.g., '20220101.2359'.",
-        type=str,
-        required=False,
-        default=None,
-    )
-    parser.add_argument(
-        "--latest",
-        help="Download the single latest MRT file. Use with --rib and/or "
-        "--update.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--range",
-        help="Download a range up files from --start to --end inclusive. "
-        "Use with --rib and/or --update.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--replace",
-        help="Replace/overwrite existing MRT files if they already exist.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--rib",
-        help="Download RIB dump MRT files.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--start",
-        help="Start date in format 'yyyymmdd.hhmm' e.g., '20220101.0000'.",
-        type=str,
-        required=False,
-        default=None,
-    )
-    parser.add_argument(
-        "--update",
-        help="Download BGP update MRT files.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--yesterday",
-        help="This is a shortcut for --ymd yyyymmdd using yesterdays date.",
-        default=False,
-        action="store_true",
-        required=False,
-    )
-    parser.add_argument(
-        "--ymd",
-        help="Specify a day to download all MRT files from, for that specific "
-        "day. Must use yyyymmdd format e.g., 20220101.",
-        type=str,
-        default=None,
         required=False,
     )
 
@@ -491,23 +531,6 @@ def main():
         log_src="MRT downloader script",
         log_path=cfg.LOG_GETTER,
     )
-
-    if (
-        not args["continuous"]
-        and not args["latest"]
-        and not args["range"]
-        and not args["ymd"]
-        and not args["yesterday"]
-    ):
-        raise ValueError(
-            "Exactly one of the four modes must be chosen: --continuous, "
-            "--range, --yesterday, or --ymd!"
-        )
-
-    if not args["rib"] and not args["update"]:
-        raise ValueError(
-            "At least one of --rib and/or --update must be specified!"
-        )
 
     if args["continuous"]:
         continuous(args)
