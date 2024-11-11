@@ -3,8 +3,9 @@ import os
 import re
 import shutil
 import sys
-import typing
 import unittest
+
+import pytest
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
@@ -15,7 +16,14 @@ from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
 
 
+@pytest.mark.sequential_tests
 class test_mrt_stats(unittest.TestCase):
+    """
+    Run these tests sequentially. When run in parallel,
+    setUp() doesn't finish before the unit tests run so they fail.
+    Probably something that can be fixed in the future.
+    """
+
     def setUp(self: "test_mrt_stats") -> None:
         """
         Copy the test files to the location they would be in,
@@ -123,15 +131,15 @@ class test_mrt_stats(unittest.TestCase):
             "RRC1/",
             self.upd_5_fn + ".json",
         )
-        if not os.path.isfile(self.upd_3_json):
+        if not os.path.isfile(self.upd_5_json):
             raise Exception(
-                f"Test stats JSON dump is not found: {self.upd_3_json}"
+                f"Test stats JSON dump is not found: {self.upd_5_json}"
             )
 
         self.upd_1_test = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             "RRC23/",
-            "rrc23.updates.20220421.0200.gz.test",
+            f"{self.upd_1_fn}.test",
         )
 
     def test_init(self: "test_mrt_stats") -> None:

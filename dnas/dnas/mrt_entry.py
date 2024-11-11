@@ -1,13 +1,12 @@
 import datetime
 import json
-import typing
 
 from dnas.config import config as cfg
 
 
 class mrt_entry:
     """
-    An MRT Entry object contains the prased BGP data which is a single data
+    An MRT Entry object contains the parsed BGP data which is a single data
     point for one of the stats in an MRT Stats object.
     """
 

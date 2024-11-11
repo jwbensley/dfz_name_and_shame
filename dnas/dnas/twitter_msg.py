@@ -1,5 +1,4 @@
 import json
-import typing
 
 
 class twitter_msg:

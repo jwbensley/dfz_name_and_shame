@@ -1,5 +1,4 @@
 import os
-import typing
 
 
 class config:
@@ -12,10 +11,9 @@ class config:
     #################
 
     """
-    Application root for everything (logging, downloads, tmp files, etc.)
-    with trailing slash:
+    Data root (for logging, downloads, tmp files, etc.) with trailing slash:
     """
-    BASE_DIR = "/opt/dnas_data/"
+    DATA_DIR = "/opt/dnas_data/"
 
     """
     The time format used for generating new timestamps and parsing existing
@@ -38,7 +36,7 @@ class config:
         "%(asctime)s|%(levelname)s|%(process)d|%(funcName)s|%(message)s"
     )
     # Log directory for all logs
-    LOG_DIR = os.path.join(BASE_DIR, "logs/")
+    LOG_DIR = os.path.join(DATA_DIR, "logs/")
     # Logging from script: get_mrts.py
     LOG_GETTER = os.path.join(LOG_DIR, "get_mrts.log")
     # Logging from script: git_report.py
@@ -55,6 +53,22 @@ class config:
     LOG_TESTER = os.path.join(LOG_DIR, "mrt_test.log")
     # Logging from script: tweet.py
     LOG_TWITTER = os.path.join(LOG_DIR, "tweet.log")
+    # Logging from script: update_asn_allocations.py
+    LOG_UPDATE_ASN = os.path.join(LOG_DIR, "update_asn.log")
+
+    ###########################
+    # ASN ALLOCATION SETTINGS #
+    ###########################
+
+    # URL of ASN allocation stats
+    asn_allocation_url = (
+        "https://www.iana.org/assignments/as-numbers/as-numbers-2.csv"
+    )
+    ASN_DATA = os.path.join(DATA_DIR, "asn_data/")
+    # Output file
+    asn_stats_file = os.path.join(ASN_DATA, "iana-32bit-asns.csv")
+    # Allocated ASNs list
+    unallocated_asns_file = os.path.join(ASN_DATA, "unallocated-asns.txt")
 
     ###################
     # PARSER SETTINGS #
@@ -89,7 +103,7 @@ class config:
     )
 
     # Local git repo details
-    GIT_BASE = os.path.join(BASE_DIR, "dnas_stats/")
+    GIT_BASE = os.path.join(DATA_DIR, "dnas_stats/")
     GIT_REPORT_BRANCH = "main"
 
     ####################
@@ -142,10 +156,10 @@ class config:
     ########################
 
     # Base dir to save MRT files to
-    DL_DIR = os.path.join(BASE_DIR, "downloads/")
+    DL_DIR = os.path.join(DATA_DIR, "downloads/")
 
     # Temporary directory to split MRT files into
-    SPLIT_DIR = "/tmp/"  # Set to None to disable
+    SPLIT_DIR = "/tmp/"  # Set to None to disable MRT splitting
 
     # Default interval for downloading and parsing new MRT files (seconds)
     DFT_INTERVAL = 3600
@@ -154,13 +168,13 @@ class config:
     MRT_ARCHIVES = []
     """
     If the machine running this code is in a different timezone to the MRT
-    archive, an additional offset in hous is required. A negative int means
+    archive, an additional offset in hours is required. A negative int means
     "hours in the future", a positive int means "hours in the past". These are
     the RIB_OFFSET and UPD_INTERVAL values below.
     """
 
     # DISABLED AS PART OF https://github.com/jwbensley/dfz_name_and_shame/issues/135
-    # This is an example of how to configured a local BIRD instance which is dumping MRTs
+    # This is an example of how to configure a local BIRD instance which is dumping MRTs
     """
     Transit session from @LukaszBromirski
     RIB dumps are every 1 hour. RIB dumps are disabled!
@@ -351,7 +365,7 @@ class config:
     )
 
     """
-    RRC12 Frankfurt DEC-IX
+    RRC12 Frankfurt DE-CIX
     RIB dumps are every 8 hours
     RIB dump example: https://data.ris.ripe.net/rrc12/2023.07/bview.20230702.0000.gz
     UPDATE dumps are every 5 minutes

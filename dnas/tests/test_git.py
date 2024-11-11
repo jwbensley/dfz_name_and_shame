@@ -4,8 +4,9 @@ import re
 import shutil
 import subprocess
 import sys
-import typing
 import unittest
+
+import pytest
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
@@ -14,7 +15,13 @@ from dnas.config import config
 from dnas.git import git
 
 
+@pytest.mark.sequential_tests
 class test_git(unittest.TestCase):
+    """
+    The git tests must be run sequential, using a pytest marker to exclude
+    from parallel tests.
+    """
+
     cfg = config()
     g = git()
     test_filename = "abc123"

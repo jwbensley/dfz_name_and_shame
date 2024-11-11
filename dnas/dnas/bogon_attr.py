@@ -1,6 +1,3 @@
-import typing
-
-
 class bogon_attr:
     """
     Class to check if a BGP attribute is "well known"/defined.

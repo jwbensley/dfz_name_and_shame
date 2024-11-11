@@ -1,6 +1,4 @@
 import datetime
-import logging
-import typing
 
 from dnas.config import config as cfg
 from dnas.mrt_stats import mrt_stats

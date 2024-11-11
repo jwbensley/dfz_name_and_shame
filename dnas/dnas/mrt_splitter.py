@@ -28,7 +28,7 @@ class MrtFormatError(Exception):
 class mrt_splitter:
     """
     Splitter for MRT files.
-    Copy-pasta of the original mrtparer lib to split an MRT file into N files.
+    Copy-pasta of the original mrtparser lib to split an MRT file into N files.
     """
 
     def __init__(self: "mrt_splitter", filename: str) -> None:

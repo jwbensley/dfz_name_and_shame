@@ -1,6 +1,5 @@
 import datetime
 import json
-import typing
 
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
@@ -10,13 +9,13 @@ from dnas.mrt_entry import mrt_entry
 class mrt_stats:
     """
     An MRT Stats object contains lists of MRT Entry objects, plus some metadata.
-    This stores the starts from a parsed data source (i.e. a BGP MRT dump).
+    This stores the stats from a parsed data source (i.e. a BGP MRT dump).
     """
 
     def __init__(self: "mrt_stats") -> None:
-        self.archive_list: set[
-            str
-        ] = set()  # Archives from which this stats object was populated
+        self.archive_list: set[str] = (
+            set()
+        )  # Archives from which this stats object was populated
         self.bogon_origin_asns: list[mrt_entry] = []
         self.bogon_prefixes: list[mrt_entry] = []
         self.highest_med_prefixes: list[mrt_entry] = []
@@ -33,10 +32,11 @@ class mrt_stats:
         self.most_withd_peer_asn: list[mrt_entry] = []
         self.most_origin_asns: list[mrt_entry] = []
         self.most_unknown_attrs: list[mrt_entry] = []
+        self.most_unreg_origins: list[mrt_entry] = []
         self.file_list: list[str] = []
         self.timestamp: str = ""
         self.total_upd: int = 0  # All updates received/parsed
-        self.total_advt: int = 0  # Updates signalling prefix avertisement
+        self.total_advt: int = 0  # Updates signalling prefix advertisement
         self.total_withd: int = 0  # Updates signalling prefix withdrawal
 
     def add(self: "mrt_stats", merge_data: "mrt_stats") -> bool:
@@ -65,8 +65,8 @@ class mrt_stats:
 
         changed = False
 
-        # Prefixes with bogon origin ASN
-        tmp = []
+        # Prefixes with most bogon origin ASN
+        tmp: list[mrt_entry] = []
         for u_e in merge_data.bogon_origin_asns[:]:
             for res_e in self.bogon_origin_asns:
                 if (
@@ -185,6 +185,69 @@ class mrt_stats:
                         changed = True
                 else:
                     self.bogon_prefixes = merge_data.bogon_prefixes.copy()
+                    changed = True
+
+        # Prefixes with most unregistered origin ASN
+        tmp = []
+        for u_e in merge_data.most_unreg_origins[:]:
+            for res_e in self.most_unreg_origins:
+                if (
+                    res_e.prefix == u_e.prefix
+                    and res_e.origin_asns != u_e.origin_asns
+                ):
+                    tmp.append(
+                        mrt_entry(
+                            filename=u_e.filename,
+                            origin_asns=res_e.origin_asns.union(
+                                u_e.origin_asns
+                            ),
+                            prefix=res_e.prefix,
+                            timestamp=u_e.timestamp,
+                        )
+                    )
+
+        if tmp:
+            for tmp_e in tmp:
+                if len(tmp_e.origin_asns) == len(
+                    self.most_unreg_origins[0].origin_asns
+                ):
+                    s_prefixes = [
+                        mrt_e.prefix for mrt_e in self.most_unreg_origins
+                    ]
+                    if tmp_e.prefix not in s_prefixes:
+                        self.most_unreg_origins.append(tmp_e)
+                        changed = True
+                elif len(tmp_e.origin_asns) > len(
+                    self.most_unreg_origins[0].origin_asns
+                ):
+                    self.most_unreg_origins = [tmp_e]
+                    changed = True
+        else:
+            if merge_data.most_unreg_origins:
+                if self.most_unreg_origins:
+                    if (
+                        len(merge_data.most_unreg_origins[0].origin_asns)
+                        == len(self.most_unreg_origins[0].origin_asns)
+                        and len(self.most_unreg_origins[0].origin_asns) > 0
+                    ):
+                        s_prefixes = [
+                            mrt_e.prefix for mrt_e in self.most_unreg_origins
+                        ]
+                        for mrt_e in merge_data.most_unreg_origins:
+                            if mrt_e.prefix not in s_prefixes:
+                                self.most_unreg_origins.append(mrt_e)
+                                changed = True
+                    elif len(
+                        merge_data.most_unreg_origins[0].origin_asns
+                    ) > len(self.most_unreg_origins[0].origin_asns):
+                        self.most_unreg_origins = (
+                            merge_data.most_unreg_origins.copy()
+                        )
+                        changed = True
+                else:
+                    self.most_unreg_origins = (
+                        merge_data.most_unreg_origins.copy()
+                    )
                     changed = True
 
         # Highest MED
@@ -1131,6 +1194,14 @@ class mrt_stats:
         if mrt_s.most_unknown_attrs:
             return False
 
+        for self_e in self.most_unreg_origins:
+            for mrt_e in mrt_s.most_unreg_origins[:]:
+                if self_e.equal_to(mrt_e):
+                    mrt_s.most_unreg_origins.remove(mrt_e)
+                    break
+        if mrt_s.most_unreg_origins:
+            return False
+
         if self.total_upd != mrt_s.total_upd:
             return False
 
@@ -1295,6 +1366,15 @@ class mrt_stats:
         else:
             self.most_unknown_attrs.append(mrt_entry())
 
+        self.most_unreg_origins = []
+        if "most_unreg_origins" in json_dict:
+            for json_e in json_dict["most_unreg_origins"]:
+                mrt_e = mrt_entry()
+                mrt_e.from_json(json_e)
+                self.most_unreg_origins.append(mrt_e)
+        else:
+            self.most_unreg_origins.append(mrt_entry())
+
         self.file_list = json_dict["file_list"]
 
         self.timestamp = json_dict["timestamp"]
@@ -1397,6 +1477,7 @@ class mrt_stats:
         diff.most_withd_peer_asn = []
         diff.most_origin_asns = []
         diff.most_unknown_attrs = []
+        diff.most_unreg_origins = []
 
         for mrt_e in mrt_s.bogon_origin_asns:
             found = False
@@ -1551,6 +1632,15 @@ class mrt_stats:
             if not found:
                 diff.most_unknown_attrs.append(mrt_e)
 
+        for mrt_e in mrt_s.most_unreg_origins:
+            found = False
+            for self_e in self.most_unreg_origins:
+                if self_e.equal_to(mrt_e):
+                    found = True
+                    break
+            if not found:
+                diff.most_unreg_origins.append(mrt_e)
+
         if mrt_s.total_upd != self.total_upd:
             diff.total_upd = mrt_s.total_upd
 
@@ -1565,7 +1655,7 @@ class mrt_stats:
     def get_diff_larger(self: "mrt_stats", mrt_s: "mrt_stats") -> "mrt_stats":
         """
         Generate an mrt_stats obj with entries which are unique to mrt_s, and
-        are larger than the equivilent values in this obj. For example, only
+        are larger than the equivalent values in this obj. For example, only
         prefixes if the AS Path is longer, or only origin ASNs which sent more
         updates.
         """
@@ -1592,10 +1682,11 @@ class mrt_stats:
         diff.most_withd_peer_asn = []
         diff.most_origin_asns = []
         diff.most_unknown_attrs = []
+        diff.most_unreg_origins = []
 
         updated = False
 
-        # Pefixes with most bogon origin ASNs
+        # Prefixes with most bogon origin ASNs
         if mrt_s.bogon_origin_asns:
             if self.bogon_origin_asns:
                 if (
@@ -1869,6 +1960,24 @@ class mrt_stats:
                 diff.most_unknown_attrs = mrt_s.most_unknown_attrs.copy()
                 updated = True
 
+        # Prefixes with most unregistered origin ASNs
+        if mrt_s.most_unreg_origins:
+            if self.most_unreg_origins:
+                if (
+                    mrt_s.most_unreg_origins[0].prefix
+                    and self.most_unreg_origins[0].prefix
+                ):
+                    if len(mrt_s.most_unreg_origins[0].origin_asns) > len(
+                        self.most_unreg_origins[0].origin_asns
+                    ):
+                        diff.most_unreg_origins = (
+                            mrt_s.most_unreg_origins.copy()
+                        )
+                        updated = True
+            else:
+                diff.most_unreg_origins = mrt_s.most_unreg_origins.copy()
+                updated = True
+
         # If stats from a rib dump are being compared, these wont be present:
         # More updates parsed
         if mrt_s.total_upd > self.total_upd:
@@ -1935,6 +2044,7 @@ class mrt_stats:
             and not self.most_withd_peer_asn
             and not self.most_origin_asns
             and not self.most_unknown_attrs
+            and not self.most_unreg_origins
             and not self.file_list
             and not self.timestamp
             and not self.total_upd
@@ -1959,7 +2069,7 @@ class mrt_stats:
         E.g, if both objects have the same "max updates per prefix" prefix,
         192.168.0.0/24, with both objects recording 1000 updates for this
         prefix, no change is made to this object. If merge_data has a
-        diffferent prefix, 192.168.1.0/24 also with 1000 updates, that will be
+        different prefix, 192.168.1.0/24 also with 1000 updates, that will be
         appended to this object so that this object has two prefixes with 1000
         updates. If merge_data has a prefix with 10000 updates, 192.168.2.0/24,
         all prefixes in this object will be dropped, and this object will now
@@ -2428,6 +2538,32 @@ class mrt_stats:
                 self.most_unknown_attrs = merge_data.most_unknown_attrs.copy()
                 changed = True
 
+        # Prefixes with most unregistered origin ASNs
+        if merge_data.most_unreg_origins:
+            if self.most_unreg_origins:
+                if (
+                    len(merge_data.most_unreg_origins[0].origin_asns)
+                    == len(self.most_unreg_origins[0].origin_asns)
+                    and len(self.most_unreg_origins[0].origin_asns) > 0
+                ):
+                    s_prefixes = [
+                        mrt_e.prefix for mrt_e in self.most_unreg_origins
+                    ]
+                    for mrt_e in merge_data.most_unreg_origins:
+                        if mrt_e.prefix not in s_prefixes:
+                            self.most_unreg_origins.append(mrt_e)
+                            changed = True
+                elif len(merge_data.most_unreg_origins[0].origin_asns) > len(
+                    self.most_unreg_origins[0].origin_asns
+                ):
+                    self.most_unreg_origins = (
+                        merge_data.most_unreg_origins.copy()
+                    )
+                    changed = True
+            else:
+                self.most_unreg_origins = merge_data.most_unreg_origins.copy()
+                changed = True
+
         """
         Most updates parsed
         If stats from a rib dump are being merged, these wont be present:
@@ -2746,6 +2882,23 @@ class mrt_stats:
         if self.most_unknown_attrs:
             print("")
 
+        for mrt_e in self.most_unreg_origins:
+            print(f"most_unreg_origins->prefix: {mrt_e.prefix}")
+            print(f"most_unreg_origins->advt: {mrt_e.advt}")
+            print(f"most_unreg_origins->as_path: {mrt_e.as_path}")
+            print(f"most_unreg_origins->comm_set: {mrt_e.comm_set}")
+            print(f"most_unreg_origins->filename: {mrt_e.filename}")
+            print(f"most_unreg_origins->med: {mrt_e.med}")
+            print(f"most_unreg_origins->next_hop: {mrt_e.next_hop}")
+            print(f"most_unreg_origins->origin_asns: {mrt_e.origin_asns}")
+            print(f"most_unreg_origins->peer_asn: {mrt_e.peer_asn}")
+            print(f"most_unreg_origins->timestamp: {mrt_e.timestamp}")
+            print(f"most_unreg_origins->updates: {mrt_e.updates}")
+            print(f"most_unreg_origins->withdraws: {mrt_e.withdraws}")
+            print(f"most_unreg_origins->unknown_attrs: {mrt_e.unknown_attrs}")
+        if self.most_unreg_origins:
+            print("")
+
         if self.total_upd:
             print(f"total_upd: {self.total_upd}")
         if self.total_advt:
@@ -2823,6 +2976,9 @@ class mrt_stats:
             ],
             "most_unknown_attrs": [
                 mrt_e.to_json() for mrt_e in self.most_unknown_attrs
+            ],
+            "most_unreg_origins": [
+                mrt_e.to_json() for mrt_e in self.most_unreg_origins
             ],
             "total_upd": self.total_upd,
             "total_advt": self.total_advt,

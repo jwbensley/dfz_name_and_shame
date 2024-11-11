@@ -6,12 +6,11 @@ import json
 import logging
 import os
 import sys
-import typing
 from enum import Enum
 
 import mrtparse  # type: ignore
 
-# Accomodate the use of the dnas library, even when the library isn't installed
+# Accommodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )

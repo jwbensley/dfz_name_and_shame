@@ -1,7 +1,5 @@
 import logging
-import os
 import subprocess
-import typing
 
 from dnas.bogon_asn import bogon_asn
 
@@ -41,7 +39,7 @@ class whois:
                     try:
                         output = ret.decode("ISO-8859-1")
                     except UnicodeDecodeError:
-                        logging.error("Unable to decode WHOIS output: {cmd}")
+                        logging.error(f"Unable to decode WHOIS output: {cmd}")
                         return ""
 
         as_name = ""

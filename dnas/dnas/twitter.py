@@ -1,5 +1,4 @@
 import logging
-import typing
 
 import tweepy  # type: ignore
 from dnas.config import config as cfg
@@ -8,7 +7,6 @@ from dnas.mrt_stats import mrt_stats
 from dnas.report import report
 from dnas.twitter_auth import twitter_auth  # type: ignore
 from dnas.twitter_msg import twitter_msg
-from dnas.whois import whois
 
 
 class twitter:

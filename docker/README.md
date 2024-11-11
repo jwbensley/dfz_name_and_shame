@@ -8,13 +8,14 @@ To build pull the latest code version, build the DNAS containers, and the Redis 
 /opt/dnas/docker/build_dnas.sh
 ```
 
-One can run `docker-compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git.
+One can run `docker compose build` to rebuild the Redis and DNAS containers any time. However this doesn't pull the latest software version from Git.
 
 ### Build Issues
 
 If you see output like the following:
+
 ```shell
-docker-compose build
+docker compose build
 ...
 Ign:1 http://mirror.mythic-beasts.com/ubuntu focal InRelease
 Ign:2 http://mirror.mythic-beasts.com/ubuntu focal-updates InRelease
@@ -29,38 +30,39 @@ Update docker on the host machine (`sudo apt-get update && sudo apt-get --no-ins
 
 To run the various scripts, spin up temporary containers:
 
-* Run the MRT getter script: `docker-compose run --rm --name tmp_getter dnas_getter -- /opt/dnas/dnas/scripts/get_mrts.py --help`
-* Run the MRT parser script: `docker-compose run --rm --name tmp_parser dnas_parser -- /opt/dnas/dnas/scripts/parse_mrts.py --help`
-* Run the MRT stats script (don't use the dnas_stats container):  `docker-compose run --rm --name tmp_stats dnas_parser -- /opt/dnas/dnas/scripts/stats.py --help`
-* Run the git script (don't use the dnas_stats container):  `docker-compose run --rm --name tmp_git dnas_parser -- /opt/dnas/dnas/scripts/git_reports.py --help`
-* Run the Redis management script `docker-compose run --rm --name tmp_redis dnas_parser -- /opt/dnas/dnas/scripts/redis_mgmt.py --help`
+* Run the MRT getter script: `docker compose run --rm --name tmp_getter dnas_getter -- /opt/dnas/dnas/scripts/get_mrts.py --help`
+* Run the MRT parser script: `docker compose run --rm --name tmp_parser dnas_parser -- /opt/dnas/dnas/scripts/parse_mrts.py --help`
+* Run the MRT stats script (don't use the dnas_stats container):  `docker compose run --rm --name tmp_stats dnas_parser -- /opt/dnas/dnas/scripts/stats.py --help`
+* Run the git script (don't use the dnas_stats container):  `docker compose run --rm --name tmp_git dnas_parser -- /opt/dnas/dnas/scripts/git_reports.py --help`
+* Run the Redis management script `docker compose run --rm --name tmp_redis dnas_parser -- /opt/dnas/dnas/scripts/redis_mgmt.py --help`
+* Drop into a shell: `docker compose run --rm --name tmp_shell --entrypoint /bin/bash dnas_getter`
 
 ## Running
 
 ### In Pipeline Mode
 
-Use docker-compose to start the Redis container, and the MRT-getter and MRT-parser containers in continuous mode:
+Use docker compose to start the Redis container, and the MRT-getter and MRT-parser containers in continuous mode:
 
 ```shell
 cd /opt/dnas/
 source venv/bin/activate
 cd docker/
-docker-compose up -d
-docker-compose logs -f
+docker compose up -d
+docker compose logs -f
 ```
 
-To shut the entire pipeline down simply run: `docker-compose down`
+To shut the entire pipeline down simply run: `docker compose down`
 
-To start an individual container from the pipeline use: `docker-compose up -d dnas_parser`
+To start an individual container from the pipeline use: `docker compose up -d dnas_parser`
 
-To stop and remove an individual container use: `docker-compose stop dnas_parser && docker-compose rm dnas_parser`
+To stop and remove an individual container use: `docker compose stop dnas_parser && docker compose rm dnas_parser`
 
-To run BASH on a container use: `docker-compose exec dnas_parser /bin/bash`
+To run BASH on a container use: `docker compose exec dnas_parser /bin/bash`
 &nbsp;
 
 #### Redis
 
-Redis uses authentication so you won't be able to access the redis CLI without authenticating first. With the container running in the background, start an interactive redis-cli process on the same container (`docker-compose exec dnas_redis redis-cli`). Use the auth command in the Redis CLI `AUTH xxxxx` (password from redis.conf file) and test with command `PING`.  
+Redis uses authentication so you won't be able to access the redis CLI without authenticating first. With the container running in the background, start an interactive redis-cli process on the same container (`docker compose exec dnas_redis redis-cli`). Use the auth command in the Redis CLI `AUTH xxxxx` (password from redis.conf file) and test with command `PING`.  
 &nbsp;
 
 #### Continuous MRT Getter
@@ -83,43 +85,43 @@ To run the containers for a period of time one ca use `/opt/dnas/docker/manual_r
 
 Pull any missing MRTs for a specific day:
 ```shell
-docker-compose run --rm --name tmp_getter dnas_getter -- \
+docker compose run --rm --name tmp_getter dnas_getter -- \
 /opt/dnas/dnas/scripts/get_mrts.py --backfill --update --enabled --ymd "20230101"
 ```
 
 Run the parser for a specfic file:
 ```shell
-docker-compose run --rm --name tmp_parser dnas_parser -- \
+docker compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --single /opt/dnas_data/downloads/SYDNEY/updates.20230424.0615.bz2
 ```
 
 Run the parser for a specific time range (this can be less than a day or longer than a day, also note that this expects all MRTs not currently in the DB to already exist on disk, it will fail if some are missing):
 ```shell
-docker-compose run --rm --name tmp_parser dnas_parser -- \
+docker compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --enabled --start "20230101.0000" --end "20230101.2359"
 ```
 
 Run an the parser for a specific day (note that this will try to pass all MRTs that exist on disk for the specified day, and will not fail if some are missing from disk which are also missing in the DB):
 ```shell
-docker-compose run --rm --name tmp_parser dnas_parser -- \
+docker compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "20230101"
 ```
 
 Generate stats in the DB for a specific day:
 ```shell
-docker-compose run --rm --name tmp_stats --entrypoint /opt/pypy dnas_stats -- \
+docker compose run --rm --name tmp_stats --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/stats.py --update --enabled --daily --ymd "20230101"
 ```
 
 Generate and push a report to git for a specific day:
 ```shell
-docker-compose run --rm --name tmp_report --entrypoint /opt/pypy dnas_stats -- \
+docker compose run --rm --name tmp_report --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/git_reports.py --generate --publish --ymd "20230101"
 ```
 
 Tweet for a specific day:
 ```shell
-docker-compose run --rm --name tmp_tweet --entrypoint /opt/pypy dnas_stats -- \
+docker compose run --rm --name tmp_tweet --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/tweet.py --generate --tweet --ymd "20230101"
 ```
 
