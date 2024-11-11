@@ -5,9 +5,8 @@ import logging
 import os
 import pprint
 import sys
-import typing
 
-# Accomodate the use of the dnas library, even when the library isn't installed
+# Accommodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )

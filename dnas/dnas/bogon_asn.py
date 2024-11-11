@@ -1,8 +1,3 @@
-import typing
-
-from dnas.config import config as cfg
-
-
 class bogon_asn:
     """
     Class to check if an ASN is a bogon ASN (meaning reserved by an RFC,

@@ -23,7 +23,7 @@ There is a single DNAS container that is built and used for all stages of the pi
 ```bash
 sudo apt-get update
 
-# Install Docker (from: https://docs.docker.com/engine/install/ubuntu/):
+# Install Docker & Docker Compose (from: https://docs.docker.com/engine/install/ubuntu/):
 sudo apt-get install -y curl
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
@@ -35,7 +35,7 @@ https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
 | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo apt-get install --no-install-recommends -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo systemctl enable docker.service
 sudo systemctl enable containerd.service
 sudo groupadd docker
@@ -43,33 +43,22 @@ sudo usermod -aG docker $USER
 # ^ Log out and in again for this to take effect
 
 # Set up base directory:
-sudo mkdir /opt/dnas/ && sudo chown $USER:$USER /opt/dnas/
+BASE_DIR="/opt/dnas"
+sudo mkdir -p "$BASE_DIR" && sudo chown $USER:$USER "$BASE_DIR"
 
 # Install git:
-sudo apt-get install -y git
+sudo apt-get install --no-install-recommends -y git
 
-# Clone this repo (first add read-only key to Deploy Keys under https://github.com/jwbensley/dfz_name_and_shame/settings/keys):
-git clone git@github.com:jwbensley/dfz_name_and_shame.git /opt/dnas
+# Clone repo to base directory:
+git clone git@github.com:jwbensley/dfz_name_and_shame.git "$DATA_DIR"
 
-# Install virtualenv:
-sudo apt-get install -y virtualenv
-
-# Install docker-compose in a venv and build containers
-cd /opt/dnas/ && virtualenv venv && source venv/bin/activate
-pip3 install --upgrade pip
-pip3 install docker-compose
-cd docker/
-docker-compose build
-
-# Create the data directory
-BASE_DIR=$(grep "BASE_DIR =" /opt/dnas/dnas/dnas/config.py | awk -F "\"" '{print $2}')
-sudo mkdir -p "${BASE_DIR}" && sudo chmod a+rwx "${BASE_DIR}"
+# Run the build script
+${BASE_DIR}/docker/build_dnas.sh
 ```
 
 After the steps above, DNAS is ready to run inside the containers. See documentation under [docker/](docker/) for more details.
 
 To run DNAS "natively", not in a container, see documentation under [dnas/](dnas/).  
-
 
 ## Credits
 

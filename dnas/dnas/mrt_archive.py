@@ -1,7 +1,6 @@
 import datetime
 import os
 import re
-import typing
 
 from dnas.config import config as cfg
 

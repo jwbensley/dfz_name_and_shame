@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import subprocess
-import typing
 import urllib.parse
 
 from dnas.config import config as cfg
@@ -10,13 +9,13 @@ from dnas.config import config as cfg
 
 class git:
     """
-    A class for commiting and pushing files to GitHub.
+    A class for committing and pushing files to GitHub
     """
 
     @staticmethod
     def add(filename: str) -> None:
         """
-        Add files to the git index, to be commited.
+        Add files to the git index, to be committed
         """
         if not filename:
             raise ValueError(
@@ -87,19 +86,19 @@ class git:
 
         ret = subprocess.run(
             ["git", "clone", cfg.GIT_STAT_CLONE_URL],
-            cwd=cfg.BASE_DIR,
+            cwd=cfg.DATA_DIR,
             capture_output=True,
         )
         if ret.returncode != 0:
             raise ChildProcessError(
                 f"Couldn't clone git repo {cfg.GIT_STAT_CLONE_URL} to directory "
-                f"{cfg.BASE_DIR}:\n"
+                f"{cfg.DATA_DIR}:\n"
                 f"args: {ret.args}\n"
                 f"stdout: {ret.stdout.decode()}\n"
                 f"stderr: {ret.stderr.decode()}"
             )
         logging.debug(
-            f"Cloned git repo {cfg.GIT_STAT_CLONE_URL} to {cfg.BASE_DIR}"
+            f"Cloned git repo {cfg.GIT_STAT_CLONE_URL} to {cfg.DATA_DIR}"
         )
 
     @staticmethod
