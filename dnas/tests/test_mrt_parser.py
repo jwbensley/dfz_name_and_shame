@@ -27,6 +27,7 @@ class test_mrt_parser(unittest.TestCase):
         self.upd_3_fn = "sydney.updates.20220601.0415.bz2"
         self.json_3_fn = "sydney.updates.20220601.0415.bz2.json"
         self.upd_4_fn = "rrc01.updates.20100827.0840.gz"
+        self.upd_5_fn = "rrc01.updates.20241001.0055.gz"  # Added for unallocated origin ASN
 
         self.upd_1_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -66,6 +67,12 @@ class test_mrt_parser(unittest.TestCase):
         if not os.path.isfile(self.upd_4_path):
             raise Exception(f"Test MRT file is not found: {self.upd_4_path}")
 
+        self.upd_5_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "RRC1/", self.upd_5_fn
+        )
+        if not os.path.isfile(self.upd_4_path):
+            raise Exception(f"Test MRT file is not found: {self.upd_5_path}")
+
         mrt_a = mrt_archives()
         for arch in mrt_a.archives:
             if arch.NAME == "UNIT_TEST_RRC_23":
@@ -73,6 +80,7 @@ class test_mrt_parser(unittest.TestCase):
                 self.upd_1_mrt = os.path.join(arch.MRT_DIR, self.upd_1_fn)
                 self.upd_2_mrt = os.path.join(arch.MRT_DIR, self.upd_2_fn)
                 self.upd_4_mrt = os.path.join(arch.MRT_DIR, self.upd_4_fn)
+                self.upd_5_mrt = os.path.join(arch.MRT_DIR, self.upd_5_fn)
             if arch.NAME == "UNIT_TEST_RV_SYDNEY":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_3_mrt = os.path.join(arch.MRT_DIR, self.upd_3_fn)
@@ -81,6 +89,7 @@ class test_mrt_parser(unittest.TestCase):
         shutil.copy2(self.upd_2_path, self.upd_2_mrt)
         shutil.copy2(self.upd_3_path, self.upd_3_mrt)
         shutil.copy2(self.upd_4_path, self.upd_4_mrt)
+        shutil.copy2(self.upd_5_path, self.upd_5_mrt)
 
     def test_init(self: "test_mrt_parser"):
         """
@@ -118,6 +127,8 @@ class test_mrt_parser(unittest.TestCase):
         self.assertIsInstance(test_3_stats, mrt_stats)
         upd_4_stats = mrt_p.parse_upd_dump(self.upd_4_mrt)
         self.assertIsInstance(upd_4_stats, mrt_stats)
+        upd_5_stats = mrt_p.parse_upd_dump(self.upd_5_mrt)
+        self.assertIsInstance(upd_5_stats, mrt_stats)
 
         self.assertIsInstance(upd_1_stats.bogon_origin_asns, list)
         self.assertEqual(len(upd_1_stats.bogon_origin_asns), 1)
@@ -1152,6 +1163,56 @@ class test_mrt_parser(unittest.TestCase):
         self.assertEqual(upd_2_stats.file_list, [self.upd_2_mrt])
         self.assertIsInstance(upd_2_stats.timestamp, str)
         self.assertEqual(upd_2_stats.timestamp, "20220501.2305")
+
+        self.assertIsInstance(upd_5_stats.most_unreg_origins, list)
+        self.assertEqual(len(upd_5_stats.most_unreg_origins), 6)
+        self.assertIsInstance(upd_5_stats.most_unreg_origins[0], mrt_entry)
+        self.assertEqual(upd_5_stats.most_unreg_origins[0].advt, 0)
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].as_path,
+            [
+                "207841",
+                "6939",
+                "328882",
+                "3288824",
+                "3288824",
+                "3288824",
+                "3288824",
+                "3288824",
+            ],
+        )
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].comm_set,
+            [
+                "207841:0:1000",
+                "207841:0:1001",
+                "207841:10:1",
+                "207841:20:1",
+                "207841:40:1",
+            ],
+        )
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].filename, self.upd_5_mrt
+        )
+        self.assertEqual(upd_5_stats.most_unreg_origins[0].med, -1)
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].next_hop, "195.66.224.21"
+        )
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].origin_asns, set(["3288824"])
+        )
+        self.assertEqual(upd_5_stats.most_unreg_origins[0].peer_asn, "207841")
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].prefix, "102.208.228.0/24"
+        )
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].unknown_attrs, set()
+        )
+        self.assertEqual(
+            upd_5_stats.most_unreg_origins[0].timestamp, "20241001.0055"
+        )
+        self.assertEqual(upd_5_stats.most_unreg_origins[0].updates, 0)
+        self.assertEqual(upd_5_stats.most_unreg_origins[0].withdraws, 0)
 
 
 if __name__ == "__main__":

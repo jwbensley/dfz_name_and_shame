@@ -61,14 +61,14 @@ class config:
     ###########################
 
     # URL of ASN allocation stats
-    nro_stats_url = (
-        "https://ftp.ripe.net/pub/stats/ripencc/nro-stats/latest/"
-        "nro-delegated-stats"
+    asn_allocation_url = (
+        "https://www.iana.org/assignments/as-numbers/as-numbers-2.csv"
     )
+    ASN_DATA = os.path.join(DATA_DIR, "asn_data/")
     # Output file
-    nro_stats_file = os.path.join(DATA_DIR, "nro-delegated-stats")
+    asn_stats_file = os.path.join(ASN_DATA, "iana-32bit-asns.csv")
     # Allocated ASNs list
-    nro_asns_file = os.path.join(DATA_DIR, "nro-asns")
+    unallocated_asns_file = os.path.join(ASN_DATA, "unallocated-asns.txt")
 
     ###################
     # PARSER SETTINGS #

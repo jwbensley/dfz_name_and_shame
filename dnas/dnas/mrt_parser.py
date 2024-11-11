@@ -4,7 +4,6 @@ import logging
 import operator
 import os
 import traceback
-import typing
 
 import mrtparse  # type: ignore
 from dnas.bogon_asn import bogon_asn
@@ -14,6 +13,7 @@ from dnas.config import config as cfg
 from dnas.mrt_archives import mrt_archives
 from dnas.mrt_entry import mrt_entry
 from dnas.mrt_stats import mrt_stats
+from dnas.unallocated_asn import unallocated_asn
 
 
 class mrt_parser:
@@ -73,7 +73,7 @@ class mrt_parser:
         mrt_s = mrt_stats()
 
         """
-        for idx, mrt_e in enumerate(mrt_entries):
+        for _, mrt_e in enumerate(mrt_entries):
             if "prefix" not in mrt_e.data:
                 continue #### FIX ME - Skip the peer table record at the start?
         """
@@ -99,6 +99,8 @@ class mrt_parser:
         We will see the same data again and again, so cache "seen" data to
         speed up parsing
         """
+        unalloc_asn = unallocated_asn()
+        prefix_unalloc_origin: list[mrt_entry] = []
         non_bogon_asns: dict[str, None] = {}
         bogon_origin_asns: list[mrt_entry] = []
         bogon_prefix_entries: list[mrt_entry] = []
@@ -141,7 +143,7 @@ class mrt_parser:
 
         # Sometimes the MRT files contain corrupt BGP UPDATES
         try:
-            for idx, mrt_e in enumerate(mrt_entries):
+            for _, mrt_e in enumerate(mrt_entries):
                 """
                 Some RIPE UPDATE MRTs contain the BGP state change events,
                 whereas Route-Views don't.
@@ -156,7 +158,7 @@ class mrt_parser:
                 """
                 I'm not sure why but some MRT files contain a BGP message with
                 no actual UPDATE, but they are an UPDATE, i.e. not a KEEPALIVE.
-                 Yay!
+                Yay!
                 """
                 if "bgp_message" not in mrt_e.data:
                     continue
@@ -176,6 +178,7 @@ class mrt_parser:
                     next(iter(mrt_e.data["timestamp"].items()))[0]
                 )  # E.g., 1486801684
 
+                is_unalloc_origin = False
                 bogon_prefixes: list[str] = []
                 comm_set: list[str] = []
                 invalid_len: list[str] = []
@@ -195,7 +198,7 @@ class mrt_parser:
                 whereas all Route-Views MRTs do.
                 The key may be present, but empty. Yay!
                 These are IPv4 withdraws, IPv6 withdraws are in attrib
-                MP_UNREACH_NLRI
+                MP_UNREACH_NLRI.
                 """
                 if withdrawn_routes := mrt_e.data["bgp_message"].get(
                     "withdrawn_routes"
@@ -235,6 +238,8 @@ class mrt_parser:
                                 advt_per_origin_asn[origin_asn] = 1
                             else:
                                 advt_per_origin_asn[origin_asn] += 1
+                            if unalloc_asn.is_unallocated(int(origin_asn)):
+                                is_unalloc_origin = True
 
                         # NEXT_HOP
                         elif attr_t == 3:
@@ -490,6 +495,9 @@ class mrt_parser:
                             for prefix in prefixes
                         ]
 
+                """
+                Keep prefixes with the longest AS Path
+                """
                 if not longest_as_path:
                     longest_as_path = [
                         mrt_entry(
@@ -544,6 +552,9 @@ class mrt_parser:
                             for prefix in prefixes
                         ]
 
+                """
+                Keep prefixes with the longest community set
+                """
                 if not longest_comm_set:
                     longest_comm_set = [
                         mrt_entry(
@@ -598,6 +609,52 @@ class mrt_parser:
                             )
                             for prefix in prefixes
                         ]
+
+                """
+                Keep prefixes with an unallocated origin ASN
+                """
+                if not prefix_unalloc_origin and is_unalloc_origin:
+                    prefix_unalloc_origin = [
+                        mrt_entry(
+                            as_path=as_path,
+                            comm_set=comm_set,
+                            filename=orig_filename,
+                            med=med,
+                            next_hop=next_hop,
+                            origin_asns=set([origin_asn]),
+                            peer_asn=peer_asn,
+                            prefix=prefix,
+                            timestamp=ts,
+                            unknown_attrs=unknown_attrs.copy(),
+                        )
+                        for prefix in prefixes
+                    ]
+                elif is_unalloc_origin:
+                    known_prefixes = [
+                        mrt_e.prefix for mrt_e in prefix_unalloc_origin
+                    ]
+                    for prefix in prefixes:
+                        if prefix not in known_prefixes:
+                            prefix_unalloc_origin.append(
+                                mrt_entry(
+                                    as_path=as_path,
+                                    comm_set=comm_set,
+                                    filename=orig_filename,
+                                    med=med,
+                                    next_hop=next_hop,
+                                    origin_asns=set([origin_asn]),
+                                    peer_asn=peer_asn,
+                                    prefix=prefix,
+                                    timestamp=ts,
+                                    unknown_attrs=unknown_attrs.copy(),
+                                )
+                            )
+                        else:
+                            for mrt_e in prefix_unalloc_origin:
+                                if mrt_e.prefix == prefix:
+                                    if origin_asn not in mrt_e.origin_asns:
+                                        mrt_e.origin_asns.add(origin_asn)
+                                    break
 
                 """
                 Keep unique prefixes only, with additional origin ASNs for the
@@ -709,6 +766,22 @@ class mrt_parser:
         mrt_s.longest_as_path = longest_as_path.copy()
 
         mrt_s.longest_comm_set = longest_comm_set.copy()
+
+        # Only get the prefixes with the most unregistered ASNs
+        for mrt_e in prefix_unalloc_origin:
+            if not mrt_s.most_unreg_origins:
+                mrt_s.most_unreg_origins = [mrt_e]
+            else:
+                if (
+                    len(mrt_e.origin_asns)
+                    == len(mrt_s.most_unreg_origins[0].origin_asns)
+                    and mrt_e.origin_asns
+                ):
+                    mrt_s.most_unreg_origins.append(mrt_e)
+                elif len(mrt_e.origin_asns) > len(
+                    mrt_s.most_unreg_origins[0].origin_asns
+                ):
+                    mrt_s.most_unreg_origins = [mrt_e]
 
         # Only get the ASNs originating the most bogon downstream ASNs
         bogon_asn_count = 0
@@ -1008,6 +1081,6 @@ class mrt_parser:
             )
 
         i = 0
-        for entry in mrtparse.Reader(filename):
+        for _ in mrtparse.Reader(filename):
             i += 1
         return i

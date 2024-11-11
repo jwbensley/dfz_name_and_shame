@@ -12,6 +12,9 @@ set -e
 PYPY="/opt/pypy"
 SCRIPTS="/opt/dnas/dnas/scripts"
 
+# Ensure the latest AS stat allocations have been downloaded:
+${PYPY} ${SCRIPTS}/update_asn_allocations.py
+
 # Ensure no MRTs are missing for yesterday:
 ${PYPY} ${SCRIPTS}/get_mrts.py --yesterday --update --enabled --backfill
 
