@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   dnas_redis:
     container_name: dnas_redis
@@ -21,7 +19,7 @@ services:
     image: dnas:latest
     build:
       args:
-        - PYPY=pypy3.10-v7.3.12-linux64
+        - PYPY=$PYPY
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
@@ -43,7 +41,7 @@ services:
     image: dnas:latest
     build:
       args:
-        - PYPY=pypy3.10-v7.3.12-linux64
+        - PYPY=$PYPY
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
@@ -66,7 +64,7 @@ services:
     image: dnas:latest
     build:
       args:
-        - PYPY=pypy3.10-v7.3.12-linux64
+        - PYPY=$PYPY
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:

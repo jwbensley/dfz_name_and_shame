@@ -395,7 +395,7 @@ def parse_args() -> dict:
     """
     parser = argparse.ArgumentParser(
         description="Download MRT files from public MRT archives. "
-        "One or both of --rib and --update must be chosen.",
+        "One of --rib or --update must be chosen.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 

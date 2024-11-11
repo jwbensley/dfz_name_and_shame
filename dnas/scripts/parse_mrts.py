@@ -28,12 +28,12 @@ from dnas.redis_db import redis_db
 
 def continuous(args: dict) -> None:
     """
-    Continuously parse new MRT files as they are download from the configured MRT
-    archives. This function simply globs for all MRTs that match todays "ymd"
-    value. This is problematic around midnight e.g., an MRT for 23.50 to 00.00
-    might not be avaiable until 00.05 the next day. This function sets the "ymd"
-    value to be now() - $delta minutes, meaning it globs for files from the
-    previous day up until $delta past midnight each day.
+    Continuously parse new MRT files as they are download from the configured
+    MRT archives. This function simply globs for all MRTs that match todays
+    "ymd" value. This is problematic around midnight e.g., an MRT for 23.50 to
+    00.00 might not be available until 00.05 the next day. This function sets
+    the "ymd" value to be now() - $delta minutes, meaning it globs for files
+    from the previous day up until $delta past midnight each day.
     """
     if not args:
         raise ValueError(f"Missing required arguments: args={args}")
