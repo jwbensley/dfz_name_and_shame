@@ -86,19 +86,19 @@ class git:
 
         ret = subprocess.run(
             ["git", "clone", cfg.GIT_STAT_CLONE_URL],
-            cwd=cfg.BASE_DIR,
+            cwd=cfg.DATA_DIR,
             capture_output=True,
         )
         if ret.returncode != 0:
             raise ChildProcessError(
                 f"Couldn't clone git repo {cfg.GIT_STAT_CLONE_URL} to directory "
-                f"{cfg.BASE_DIR}:\n"
+                f"{cfg.DATA_DIR}:\n"
                 f"args: {ret.args}\n"
                 f"stdout: {ret.stdout.decode()}\n"
                 f"stderr: {ret.stderr.decode()}"
             )
         logging.debug(
-            f"Cloned git repo {cfg.GIT_STAT_CLONE_URL} to {cfg.BASE_DIR}"
+            f"Cloned git repo {cfg.GIT_STAT_CLONE_URL} to {cfg.DATA_DIR}"
         )
 
     @staticmethod
