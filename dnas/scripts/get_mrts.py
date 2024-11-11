@@ -4,13 +4,11 @@ import argparse
 import datetime
 import logging
 import os
+import requests
 import sys
 import time
-import typing
 
-import requests
-
-# Accomodate the use of the dnas library, even when the library isn't installed
+# Accommodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
@@ -148,7 +146,9 @@ def get_mrts(url_list: list[str], replace: bool = False) -> None:
         outage. For this reason, ignore HTTP erros like 404s.
         """
         try:
-            mrt_getter.download_mrt(filename=outfile, replace=replace, url=url)
+            mrt_getter.download_file(
+                filename=outfile, replace=replace, url=url
+            )
             i += 1
             logging.info(f"Downloaded {i}/{len(url_list)}")
         except requests.exceptions.HTTPError as e:

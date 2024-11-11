@@ -8,10 +8,9 @@ import multiprocessing
 import os
 import sys
 import time
-import typing
 from multiprocessing import Pool
 
-# Accomodate the use of the dnas library, even when the library isn't installed
+# Accommodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
