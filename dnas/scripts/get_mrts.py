@@ -4,9 +4,10 @@ import argparse
 import datetime
 import logging
 import os
-import requests
 import sys
 import time
+
+import requests
 
 # Accommodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
