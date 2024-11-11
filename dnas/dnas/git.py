@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import subprocess
-import typing
 import urllib.parse
 
 from dnas.config import config as cfg
@@ -10,13 +9,13 @@ from dnas.config import config as cfg
 
 class git:
     """
-    A class for commiting and pushing files to GitHub.
+    A class for committing and pushing files to GitHub
     """
 
     @staticmethod
     def add(filename: str) -> None:
         """
-        Add files to the git index, to be commited.
+        Add files to the git index, to be committed
         """
         if not filename:
             raise ValueError(

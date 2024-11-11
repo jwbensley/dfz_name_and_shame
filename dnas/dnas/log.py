@@ -1,6 +1,5 @@
 import logging
 import os
-import typing
 
 from dnas.config import config as cfg
 

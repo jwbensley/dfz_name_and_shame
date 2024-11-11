@@ -1,5 +1,4 @@
 import ipaddress
-import typing
 
 from dnas.config import config as cfg
 
