@@ -30,7 +30,7 @@ class mrt_getter:
         filename = arch.gen_latest_rib_fn()
         url = arch.gen_rib_url(filename)
         outfile = os.path.normpath(arch.MRT_DIR + "/" + os.path.basename(url))
-        mrt_getter.download_mrt(filename=outfile, replace=replace, url=url)
+        mrt_getter.download_file(filename=outfile, replace=replace, url=url)
         return (outfile, url)
 
     @staticmethod
@@ -50,7 +50,7 @@ class mrt_getter:
         filename = arch.gen_latest_upd_fn()
         url = arch.gen_upd_url(filename)
         outfile = os.path.normpath(arch.MRT_DIR + "/" + os.path.basename(url))
-        mrt_getter.download_mrt(filename=outfile, replace=replace, url=url)
+        mrt_getter.download_file(filename=outfile, replace=replace, url=url)
         return (outfile, url)
 
     @staticmethod
@@ -95,7 +95,7 @@ class mrt_getter:
                 arch.MRT_DIR + "/" + os.path.basename(url)
             )
 
-            if mrt_getter.download_mrt(
+            if mrt_getter.download_file(
                 filename=outfile, replace=replace, url=url
             ):
                 downloaded.append((outfile, url))
@@ -146,7 +146,7 @@ class mrt_getter:
                 arch.MRT_DIR + "/" + os.path.basename(url)
             )
 
-            if mrt_getter.download_mrt(
+            if mrt_getter.download_file(
                 filename=outfile, replace=replace, url=url
             ):
                 downloaded.append((outfile, url))
@@ -155,7 +155,7 @@ class mrt_getter:
         return downloaded
 
     @staticmethod
-    def download_mrt(
+    def download_file(
         filename: str, url: str, replace: bool = False
     ) -> Union[str, Literal[False]]:
         """
@@ -184,7 +184,7 @@ class mrt_getter:
         try:
             req = requests.get(url, stream=True)
         except requests.exceptions.ConnectionError as e:
-            logging.info(f"Couldn't connect to MRT server: {e}")
+            logging.info(f"Couldn't connect to HTTP server: {e}")
             raise requests.exceptions.ConnectionError
 
         if req.status_code != 200:
