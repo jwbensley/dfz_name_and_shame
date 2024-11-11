@@ -182,7 +182,14 @@ class mrt_getter:
         """
         logging.info(f"Downloading {url} to {filename}")
         try:
-            req = requests.get(url, stream=True)
+            """
+            The default Accept-Encoding is gzip, which causes the server to
+            respond with a Content-Length which is not the full file
+            size. Replace this so we can later compare the file size:
+            """
+            req = requests.get(
+                url, headers={"Accept-Encoding": "*"}, stream=True
+            )
         except requests.exceptions.ConnectionError as e:
             logging.info(f"Couldn't connect to HTTP server: {e}")
             raise requests.exceptions.ConnectionError
@@ -194,6 +201,10 @@ class mrt_getter:
             logging.error(req.content)
             req.raise_for_status()
 
+        if os.path.exists(filename):
+            local_size = os.path.getsize(filename)
+        else:
+            local_size = 0
         file_len = int(req.headers["Content-length"])
 
         if file_len is None or file_len == 0:
@@ -201,6 +212,11 @@ class mrt_getter:
             logging.error(req.text)
             logging.error(req.content)
             raise ValueError("Missing file length!")
+
+        # Don't download if the file size has not changed
+        if local_size == file_len:
+            logging.warning(f"Not downloading, unchanged file size for {url}")
+            return False
 
         rcvd = 0
         logging.info(f"File size is {file_len/1024/1024:.7}MBs")
