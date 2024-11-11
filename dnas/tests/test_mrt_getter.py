@@ -1,8 +1,9 @@
 import os
 import sys
-import unittest
-import requests
 import tempfile
+import unittest
+
+import requests
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
@@ -29,7 +30,7 @@ class test_mrt_getter(unittest.TestCase):
         Required args missing
         """
         with self.assertRaises(TypeError):
-            mrt_getter.download_file()
+            mrt_getter.download_file()  # type: ignore [call-arg]
 
     def test_download_file_no_perms(self: "test_mrt_getter") -> None:
         """
