@@ -365,7 +365,7 @@ class config:
     )
 
     """
-    RRC12 Frankfurt DEC-IX
+    RRC12 Frankfurt DE-CIX
     RIB dumps are every 8 hours
     RIB dump example: https://data.ris.ripe.net/rrc12/2023.07/bview.20230702.0000.gz
     UPDATE dumps are every 5 minutes
