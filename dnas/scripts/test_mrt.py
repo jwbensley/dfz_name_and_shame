@@ -30,7 +30,7 @@ class MrtType(str, Enum):
 
 def check_rib_dump(filename: str) -> None:
     """
-    Perform some basic checks to determin if this is a valid MRT RIB dump.
+    Perform some basic checks to determine if this is a valid MRT RIB dump.
     """
     if not filename:
         raise ValueError("MRT filename is missing")
@@ -66,7 +66,7 @@ def check_rib_dump(filename: str) -> None:
 
 def check_update_dump(filename: str) -> None:
     """
-    Perform some basic checks to determin if this is a valid MRT UPDATE
+    Perform some basic checks to determine if this is a valid MRT UPDATE
     dump.
     """
     if not filename:
@@ -106,7 +106,7 @@ def check_update_dump(filename: str) -> None:
 
 def get_stats(filename: str) -> None:
     """
-    Print some basic statis about the entries in an MRT file.
+    Print some basic statistics about the entries in an MRT file.
     """
     if not filename:
         raise ValueError("MRT filename is missing")

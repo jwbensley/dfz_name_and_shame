@@ -6,7 +6,7 @@ ARG OS="linux"
 ARG PYPY
 
 # Keep this as one giant run command to reduce the number of layers in the image.
-# Remote apt cache, pip cache, pypy tar ball etc. to also reduce the image size.
+# Remove apt cache, pip cache, pypy tar ball etc. to also reduce the image size.
 RUN apt-get update
 RUN apt-get -y --no-install-recommends install \
 ca-certificates wget bzip2 gzip unzip git less whois netbase vim ssh cron && \
@@ -47,7 +47,7 @@ RUN chmod 0755 /opt/dnas/docker/cron_script.sh && \
 chmod 0644 /opt/dnas/docker/cronfile && \
 crontab /opt/dnas/docker/cronfile
 
-# "Whatever is specified in the command in docker-compose.yml should get
+# Whatever is specified in the command in docker-compose.yml should get
 # appended to the entrypoint defined in the Dockerfile, provided entrypoint
 # is defined in exec form in the Dockerfile:
 ENTRYPOINT ["/opt/pypy"]
