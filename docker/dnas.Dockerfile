@@ -47,7 +47,7 @@ RUN chmod 0755 /opt/dnas/docker/cron_script.sh && \
 chmod 0644 /opt/dnas/docker/cronfile && \
 crontab /opt/dnas/docker/cronfile
 
-# Whatever is specified in the command in docker-compose.yml should get
+# "Whatever is specified in the command in docker-compose.yml should get
 # appended to the entrypoint defined in the Dockerfile, provided entrypoint
 # is defined in exec form in the Dockerfile:
 ENTRYPOINT ["/opt/pypy"]
