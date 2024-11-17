@@ -14,6 +14,7 @@ from dnas.mrt_stats import mrt_stats
 
 
 class test_mrt_parser(unittest.TestCase):
+
     cfg = config()
 
     def setUp(self: "test_mrt_parser") -> None:
