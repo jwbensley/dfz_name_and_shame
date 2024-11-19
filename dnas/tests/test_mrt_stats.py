@@ -16,13 +16,8 @@ from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
 
 
-@pytest.mark.sequential_tests
+@pytest.mark.mrt_stats
 class test_mrt_stats(unittest.TestCase):
-    """
-    Run these tests sequentially. When run in parallel,
-    setUp() doesn't finish before the unit tests run so they fail.
-    Probably something that can be fixed in the future.
-    """
 
     def setUp(self: "test_mrt_stats") -> None:
         """
@@ -4477,13 +4472,6 @@ class test_mrt_stats(unittest.TestCase):
 
     def test_ts_ymd_format(self: "test_mrt_stats") -> None:
         self.assertEqual(self.upd_1_stats.ts_ymd_format(), "2022/04/21")
-
-    def tearDown(self: "test_mrt_stats") -> None:
-        os.remove(self.upd_1_mrt)
-        os.remove(self.upd_2_mrt)
-        os.remove(self.upd_3_mrt)
-        os.remove(self.upd_4_mrt)
-        os.remove(self.upd_5_mrt)
 
 
 if __name__ == "__main__":

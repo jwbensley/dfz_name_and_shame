@@ -17,9 +17,9 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v3
       - name: Setup SSH Keys and known_hosts
-        uses: webfactory/ssh-agent@v0.8.0
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.CI_ACTION_SSH_PRIV_KEY }}
       - name: Setup git
         run: |
           git config --global user.email "github_actions@example.com"
