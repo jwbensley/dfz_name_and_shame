@@ -14,6 +14,7 @@ from dnas.mrt_parser import mrt_parser
 
 
 class test_mrt_entry(unittest.TestCase):
+
     def setUp(self: "test_mrt_entry") -> None:
         self.mrt_e = mrt_entry()
 
@@ -46,6 +47,8 @@ class test_mrt_entry(unittest.TestCase):
             if arch.NAME == "UNIT_TEST_RRC_23":
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_1_mrt = os.path.join(arch.MRT_DIR, self.upd_1_fn)
+                break
+        assert self.upd_1_mrt
 
         shutil.copy2(self.upd_1_path, self.upd_1_mrt)
         self.mrt_s = mrt_parser.parse_upd_dump(self.upd_1_mrt)
@@ -113,9 +116,6 @@ class test_mrt_entry(unittest.TestCase):
         j2 = self.mrt_s.longest_as_path[0].to_json(indent=4)
         self.assertIsInstance(j2, str)
         self.assertEqual(j1, j2)
-
-    def tearDown(self: "test_mrt_entry") -> None:
-        os.remove(self.upd_1_mrt)
 
 
 if __name__ == "__main__":

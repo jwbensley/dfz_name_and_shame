@@ -6,8 +6,6 @@ import subprocess
 import sys
 import unittest
 
-import pytest
-
 sys.path.append(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 )
@@ -15,7 +13,6 @@ from dnas.config import config
 from dnas.git import git
 
 
-@pytest.mark.sequential_tests
 class test_git(unittest.TestCase):
     """
     The git tests must be run sequential, using a pytest marker to exclude
@@ -163,7 +160,7 @@ class test_git(unittest.TestCase):
     def test_clone(self: "test_git") -> None:
         """
         Git clone should fail if there is an existing directory, that contains a
-        different repo. Create the base direcory with an empty .git sub-dir
+        different repo. Create the base directory with an empty .git sub-dir
         (which is invalid for git)
         """
         try:
