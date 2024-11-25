@@ -27,8 +27,11 @@ jobs:
           ls -l ~/.ssh/
           cat ~/.ssh/config
           cat ~/.ssh/key*
-          git clone git@github.com:DFZ-Name-and-Shame/dnas_stats.git
-          ls -l dnas_stats/
+          #git clone git@github.com:DFZ-Name-and-Shame/dnas_stats.git
+          #ls -l dnas_stats/
+      - name: python clone
+        run: |
+          python3 clone.py
       - name: exit
         run: |
           false
