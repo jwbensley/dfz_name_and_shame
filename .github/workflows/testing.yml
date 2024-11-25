@@ -25,7 +25,10 @@ jobs:
           git config --global user.name "Github Actions"
           git config -l
           ls -l ~/.ssh/
+          cat ~/.ssh/config
+          cat ~/.ssh/key*
           git clone git@github.com:DFZ-Name-and-Shame/dnas_stats.git
+          ls -l dnas_stats/
       - name: exit
         run: |
           false
