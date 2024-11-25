@@ -11,8 +11,7 @@ on:
 jobs:
   python-unit-tests:
     name: Python Unit Tests
-    runs-on: ubuntu-20.04
-
+    runs-on: ubuntu-22.04
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
@@ -24,6 +23,12 @@ jobs:
         run: |
           git config --global user.email "github_actions@example.com"
           git config --global user.name "Github Actions"
+          git config -l
+          ls -l ~/.ssh/
+          git clone git@github.com:DFZ-Name-and-Shame/dnas_stats.git
+      - name: exit
+        run: |
+          false
       - name: Install Python 3.10
         uses: actions/setup-python@v3
         with:
