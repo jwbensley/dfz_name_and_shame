@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# If there was a problem with the pipeline on range of days,
+# If there was a problem with the pipeline for multiple days,
 # use this script to re-run it for those days:
 # start y/m/d end y/m/d
 #./manual_day.sh 2023 09 01 2023 09 30
@@ -17,7 +17,7 @@ set -e
 if [[ ${#} -lt 6 ]]
 then
   echo "Wrong number of args: ${#}"
-  echo "Call the script with at least 6 values, all space seperated."
+  echo "Call the script with at least 6 values, all space separated."
   echo "Start year, start month, start day, end year, end month, end day."
   echo "These should have leading zeros e.g.,"
   echo "${0} 2023 09 01 2023 09 30"
