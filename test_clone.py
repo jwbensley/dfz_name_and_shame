@@ -19,3 +19,4 @@ def test_clone():
     print(ret.returncode)
     print(ret.stdout.decode())
     print(ret.stderr.decode())
+    assert True == False
