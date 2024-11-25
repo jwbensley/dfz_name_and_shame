@@ -84,42 +84,49 @@ To run the containers for a period of time one ca use `/opt/dnas/docker/manual_r
 #### Manually
 
 Pull any missing MRTs for a specific day:
+
 ```shell
 docker compose run --rm --name tmp_getter dnas_getter -- \
 /opt/dnas/dnas/scripts/get_mrts.py --backfill --update --enabled --ymd "20230101"
 ```
 
-Run the parser for a specfic file:
+Run the parser for a specific file:
+
 ```shell
 docker compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --single /opt/dnas_data/downloads/SYDNEY/updates.20230424.0615.bz2
 ```
 
 Run the parser for a specific time range (this can be less than a day or longer than a day, also note that this expects all MRTs not currently in the DB to already exist on disk, it will fail if some are missing):
+
 ```shell
 docker compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --enabled --start "20230101.0000" --end "20230101.2359"
 ```
 
-Run an the parser for a specific day (note that this will try to pass all MRTs that exist on disk for the specified day, and will not fail if some are missing from disk which are also missing in the DB):
+Run the parser for a specific day (note that this will try to pass all MRTs that exist on disk for the specified day, and will not fail if some are missing from disk which are also missing in the DB):
+
 ```shell
 docker compose run --rm --name tmp_parser dnas_parser -- \
 /opt/dnas/dnas/scripts/parse_mrts.py --update --remove --enabled --ymd "20230101"
 ```
 
 Generate stats in the DB for a specific day:
+
 ```shell
 docker compose run --rm --name tmp_stats --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/stats.py --update --enabled --daily --ymd "20230101"
 ```
 
 Generate and push a report to git for a specific day:
+
 ```shell
 docker compose run --rm --name tmp_report --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/git_reports.py --generate --publish --ymd "20230101"
 ```
 
 Tweet for a specific day:
+
 ```shell
 docker compose run --rm --name tmp_tweet --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/tweet.py --generate --tweet --ymd "20230101"
