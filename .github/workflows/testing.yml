@@ -11,8 +11,7 @@ on:
 jobs:
   python-unit-tests:
     name: Python Unit Tests
-    runs-on: ubuntu-20.04
-
+    runs-on: ubuntu-22.04
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
@@ -35,7 +34,5 @@ jobs:
           sudo apt-get install -y whois shellcheck
       - name: Run the tox tests
         working-directory: /home/runner/work/dfz_name_and_shame/dfz_name_and_shame/
-        env:
-            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
             tox
