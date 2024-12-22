@@ -30,6 +30,7 @@ Update docker on the host machine (`sudo apt-get update && sudo apt-get --no-ins
 
 To run the various scripts, spin up temporary containers:
 
+* Run the update ASN allocations script: `docker compose run --rm --name tmp_asn_allocations dnas_parser -- /opt/dnas/dnas/scripts/update_asn_allocations.py --help`
 * Run the MRT getter script: `docker compose run --rm --name tmp_getter dnas_getter -- /opt/dnas/dnas/scripts/get_mrts.py --help`
 * Run the MRT parser script: `docker compose run --rm --name tmp_parser dnas_parser -- /opt/dnas/dnas/scripts/parse_mrts.py --help`
 * Run the MRT stats script (don't use the dnas_stats container):  `docker compose run --rm --name tmp_stats dnas_parser -- /opt/dnas/dnas/scripts/stats.py --help`
