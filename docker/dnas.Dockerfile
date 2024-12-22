@@ -1,5 +1,5 @@
-FROM ubuntu:22.04
-LABEL description="DNAS"
+FROM ubuntu:24.04
+LABEL description="dnas"
 # FROM must come before ARG, otherwise ARGs apply to FROM and nothing after
 ARG ARCH="x64"
 ARG OS="linux"
@@ -12,6 +12,8 @@ RUN apt-get -y --no-install-recommends install \
 ca-certificates wget bzip2 gzip unzip git less whois netbase vim ssh cron && \
 apt-get clean && \
 rm -rf /var/lib/apt/lists/*
+
+# Install PyPy
 RUN cd /opt && \
 wget "https://downloads.python.org/pypy/$PYPY.tar.bz2" && \
 tar -xf "$PYPY.tar.bz2" && \
