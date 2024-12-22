@@ -149,7 +149,7 @@ def parse_args() -> dict:
     )
     parser.add_argument(
         "--load",
-        help="Specify an intput JSON filename to load in redis. "
+        help="Specify an input JSON filename to load in redis. "
         "Any existing keys that match will be overwritten.",
         type=str,
         metavar=("/path/to/input.json"),
