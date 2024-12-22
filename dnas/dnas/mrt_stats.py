@@ -1258,8 +1258,9 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.bogon_origin_asns.append(mrt_e)
-        else:
-            self.bogon_origin_asns.append(mrt_entry())
+        #else:
+        #    self.bogon_origin_asns.append(mrt_entry())
+        # Breaks report generations -> remove if stable after commenting out
 
         self.bogon_prefixes = []
         if "bogon_prefixes" in json_dict:
@@ -1267,8 +1268,9 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.bogon_prefixes.append(mrt_e)
-        else:
-            self.bogon_prefixes.append(mrt_entry())
+        #else:
+        #    self.bogon_prefixes.append(mrt_entry())
+        # Breaks report generations -> remove if stable after commenting out
 
         self.highest_med_prefixes = []
         if "highest_med_prefixes" in json_dict:
@@ -1276,8 +1278,9 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.highest_med_prefixes.append(mrt_e)
-        else:
-            self.highest_med_prefixes.append(mrt_entry())
+        #else:
+        #    self.highest_med_prefixes.append(mrt_entry())
+        # Breaks report generations -> remove if stable after commenting out
 
         self.invalid_len = []
         if "invalid_len" in json_dict:
@@ -1285,8 +1288,9 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.invalid_len.append(mrt_e)
-        else:
-            self.invalid_len.append(mrt_entry())
+        #else:
+        #    self.invalid_len.append(mrt_entry())
+        # Breaks report generations -> remove if stable after commenting out
 
         self.longest_as_path = []
         for json_e in json_dict["longest_as_path"]:
@@ -1312,8 +1316,9 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.most_bogon_asns.append(mrt_e)
-        else:
-            self.most_bogon_asns.append(mrt_entry())
+        #else:
+        #    self.most_bogon_asns.append(mrt_entry())
+        # Breaks report generations -> remove if stable after commenting out
 
         self.most_upd_prefixes = []
         for json_e in json_dict["most_upd_prefixes"]:
@@ -1363,8 +1368,9 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.most_unknown_attrs.append(mrt_e)
-        else:
-            self.most_unknown_attrs.append(mrt_entry())
+        #else:
+        #    self.most_unknown_attrs.append(mrt_entry())
+        # Breaks report generations -> remove if stable after commenting out
 
         self.most_unreg_origins = []
         if "most_unreg_origins" in json_dict:
@@ -1372,8 +1378,9 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.most_unreg_origins.append(mrt_e)
-        else:
-            self.most_unreg_origins.append(mrt_entry())
+        #else:
+        #    self.most_unreg_origins.append(mrt_entry())
+        # Breaks report generations -> remove if stable after commenting out
 
         self.file_list = json_dict["file_list"]
 
