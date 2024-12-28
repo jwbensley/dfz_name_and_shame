@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from time import sleep
 from typing import Literal, Tuple, Union
 
 import requests
@@ -183,13 +184,30 @@ class mrt_getter:
         logging.info(f"Downloading {url} to {filename}")
         try:
             """
-            The default Accept-Encoding is gzip, which causes the server to
-            respond with a Content-Length which is not the full file
-            size. Replace this so we can later compare the file size:
+            When pulling files from RIPE RIS, there are occasional timeouts.
+            Retry a few times with a pause between attempts because this seems
+            to almost always be a transient error.
             """
-            req = requests.get(
-                url, headers={"Accept-Encoding": "*"}, stream=True
-            )
+            retries = cfg.DL_RETIRES
+            while retries > 0:
+                try:
+                    """
+                    The default Accept-Encoding is gzip, which causes the server
+                    to respond with a Content-Length which is not the full file
+                    size. Replace this so we can later compare the file size:
+                    """
+                    req = requests.get(
+                        url, headers={"Accept-Encoding": "*"}, stream=True
+                    )
+                    retries = 0
+                except requests.exceptions.ReadTimeout as e:
+                    retries -= 1
+                    logging.info(
+                        f"Request timeout connecting to HTTP server: {e}\n"
+                        f"Remaining retires: {retries}\n"
+                        f"Waiting {cfg.DL_DELAY} seconds..."
+                    )
+                    sleep(cfg.DL_DELAY)
         except requests.exceptions.ConnectionError as e:
             logging.info(f"Couldn't connect to HTTP server: {e}")
             raise requests.exceptions.ConnectionError
