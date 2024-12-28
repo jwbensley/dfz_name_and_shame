@@ -1258,7 +1258,7 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.bogon_origin_asns.append(mrt_e)
-        #else:
+        # else:
         #    self.bogon_origin_asns.append(mrt_entry())
         # Breaks report generations -> remove if stable after commenting out
 
@@ -1268,7 +1268,7 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.bogon_prefixes.append(mrt_e)
-        #else:
+        # else:
         #    self.bogon_prefixes.append(mrt_entry())
         # Breaks report generations -> remove if stable after commenting out
 
@@ -1278,7 +1278,7 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.highest_med_prefixes.append(mrt_e)
-        #else:
+        # else:
         #    self.highest_med_prefixes.append(mrt_entry())
         # Breaks report generations -> remove if stable after commenting out
 
@@ -1288,7 +1288,7 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.invalid_len.append(mrt_e)
-        #else:
+        # else:
         #    self.invalid_len.append(mrt_entry())
         # Breaks report generations -> remove if stable after commenting out
 
@@ -1316,7 +1316,7 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.most_bogon_asns.append(mrt_e)
-        #else:
+        # else:
         #    self.most_bogon_asns.append(mrt_entry())
         # Breaks report generations -> remove if stable after commenting out
 
@@ -1368,7 +1368,7 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.most_unknown_attrs.append(mrt_e)
-        #else:
+        # else:
         #    self.most_unknown_attrs.append(mrt_entry())
         # Breaks report generations -> remove if stable after commenting out
 
@@ -1378,7 +1378,7 @@ class mrt_stats:
                 mrt_e = mrt_entry()
                 mrt_e.from_json(json_e)
                 self.most_unreg_origins.append(mrt_e)
-        #else:
+        # else:
         #    self.most_unreg_origins.append(mrt_entry())
         # Breaks report generations -> remove if stable after commenting out
 
