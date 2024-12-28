@@ -158,6 +158,12 @@ class config:
     # Base dir to save MRT files to
     DL_DIR = os.path.join(DATA_DIR, "downloads/")
 
+    # Number of retires for downloading an MRT file
+    DL_RETIRES = 3
+
+    # Seconds between retires
+    DL_DELAY = 10
+
     # Temporary directory to split MRT files into
     SPLIT_DIR = "/tmp/"  # Set to None to disable MRT splitting
 
