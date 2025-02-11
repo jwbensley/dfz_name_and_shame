@@ -477,7 +477,7 @@ class report:
             text = (
                 f"Prefixes with most unregistered origin ASNs per prefix: "
                 f"{len(mrt_s.most_unreg_origins)} prefix(es) had "
-                f"{len(mrt_s.most_unreg_origins[0].origin_asns)} bogon origin ASNs.\n"
+                f"{len(mrt_s.most_unreg_origins[0].origin_asns)} unregistered origin ASNs.\n"
             )
 
             txt_report.append(text)
