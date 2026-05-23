@@ -18,14 +18,19 @@ class whois:
 
         cmd = ["whois", f"AS{str(asn)}"]
 
-        # Some WHOIS records redirect to private unreachable whois servers
         try:
             ret = subprocess.check_output(cmd)
         except subprocess.CalledProcessError as e:
-            if "returned non-zero exit status 2" in str(e):
+            # A very high numbered ASN outside of the range allocated by IANA
+            if "returned non-zero exit status 1" in str(e):
+                logging.error(f"Whois lookup failed for {cmd}: {e}")
+                return ""
+            # Some WHOIS records redirect to private unreachable whois servers
+            elif "returned non-zero exit status 2" in str(e):
+                logging.error(f"Whois lookup failed for {cmd}: {e}")
                 return ""
             else:
-                raise
+                raise e
 
         try:
             output = ret.decode("utf-8")
