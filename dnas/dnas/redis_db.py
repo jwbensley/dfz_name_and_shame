@@ -128,7 +128,7 @@ class redis_db:
             )
 
         with open(filename, "r") as f:
-            self.from_json(f.read())
+            self.from_json(f.read(), compression=compression)
 
     def from_file_stream(
         self: "redis_db", filename: str, compression: bool = True
@@ -402,6 +402,7 @@ class redis_db:
         if compression:
             self.r.set(key, redis_db.compress(value))
         else:
+            logging.debug(f"Setting key {key} to value (without compression):\n{value}")
             self.r.set(key, value)
 
     def to_file(self: "redis_db", filename: str, compression: bool = True):
