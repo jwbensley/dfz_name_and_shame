@@ -5,6 +5,7 @@ import logging
 import os
 import pprint
 import sys
+from typing import Any
 
 # Accommodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
@@ -61,7 +62,7 @@ def find_keys(pattern: str) -> None:
 
 def load_json(filename: str, compression: bool, stream: bool) -> None:
     """
-    Import a JOSN dump into redis.
+    Import a JSON dump into redis.
     """
     if not filename:
         raise ValueError(f"Missing required arguments: filename={filename}")
@@ -73,7 +74,7 @@ def load_json(filename: str, compression: bool, stream: bool) -> None:
     logging.info(f"Loaded DB dump from {filename}")
 
 
-def parse_args() -> dict:
+def parse_args() -> dict[Any, Any]:
     """
     Parse the CLI args to this script.
     """

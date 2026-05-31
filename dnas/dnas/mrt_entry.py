@@ -1,5 +1,6 @@
 import datetime
 import json
+from typing import Any
 
 from dnas.config import config as cfg
 
@@ -143,13 +144,11 @@ class mrt_entry:
         """
         return datetime.datetime.now().strftime(cfg.TIME_FORMAT)
 
-    def to_json(
-        self: "mrt_entry", indent: int = cfg.MRT_ENTRY_JSON_INDENT
-    ) -> str:
+    def to_dict(self: "mrt_entry") -> dict[str, Any]:
         """
-        Return this MRT entry obj serialised to a JSON str.
+        Return this MRT entry obj as a dict.
         """
-        json_data = {
+        return {
             "advt": self.advt,
             "as_path": self.as_path,
             "comm_set": self.comm_set,
@@ -164,6 +163,14 @@ class mrt_entry:
             "updates": self.updates,
             "withdraws": self.withdraws,
         }
+
+    def to_json(
+        self: "mrt_entry", indent: int = cfg.MRT_ENTRY_JSON_INDENT
+    ) -> str:
+        """
+        Return this MRT entry obj serialised to a JSON str.
+        """
+        json_data = self.to_dict()
         return json.dumps(json_data, indent=indent)
 
     def print(self: "mrt_entry") -> None:

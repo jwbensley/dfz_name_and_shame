@@ -55,6 +55,8 @@ class config:
     LOG_TWITTER = os.path.join(LOG_DIR, "tweet.log")
     # Logging from script: update_asn_allocations.py
     LOG_UPDATE_ASN = os.path.join(LOG_DIR, "update_asn.log")
+    # Logging from script: year_stats.py
+    LOG_YEAR_STATS = os.path.join(LOG_DIR, "year_stats.log")
 
     ###########################
     # ASN ALLOCATION SETTINGS #
@@ -150,6 +152,12 @@ class config:
         "fec0::/10",  # RFC 3879
         "ff00::/8",  # RFC 4291
     ]
+
+    #######################
+    # YEAR STATS SETTINGS #
+    #######################
+    # Output file for year stats
+    YEAR_STATS_BASE = os.path.join(DATA_DIR, "year_stats/")
 
     ########################
     # MRT ARCHIVE SETTINGS #

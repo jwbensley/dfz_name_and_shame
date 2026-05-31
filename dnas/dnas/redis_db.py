@@ -2,7 +2,7 @@ import base64
 import gzip
 import json
 import logging
-from typing import Iterable, Union
+from typing import Any, Iterable, Union
 
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_auth import redis_auth  # type: ignore
@@ -49,6 +49,10 @@ class redis_db:
 
         if type(json_str) != str:
             raise TypeError(f"json_str is not a string: {type(json_str)}")
+
+        logging.debug(
+            f"Pushing string to list {key} (compression={compression}):\n{json_str}"
+        )
 
         if compression:
             self.r.lpush(key, redis_db.compress(json_str))
@@ -117,7 +121,10 @@ class redis_db:
         return self.r.delete(key)
 
     def from_file(
-        self: "redis_db", filename: str, compression: bool = True
+        self: "redis_db",
+        filename: str,
+        compression: bool = True,
+        daily_only: bool = False,
     ) -> None:
         """
         Restore redis DB from JSON file.
@@ -128,10 +135,20 @@ class redis_db:
             )
 
         with open(filename, "r") as f:
-            self.from_json(f.read(), compression=compression)
+            raw = json.load(f)
+
+        if daily_only:
+            for k in list(raw.keys()):
+                if not k.startswith("DAILY:"):
+                    del raw[k]
+
+        self.from_json(raw, compression=compression)
 
     def from_file_stream(
-        self: "redis_db", filename: str, compression: bool = True
+        self: "redis_db",
+        filename: str,
+        compression: bool = True,
+        daily_only: bool = False,
     ) -> None:
         """
         Restore redis DB from JSON file, loading the content one line at time.
@@ -199,15 +216,19 @@ class redis_db:
                     assert char == '"'
                     value += char
 
+                    if daily_only and not key.startswith('"DAILY:'):
+                        continue
+
                     # Compile the JSON string
                     json_str = "{" + key + ": " + value + "}"
                     # Parse the string to check it's valid
                     try:
-                        json_dict: dict = json.loads(json_str)
+                        json_dict: dict[Any, Any] = json.loads(json_str)
                     except json.decoder.JSONDecodeError as e:
                         raise ValueError(
                             f"Failed to decode JSON string {e}\n{json_str}"
                         )
+
                     # Load it into Redis
                     k = list(json_dict.keys())[0]
                     v = list(json_dict.values())[0]
@@ -231,6 +252,9 @@ class redis_db:
                             depth -= 1
                     assert char == "]"
 
+                    if daily_only and not key.startswith('"DAILY:'):
+                        continue
+
                     # Compile the  JSON string
                     json_str = "{" + key + ": " + value + "}"
                     # Parse the string to check it's valid
@@ -240,6 +264,7 @@ class redis_db:
                         raise ValueError(
                             f"Failed to decode JSON string {e}\n{json_str}"
                         )
+
                     # Load each entry in the list into Redis
                     k = list(json_dict.keys())[0]
                     for elem in json_dict[k]:
@@ -253,28 +278,53 @@ class redis_db:
                 else:
                     raise ValueError(f"Didn't find dict or list")
 
-                logging.info(f"Loaded {loaded_kvs} k/v's from stream")
+                logging.debug(f"Loaded {loaded_kvs} k/v's from stream")
 
-    def from_json(self: "redis_db", json_str: str, compression: bool = True):
+    def from_json(
+        self: "redis_db", data: str | dict[Any, Any], compression: bool = True
+    ):
         """
         Restore redis DB from a JSON string
         """
-        if not json_str:
-            raise ValueError(
-                f"Missing required arguments: json_str={json_str}"
-            )
+        if not data:
+            raise ValueError(f"Missing required arguments: data={data}")
 
-        try:
-            json_dict = json.loads(json_str)
-        except json.decoder.JSONDecodeError as e:
-            raise ValueError(f"Failed to decode JSON string {e}\n{json_str}")
+        if type(data) == str:
+            try:
+                json_dict = json.loads(data)
+            except json.decoder.JSONDecodeError as e:
+                raise ValueError(f"Failed to decode JSON string {e}\n{data}")
+        elif type(data) == dict:
+            json_dict = data
+        else:
+            raise TypeError(f"Expected str or dict, got {type(data)}")
+
         for k in json_dict.keys():
-            self.set(key=k, value=json_dict[k], compression=compression)
+            t = type(json_dict[k])
+            if t == str:
+                self.set(key=k, value=json_dict[k], compression=compression)
+            elif t == list:
+                for elem in json_dict[k]:
+                    if type(elem) != str:
+                        raise TypeError(
+                            f"List elem is not a string: {type(elem)}"
+                        )
+                    self.add_to_queue(
+                        key=k,
+                        json_str=elem,
+                        compression=compression,
+                    )
+            else:
+                raise TypeError(
+                    f"Value for key {k} decoded to type {type(json_dict[k])} "
+                    f"is unexpected"
+                )
+
         logging.info(f"Loaded {len(json_dict)} k/v's")
 
     def get(
         self: "redis_db", key: str, compression: bool = True
-    ) -> Union[str, list]:
+    ) -> Union[str, list[str]]:
         """
         Return the value stored in "key" from Redis
         """
@@ -319,7 +369,7 @@ class redis_db:
         else:
             raise TypeError(f"Unknown redis data type stored under {key}: {t}")
 
-    def get_keys(self: "redis_db", pattern: str) -> list:
+    def get_keys(self: "redis_db", pattern: str) -> list[str]:
         """
         Return list of Redis keys that match search pattern.
         """
@@ -399,10 +449,10 @@ class redis_db:
                 f"Missing required arguments: key={key}, value={value}"
             )
 
+        # logging.debug(f"Setting key {key} to value (compression={compression}):\n{value}")
         if compression:
             self.r.set(key, redis_db.compress(value))
         else:
-            logging.debug(f"Setting key {key} to value (without compression):\n{value}")
             self.r.set(key, value)
 
     def to_file(self: "redis_db", filename: str, compression: bool = True):

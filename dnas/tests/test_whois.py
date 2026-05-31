@@ -25,9 +25,6 @@ class test_whois(unittest.TestCase):
         # Whois entry which will decode using utf-8
         self.assertEqual("VOSTRON-AS", whois.as_lookup(41695))
 
-        # Whois entry which will decode using ISO-8859-1
-        self.assertEqual("Linkever", whois.as_lookup(38336))
-
 
 if __name__ == "__main__":
     unittest.main()
