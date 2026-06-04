@@ -57,6 +57,8 @@ class config:
     LOG_UPDATE_ASN = os.path.join(LOG_DIR, "update_asn.log")
     # Logging from script: year_stats.py
     LOG_YEAR_STATS = os.path.join(LOG_DIR, "year_stats.log")
+    # Logging from script: parse_stats.py
+    LOG_STATS_PARSER = os.path.join(LOG_DIR, "stats_parser.log")
 
     ###########################
     # ASN ALLOCATION SETTINGS #
@@ -156,8 +158,10 @@ class config:
     #######################
     # YEAR STATS SETTINGS #
     #######################
-    # Output file for year stats
+    # Output path for year stats
     YEAR_STATS_BASE = os.path.join(DATA_DIR, "year_stats/")
+    # Output path for year stats plots
+    STATS_PLOT_BASE = os.path.join(DATA_DIR, "/home/bensley/Downloads/plots/")
 
     ########################
     # MRT ARCHIVE SETTINGS #

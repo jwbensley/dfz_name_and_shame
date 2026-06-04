@@ -317,6 +317,12 @@ def wipe() -> None:
     """
     Wipe the entire redis DB.
     """
+
+    confirm = input("This will wipe the DB, continue? (y/n) ")
+    if confirm.lower() != "y":
+        logging.info("Not wiping")
+        return
+
     for k in rdb.get_keys("*"):
         rdb.delete(k)
     logging.info(f"Database wiped")

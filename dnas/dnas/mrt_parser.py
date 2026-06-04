@@ -232,14 +232,17 @@ class mrt_parser:
 
                         # AS_PATH
                         if attr_t == 2:
-                            as_path = attr["value"][0]["value"]
-                            origin_asn = as_path[-1]
-                            if origin_asn not in advt_per_origin_asn:
-                                advt_per_origin_asn[origin_asn] = 1
+                            if attr["value"]:
+                                as_path = attr["value"][0]["value"]
+                                origin_asn = as_path[-1]
+                                if origin_asn not in advt_per_origin_asn:
+                                    advt_per_origin_asn[origin_asn] = 1
+                                else:
+                                    advt_per_origin_asn[origin_asn] += 1
+                                if unalloc_asn.is_unallocated(int(origin_asn)):
+                                    is_unalloc_origin = True
                             else:
-                                advt_per_origin_asn[origin_asn] += 1
-                            if unalloc_asn.is_unallocated(int(origin_asn)):
-                                is_unalloc_origin = True
+                                logging.error(f"No AS Path: {mrt_e.data}")
 
                         # NEXT_HOP
                         elif attr_t == 3:

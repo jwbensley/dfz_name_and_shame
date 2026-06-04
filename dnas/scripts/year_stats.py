@@ -71,7 +71,8 @@ def get_year_stats(args: argparse.Namespace) -> dict[Any, Any]:
             )
 
             if not mrt_s:
-                raise ValueError(f"Missing stats for {ymd}")
+                continue
+                # raise ValueError(f"Missing stats for {ymd}")
 
             longest_as_path_per_day[doy] = len(
                 mrt_s.longest_as_path[0].as_path
@@ -215,7 +216,10 @@ def redis_load_json(args: argparse.Namespace) -> None:
     Import a JSON dump into redis.
     """
     if not args.load:
-        raise ValueError(f"Missing required arguments: filename={args.load}")
+        logging.info(
+            f"No input file specified, skipping loading JSON into REDIS"
+        )
+        return
 
     if args.stream:
         rdb.from_file_stream(
@@ -230,7 +234,7 @@ def redis_load_json(args: argparse.Namespace) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate stats for a year of DNAS data.",
+        description="Extract stats for a year from DNAS DB.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -254,7 +258,7 @@ def parse_args() -> argparse.Namespace:
         help="Specify an input JSON filename to load in to redis. "
         "Any existing keys that match will be overwritten.",
         type=str,
-        required=True,
+        required=False,
         default=None,
     )
     input.add_argument(
@@ -290,6 +294,12 @@ def wipe() -> None:
     """
     Wipe the entire redis DB.
     """
+
+    confirm = input("This will wipe the DB, continue? (y/n) ")
+    if confirm.lower() != "y":
+        logging.info("Not wiping")
+        return
+
     for k in rdb.get_keys("*"):
         rdb.delete(k)
     logging.info(f"Database wiped")
@@ -310,14 +320,9 @@ def main() -> None:
     args = parse_args()
     log.setup(
         debug=args.debug,
-        log_src="MRT parser script",
+        log_src="Year stats script",
         log_path=cfg.LOG_YEAR_STATS,
     )
-
-    confirm = input("This will wipe the DB, continue? (y/n) ")
-    if confirm.lower() != "y":
-        logging.info("Aborting.")
-        sys.exit(0)
 
     wipe()
     redis_load_json(args)
