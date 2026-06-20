@@ -18,7 +18,7 @@ RUN cd /opt && \
 wget "https://downloads.python.org/pypy/$PYPY.tar.bz2" && \
 tar -xf "$PYPY.tar.bz2" && \
 rm "$PYPY.tar.bz2" && \
-ln -s "/opt/$PYPY/bin/pypy3.10" /opt/pypy && \
+ln -s "/opt/$PYPY/bin/pypy" /opt/pypy && \
 /opt/pypy -V
 
 # This is needed to clone the reports repo as the dnasbot user:
