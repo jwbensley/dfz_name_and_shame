@@ -21,7 +21,7 @@ echo "Compressed size is: $(ls -lh "${backup_file}.gz")"
 
 backup_count=$(find "$backup_dir" -name *.json.gz | wc -l)
 echo "Backup count: $backup_count"
-if [ "$backup_count" -lt 26 ]
+if [ "$backup_count" -lt 10 ]
 then
     echo "Backup count is low, exiting"
     exit 0
