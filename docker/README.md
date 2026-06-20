@@ -126,11 +126,13 @@ docker compose run --rm --name tmp_report --entrypoint /opt/pypy dnas_stats -- \
 /opt/dnas/dnas/scripts/git_reports.py --generate --publish --ymd "20230101"
 ```
 
-Tweet for a specific day:
+~~Tweet for a specific day:~~
 
 ```shell
-docker compose run --rm --name tmp_tweet --entrypoint /opt/pypy dnas_stats -- \
-/opt/dnas/dnas/scripts/tweet.py --generate --tweet --ymd "20230101"
+# docker compose run --rm --name tmp_tweet --entrypoint /opt/pypy dnas_stats -- \
+# /opt/dnas/dnas/scripts/tweet.py --generate --tweet --ymd "20230101"
 ```
+
+The Twitter acccount has been disabled!
 
 The script `/opt/dnas/docker/cron_script.sh` can be scheduled as a cron job to run DNAS in a retrospective mode where it generates stats for the previous day in a single run, on a daily basis, instead of continuous mode were it builds up the stats throughout the day. Note that the Redis container must be already running.

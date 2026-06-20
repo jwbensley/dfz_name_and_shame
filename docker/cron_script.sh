@@ -28,5 +28,5 @@ ${PYPY} ${SCRIPTS}/stats.py --yesterday --update --enabled
 ${PYPY} ${SCRIPTS}/git_reports.py --yesterday
 
 # Tweet the report summary and link to full report:
-${PYPY} ${SCRIPTS}/tweet.py --yesterday
-
+# ${PYPY} ${SCRIPTS}/tweet.py --yesterday
+# Twitter account has been disabled

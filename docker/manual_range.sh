@@ -76,3 +76,6 @@ do
   done
 done
 
+# The Twitter account has been disabled!
+#docker compose run --rm --name tmp_tweet_range --entrypoint "${PYPY}" dnas_stats -- \
+#"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd "$1" "${@}"

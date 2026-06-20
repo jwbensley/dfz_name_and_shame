@@ -44,6 +44,7 @@ docker compose run --rm --name tmp_stats_day --entrypoint "${PYPY}" dnas_stats -
 docker compose run --rm --name tmp_report_day --entrypoint "${PYPY}" dnas_stats -- \
 "${SCRIPTS_DIR}/git_reports.py" --generate --publish --ymd "${YMD}" "${@}"
 
+# The Twitter account has been disabled!
 #dockercompose run --rm --name tmp_tweet_day --entrypoint "${PYPY}" dnas_stats -- \
 #"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd "${YMD}" "${@}"
 
