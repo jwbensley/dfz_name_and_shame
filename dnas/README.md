@@ -2,6 +2,10 @@
 
 ## Running and Testing DNAS
 
+The best way to run DNAS is inside the provided Docker containers, see [Docker](../docker/README.md).
+
+Setup a venv for your IDE:
+
 ```shell
 sudo apt-get install --no-install-recommends -y virtualenv
 
@@ -31,7 +35,7 @@ cd docker/
 docker compose up -d dnas_redis
 ```
 
-If you really need/want to, you can use the steps below to spin up a stand-alone Redis container. Note that DNAS expects to authenticate to Redis so set a password, and update the Redis hostname in redis_auth.py:
+If you really need/want to, you can use the steps below to spin up a stand-alone Redis container. Note that DNAS expects to authenticate to Redis so set a password, and update the Redis hostname in `redis_auth.py`:
 
 ```shell
 docker run -d -p 6379:6379 --name redis redis:latest
@@ -70,6 +74,12 @@ sudo mv "$pypy_dir" /opt/
 /opt/"$pypy_dir"/bin/pypy3 -m ensurepip
 /opt/"$pypy_dir"/bin/pypy3 -mpip install --upgrade pip
 /opt/"$pypy_dir"/bin/pypy3 -mpip install -r requirements.txt
+```
+
+Copy across the required authentication files:
+
+```shell
+cp "${APP_DIR}/secrets/redis_auth.py" "${APP_DIR}/dnas/dnas/"
 ```
 
 ### Testing

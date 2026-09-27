@@ -127,15 +127,24 @@ class redis_db:
         daily_only: bool = False,
     ) -> None:
         """
-        Restore redis DB from JSON file.
+        Restore redis DB from a JSON file, or a gzip compressed JSON file.
         """
         if not filename:
             raise ValueError(
                 f"Missing required arguments: filename={filename}"
             )
 
-        with open(filename, "r") as f:
-            raw = json.load(f)
+        if filename.endswith(".gz"):
+            with gzip.open(filename, "rt", encoding="utf-8") as f:
+                raw = json.load(f)
+        elif filename.endswith(".json"):
+            with open(filename, "r") as f:
+                raw = json.load(f)
+        else:
+            raise ValueError(
+                f"Unsupported file extension, expected .gz or .json: "
+                f"{filename}"
+            )
 
         if daily_only:
             for k in list(raw.keys()):
@@ -144,6 +153,70 @@ class redis_db:
 
         self.from_json(raw, compression=compression)
 
+    @staticmethod
+    def _iter_stream_kvs(f: Any, chunk_size: int = 1 << 20) -> Iterable:
+        """
+        Incrementally parse a top level JSON object of the form
+        {"key": "value", "key2": ["v1", "v2"], ...} from the file-like
+        object f, yielding (key, value) tuples.
+
+        This reads the file in large chunks and uses the C accelerated
+        json decoder to pull out each key/value pair, instead of scanning
+        the file one character at a time in Python, which is orders of
+        magnitude slower on large files.
+        """
+        decoder = json.JSONDecoder()
+        buf = f.read(chunk_size)
+        pos = 0
+
+        def ensure_data() -> bool:
+            nonlocal buf
+            chunk = f.read(chunk_size)
+            if not chunk:
+                return False
+            buf += chunk
+            return True
+
+        def skip_chars(chars: str) -> None:
+            nonlocal pos
+            while True:
+                while pos < len(buf) and buf[pos] in chars:
+                    pos += 1
+                if pos < len(buf) or not ensure_data():
+                    return
+
+        def decode_next() -> Any:
+            nonlocal pos
+            while True:
+                try:
+                    obj, pos = decoder.raw_decode(buf, pos)
+                    return obj
+                except json.JSONDecodeError:
+                    if not ensure_data():
+                        raise
+
+        skip_chars(" \t\r\n")
+        if pos >= len(buf) or buf[pos] != "{":
+            raise ValueError("Expected JSON stream to start with '{'")
+        pos += 1
+
+        while True:
+            skip_chars(" \t\r\n,")
+            if pos >= len(buf):
+                raise ValueError("Unexpected end of JSON stream")
+            if buf[pos] == "}":
+                break
+
+            key = decode_next()
+            skip_chars(" \t\r\n:")
+            value = decode_next()
+            yield key, value
+
+            # Drop the consumed prefix so the buffer doesn't grow to hold
+            # the entire remainder of the file.
+            buf = buf[pos:]
+            pos = 0
+
     def from_file_stream(
         self: "redis_db",
         filename: str,
@@ -151,133 +224,46 @@ class redis_db:
         daily_only: bool = False,
     ) -> None:
         """
-        Restore redis DB from JSON file, loading the content one line at time.
+        Restore redis DB from a JSON file, or a gzip compressed JSON file,
+        loading the content one key/value pair at a time.
         """
         if not filename:
             raise ValueError(
                 f"Missing required arguments: filename={filename}"
             )
 
+        if filename.endswith(".gz"):
+            open_func = gzip.open
+        elif filename.endswith(".json"):
+            open_func = open
+        else:
+            raise ValueError(
+                f"Unsupported file extension, expected .gz or .json: "
+                f"{filename}"
+            )
+
         loaded_kvs = 0
-        with open(filename, "r") as f:
-            # First character should be "{" to start the dump
-            opening = f.read(1)
-            assert opening == "{"
+        with open_func(filename, "rt", encoding="utf-8") as f:
+            for key, value in redis_db._iter_stream_kvs(f):
+                if daily_only and not key.startswith("DAILY:"):
+                    continue
 
-            end = False
-            while not end:
-                # Find the start of the next key
-                char = ""
-                while char != '"':
-                    char = f.read(1)
-                    # Found the end of the dump
-                    if char == "}":
-                        end = True
-                        break
-                if end:
-                    break
-                # Confirm we didn't scan to the end of the file without a match
-                assert char == '"'
-
-                # Scan in the key name including quote marks
-                key = char
-                char = ""
-                while char != '"':
-                    char = f.read(1)
-                    key += char
-                assert char == '"'
-
-                """
-                Scan in the value.
-                This could be a dict serialised as a single string,
-                or a list of strings.
-                """
-                char = ""
-                while char != "{" and char != "[":
-                    char = f.read(1)
-
-                if char == "{":
-                    """
-                    Scan until the end of this dict.
-                    This could be a dict of dicts, so track that the outer most
-                    dict is "closed"
-                    """
-                    depth = 1
-                    value = '"{'
-                    while depth != 0:
-                        char = f.read(1)
-                        value += char
-                        if char == "{":
-                            depth += 1
-                        elif char == "}":
-                            depth -= 1
-                    assert char == "}"
-                    char = f.read(1)
-                    assert char == '"'
-                    value += char
-
-                    if daily_only and not key.startswith('"DAILY:'):
-                        continue
-
-                    # Compile the JSON string
-                    json_str = "{" + key + ": " + value + "}"
-                    # Parse the string to check it's valid
-                    try:
-                        json_dict: dict[Any, Any] = json.loads(json_str)
-                    except json.decoder.JSONDecodeError as e:
-                        raise ValueError(
-                            f"Failed to decode JSON string {e}\n{json_str}"
-                        )
-
-                    # Load it into Redis
-                    k = list(json_dict.keys())[0]
-                    v = list(json_dict.values())[0]
-                    self.set(key=k, value=v, compression=compression)
-                    loaded_kvs += 1
-
-                elif char == "[":
-                    """
-                    Scan until the end of this list.
-                    This could be a list of lists, so track that the outer most
-                    list is "closed"
-                    """
-                    depth = 1
-                    value = "["
-                    while depth != 0:
-                        char = f.read(1)
-                        value += char
-                        if char == "[":
-                            depth += 1
-                        elif char == "]":
-                            depth -= 1
-                    assert char == "]"
-
-                    if daily_only and not key.startswith('"DAILY:'):
-                        continue
-
-                    # Compile the  JSON string
-                    json_str = "{" + key + ": " + value + "}"
-                    # Parse the string to check it's valid
-                    try:
-                        json_dict = json.loads(json_str)
-                    except json.decoder.JSONDecodeError as e:
-                        raise ValueError(
-                            f"Failed to decode JSON string {e}\n{json_str}"
-                        )
-
-                    # Load each entry in the list into Redis
-                    k = list(json_dict.keys())[0]
-                    for elem in json_dict[k]:
+                logging.info(f"Loading key: {key} into Redis")
+                if type(value) == str:
+                    self.set(key=key, value=value, compression=compression)
+                elif type(value) == list:
+                    for elem in value:
                         self.add_to_queue(
-                            key=k,
+                            key=key,
                             json_str=json.dumps(elem),
                             compression=compression,
                         )
-                    loaded_kvs += 1
-
                 else:
-                    raise ValueError(f"Didn't find dict or list")
-
+                    raise TypeError(
+                        f"Value for key {key} decoded to type {type(value)} "
+                        f"is unexpected"
+                    )
+                loaded_kvs += 1
                 logging.debug(f"Loaded {loaded_kvs} k/v's from stream")
 
     def from_json(
@@ -457,15 +443,24 @@ class redis_db:
 
     def to_file(self: "redis_db", filename: str, compression: bool = True):
         """
-        Dump the entire redis DB to a JSON file.
+        Dump the entire redis DB to a JSON file, or a gzip compressed JSON.
         """
         if not filename:
             raise ValueError(
                 f"Missing required arguments: filename={filename}"
             )
 
-        with open(filename, "w") as f:
-            f.write(self.to_json(compression=compression))
+        if filename.endswith(".gz"):
+            with gzip.open(filename, "wt", encoding="utf-8") as f:
+                f.write(self.to_json(compression=compression))
+        elif filename.endswith(".json"):
+            with open(filename, "w") as f:
+                f.write(self.to_json(compression=compression))
+        else:
+            raise ValueError(
+                f"Unsupported file extension, expected .gz or .json: "
+                f"{filename}"
+            )
 
     def to_file_stream(
         self: "redis_db", filename: str, compression: bool = True
@@ -480,9 +475,19 @@ class redis_db:
                 f"Missing required arguments: filename={filename}"
             )
 
-        with open(filename, "w") as f:
+        if filename.endswith(".gz"):
+            open_func = gzip.open
+        elif filename.endswith(".json"):
+            open_func = open
+        else:
+            raise ValueError(
+                f"Unsupported file extension, expected .gz or .json: "
+                f"{filename}"
+            )
+
+        with open_func(filename, "wt", encoding="utf-8") as f:
             elem_count = 0
-            for line in self.to_json_stream(compression=compression):
+            for line in self.to_json_stream(compression=not compression):
                 f.write(line)
                 elem_count += 1
                 logging.debug(
