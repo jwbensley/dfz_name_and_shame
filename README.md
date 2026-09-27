@@ -2,9 +2,9 @@
 
 ## Overview
 
-This repo contains the "code"[^1] and configuration files for the BGP DFZ Name and Shame ("DNAS") bot on Twitter: https://twitter.com/bgp_shamer
+This repo contains the "code"[^1] and configuration files for the BGP DFZ Name and Shame ("DNAS") bot on Twitter: <https://twitter.com/bgp_shamer>
 
-The ultimate output of this code are the daily reports published here: https://github.com/DFZ-Name-and-Shame/dnas_stats
+The ultimate output of this code are the daily reports published here: <https://github.com/DFZ-Name-and-Shame/dnas_stats>
 
 The bot is written in Python3 and runs in several Docker containers. These containers form a rudimentary pipeline:  
 
@@ -50,7 +50,7 @@ sudo mkdir -p "$BASE_DIR" && sudo chown $USER:$USER "$BASE_DIR"
 sudo apt-get install --no-install-recommends -y git
 
 # Clone repo to base directory:
-git clone git@github.com:jwbensley/dfz_name_and_shame.git "$DATA_DIR"
+git clone git@github.com:jwbensley/dfz_name_and_shame.git "$BASE_DIR"
 
 # Run the build script
 ${BASE_DIR}/docker/build_dnas.sh

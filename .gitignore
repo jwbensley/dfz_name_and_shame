@@ -4,7 +4,7 @@
 # Dont sync Redis backups
 redis/backups/*
 # Don't sync Redis data
-redis/data/*
+redis/data/dump.rdb
 
 # Don't sync secrets to GitHub
 **/redis.conf

@@ -223,13 +223,14 @@ class mrt_getter:
             local_size = os.path.getsize(filename)
         else:
             local_size = 0
-        file_len = int(req.headers["Content-length"])
 
-        if file_len is None or file_len == 0:
-            logging.error(req.url)
-            logging.error(req.text)
-            logging.error(req.content)
-            raise ValueError("Missing file length!")
+        # Some servers don't return the Content-length header (i.e., IANA)
+        file_len = int(req.headers.get("Content-length", -1))
+
+        if not file_len:
+            logging.warning(
+                f"Content-length header is missing or zero for {url}"
+            )
 
         # Don't download if the file size has not changed
         if local_size == file_len:
@@ -237,31 +238,37 @@ class mrt_getter:
             return False
 
         rcvd = 0
-        logging.info(f"File size is {file_len/1024/1024:.7}MBs")
         progress = 0.0
+        if file_len:
+            logging.info(f"File size to get is {file_len/1024/1024:.7}MBs")
 
         with open(filename, "wb") as f:
-            for chunk in req.iter_content(chunk_size=1024):
-                if req.status_code != 200:
-                    logging.info(f"HTTP error: {req.status_code}")
-                    logging.error(req.url)
-                    logging.error(req.text)
-                    logging.error(req.content)
-                    f.close()
-                    req.raise_for_status()
+            if file_len:
+                for chunk in req.iter_content(chunk_size=1024):
+                    if req.status_code != 200:
+                        logging.info(f"HTTP error: {req.status_code}")
+                        logging.error(req.url)
+                        logging.error(req.text)
+                        logging.error(req.content)
+                        f.close()
+                        req.raise_for_status()
 
-                rcvd += len(chunk)
-                f.write(chunk)
+                    rcvd += len(chunk)
+                    f.write(chunk)
+                    f.flush()
+
+                    if rcvd == file_len:
+                        logging.debug(
+                            f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)"
+                        )
+                    elif ((rcvd / file_len) * 100) // 10 > progress:
+                        logging.debug(
+                            f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)"
+                        )
+                        progress = ((rcvd / file_len) * 100) // 10
+            else:
+                # Don't do chunked download if file length is unknown
+                f.write(req.content)
                 f.flush()
-
-                if rcvd == file_len:
-                    logging.debug(
-                        f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100}%)"
-                    )
-                elif ((rcvd / file_len) * 100) // 10 > progress:
-                    logging.debug(
-                        f"Downloaded {rcvd}/{file_len} ({(rcvd/file_len)*100:.3}%)"
-                    )
-                    progress = ((rcvd / file_len) * 100) // 10
 
         return filename

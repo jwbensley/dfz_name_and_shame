@@ -20,17 +20,18 @@ from dnas.redis_db import redis_db
 rdb = redis_db()
 
 
-def delete(key: str) -> None:
+def delete(keys: list[str]) -> None:
     """
-    Delete they key/value pair from redis stored under key.
+    Delete the key/value pairs from redis stored under the given keys.
     """
-    if not key:
-        raise ValueError(f"Missing required arguments: key={key}")
+    if not keys:
+        raise ValueError(f"Missing required arguments: keys={keys}")
 
-    if rdb.delete(key):
-        logging.info(f"Deleted {key}")
-    else:
-        logging.info(f"Nothing to delete for {key}")
+    for key in keys:
+        if rdb.delete(key):
+            logging.info(f"Deleted {key}")
+        else:
+            logging.info(f"Nothing to delete for {key}")
 
 
 def dump_json(filename: str, compression: bool, stream: bool) -> None:
@@ -55,8 +56,7 @@ def find_keys(pattern: str) -> None:
         raise ValueError(f"Missing required arguments: pattern={pattern}")
 
     keys = rdb.get_keys(pattern)
-    for key in keys:
-        print(key)
+    print(",".join(keys))
     print(f"{len(keys)} keys in total")
 
 
@@ -101,9 +101,9 @@ def parse_args() -> dict[Any, Any]:
     )
     parser.add_argument(
         "--delete",
-        help="Specify a key to delete from redis",
+        help="Specify a comma separated list of keys to delete from redis",
         type=str,
-        metavar=("key"),
+        metavar=("key1,key2,..."),
         required=False,
         default=None,
     )
@@ -150,7 +150,7 @@ def parse_args() -> dict[Any, Any]:
     )
     parser.add_argument(
         "--load",
-        help="Specify an input JSON filename to load in redis. "
+        help="Specify an input JSON filename to load in redis (can be gzip compressed). "
         "Any existing keys that match will be overwritten.",
         type=str,
         metavar=("/path/to/input.json"),
@@ -239,7 +239,7 @@ def print_keys() -> None:
     Print all the keys in the redis DB.
     """
     keys = rdb.get_keys("*")
-    print(keys)
+    print(",".join(keys))
     print(f"{len(keys)} keys in total")
 
 
@@ -357,7 +357,7 @@ def main():
         print_stats_daily(ymd=args["daily"], compression=compression)
 
     if args["delete"]:
-        delete(key=args["delete"])
+        delete(keys=args["delete"].split(","))
 
     if args["diff"]:
         print_stats_diff(keys=args["diff"], compression=compression)
