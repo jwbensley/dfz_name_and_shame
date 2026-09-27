@@ -2,7 +2,7 @@ import base64
 import gzip
 import json
 import logging
-from typing import Any, Iterable, Union
+from typing import Any, Callable, Iterable, Union
 
 from dnas.mrt_stats import mrt_stats
 from dnas.redis_auth import redis_auth  # type: ignore
@@ -233,7 +233,7 @@ class redis_db:
             )
 
         if filename.endswith(".gz"):
-            open_func = gzip.open
+            open_func: Callable[..., Any] = gzip.open
         elif filename.endswith(".json"):
             open_func = open
         else:
@@ -476,7 +476,7 @@ class redis_db:
             )
 
         if filename.endswith(".gz"):
-            open_func = gzip.open
+            open_func: Callable[..., Any] = gzip.open
         elif filename.endswith(".json"):
             open_func = open
         else:

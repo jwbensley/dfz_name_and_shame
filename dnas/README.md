@@ -91,6 +91,11 @@ cd /opt/dnas/
 source venv/bin/activate
 python3 -m pip install tox
 tox
+
+# tox -e lint
+# tox -e fixlint
+# tox -e mypy
+# tox -e shellcheck
 ```
 
 ### Coding Style

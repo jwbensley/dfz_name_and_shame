@@ -4,10 +4,11 @@ import argparse
 import json
 import logging
 import os
-import plotly.graph_objects as go
-import plotly.offline as po
 import sys
 from typing import Any
+
+import plotly.graph_objects as go  # type: ignore
+import plotly.offline as po  # type: ignore
 
 # Accommodate the use of the dnas library, even when the library isn't installed
 sys.path.append(
@@ -83,7 +84,7 @@ def plot_stats(year_stats: YearStats) -> None:
             ],
             layout={"yaxis": {"title": "Count"}},
         )
-        fig.update_layout(
+        fig.update_layout(  # type: ignore
             barmode="group",
             title_text=(stat_name.replace("_", " ").title()),
             title_x=0.5,
@@ -92,7 +93,7 @@ def plot_stats(year_stats: YearStats) -> None:
             legend=dict(yanchor="top", xanchor="left", x=0.01, y=1.05),
             margin=dict(l=0, r=0, b=0, t=100, pad=0),
         )
-        po.plot(
+        po.plot(  # type: ignore
             fig,
             image_width=1920,
             image_height=1080,
