@@ -46,6 +46,6 @@ types-redis==4.6.0.20241004
 types-requests==2.33.0.20260518
 types-setuptools==82.0.0.20260518
 typing_extensions==4.15.0
-urllib3==2.7.0
-virtualenv==21.7.12
+urllib3==2.8.0
+virtualenv==21.4.1
 wrapt==1.14.1
