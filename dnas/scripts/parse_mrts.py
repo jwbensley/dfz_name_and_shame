@@ -280,6 +280,7 @@ def parse_file(
             mrt_chunks = Pool.map(mrt_parser.parse_upd_dump, file_chunks)
 
         Pool.close()
+        logging.debug(f"All chunks parsed")
 
         if not keep_chunks:
             for i in range(0, len(file_chunks)):
@@ -292,9 +293,11 @@ def parse_file(
                 else:
                     os.remove(file_chunks[i])
 
+        logging.debug(f"Merging chunks...")
         mrt_s = mrt_stats()
         for chunk in mrt_chunks:
             mrt_s.add(chunk)
+        logging.debug(f"Finished merging chunks")
 
     else:
         if mrt_a.is_rib_from_filename(filename):
@@ -429,6 +432,7 @@ def process_mrt_file(args: dict) -> None:
     if type(filename) != str:
         raise TypeError(f"filename is not a string: {type(filename)}")
 
+    logging.debug(f"Processing single file {filename}...")
     mrt_a = mrt_archives()
     arch = mrt_a.arch_from_file_path(filename)
     # Check that this file can be matched to a known MRT archive:

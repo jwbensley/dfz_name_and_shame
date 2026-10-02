@@ -34,6 +34,7 @@ class redis_db:
         )
         # Check we have connected:
         self.ping()
+        logging.debug("Connected to Redis DB")
 
     def add_to_queue(
         self: "redis_db", key: str, json_str: str, compression: bool = True

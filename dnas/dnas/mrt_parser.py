@@ -95,6 +95,8 @@ class mrt_parser:
         if type(filename) != str:
             raise TypeError(f"filename is not a string: {type(filename)}")
 
+        logging.debug(f"Processing update file {filename}...")
+
         """
         We will see the same data again and again, so cache "seen" data to
         speed up parsing
@@ -1068,6 +1070,7 @@ class mrt_parser:
                 ):
                     mrt_s.most_unknown_attrs = [mrt_e]
 
+        logging.debug(f"Finished processing update file {filename}")
         return mrt_s
 
     @staticmethod

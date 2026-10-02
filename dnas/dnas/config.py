@@ -32,9 +32,7 @@ class config:
     # Standard logging format
     LOG_STANDARD = "%(asctime)s|%(levelname)s|%(message)s"
     # Debugging logging formart
-    LOG_DEBUG = (
-        "%(asctime)s|%(levelname)s|%(process)d|%(funcName)s|%(message)s"
-    )
+    LOG_DEBUG = "%(asctime)s|%(levelname)s|%(process)d|%(filename)s|%(funcName)s|%(message)s"
     # Log directory for all logs
     LOG_DIR = os.path.join(DATA_DIR, "logs/")
     # Logging from script: get_mrts.py
