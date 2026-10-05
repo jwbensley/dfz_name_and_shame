@@ -19,7 +19,7 @@ services:
     image: dnas:latest
     build:
       args:
-        - PYPY=$PYPY
+        - PYTHON_VERSION=$PYTHON_VERSION
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
@@ -41,7 +41,7 @@ services:
     image: dnas:latest
     build:
       args:
-        - PYPY=$PYPY
+        - PYTHON_VERSION=$PYTHON_VERSION
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:
@@ -64,7 +64,7 @@ services:
     image: dnas:latest
     build:
       args:
-        - PYPY=$PYPY
+        - PYTHON_VERSION=$PYTHON_VERSION
       context: /opt/dnas/
       dockerfile: docker/dnas.Dockerfile
     volumes:

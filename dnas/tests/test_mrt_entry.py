@@ -13,6 +13,16 @@ from dnas.mrt_entry import mrt_entry
 from dnas.mrt_parser import mrt_parser
 
 
+def copy_atomic(src: str, dst: str) -> None:
+    """
+    Copy src to dst via a temp file and rename, so that tests running in
+    parallel (pytest-xdist) never read a partially written dst file.
+    """
+    tmp = f"{dst}.{os.getpid()}.tmp"
+    shutil.copy2(src, tmp)
+    os.replace(tmp, dst)
+
+
 class test_mrt_entry(unittest.TestCase):
 
     def setUp(self: "test_mrt_entry") -> None:
@@ -50,7 +60,7 @@ class test_mrt_entry(unittest.TestCase):
                 break
         assert self.upd_1_mrt
 
-        shutil.copy2(self.upd_1_path, self.upd_1_mrt)
+        copy_atomic(self.upd_1_path, self.upd_1_mrt)
         self.mrt_s = mrt_parser.parse_upd_dump(self.upd_1_mrt)
 
     def test_init(self: "test_mrt_entry") -> None:

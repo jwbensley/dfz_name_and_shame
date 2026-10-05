@@ -13,6 +13,16 @@ from dnas.mrt_parser import mrt_parser
 from dnas.mrt_stats import mrt_stats
 
 
+def copy_atomic(src: str, dst: str) -> None:
+    """
+    Copy src to dst via a temp file and rename, so that tests running in
+    parallel (pytest-xdist) never read a partially written dst file.
+    """
+    tmp = f"{dst}.{os.getpid()}.tmp"
+    shutil.copy2(src, tmp)
+    os.replace(tmp, dst)
+
+
 class test_mrt_parser(unittest.TestCase):
 
     cfg = config()
@@ -86,11 +96,11 @@ class test_mrt_parser(unittest.TestCase):
                 os.makedirs(arch.MRT_DIR, exist_ok=True)
                 self.upd_3_mrt = os.path.join(arch.MRT_DIR, self.upd_3_fn)
 
-        shutil.copy2(self.upd_1_path, self.upd_1_mrt)
-        shutil.copy2(self.upd_2_path, self.upd_2_mrt)
-        shutil.copy2(self.upd_3_path, self.upd_3_mrt)
-        shutil.copy2(self.upd_4_path, self.upd_4_mrt)
-        shutil.copy2(self.upd_5_path, self.upd_5_mrt)
+        copy_atomic(self.upd_1_path, self.upd_1_mrt)
+        copy_atomic(self.upd_2_path, self.upd_2_mrt)
+        copy_atomic(self.upd_3_path, self.upd_3_mrt)
+        copy_atomic(self.upd_4_path, self.upd_4_mrt)
+        copy_atomic(self.upd_5_path, self.upd_5_mrt)
 
     def test_init(self: "test_mrt_parser"):
         """
