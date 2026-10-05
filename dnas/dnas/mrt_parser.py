@@ -104,6 +104,8 @@ class mrt_parser:
         unalloc_asn = unallocated_asn()
         prefix_unalloc_origin: list[mrt_entry] = []
         non_bogon_asns: dict[str, None] = {}
+        bogon_prefix_cache: dict[str, bool] = {}
+        unalloc_asn_cache: dict[str, bool] = {}
         bogon_origin_asns: list[mrt_entry] = []
         bogon_prefix_entries: list[mrt_entry] = []
         highest_med_prefixes: list[mrt_entry] = []
@@ -241,7 +243,13 @@ class mrt_parser:
                                     advt_per_origin_asn[origin_asn] = 1
                                 else:
                                     advt_per_origin_asn[origin_asn] += 1
-                                if unalloc_asn.is_unallocated(int(origin_asn)):
+                                if origin_asn not in unalloc_asn_cache:
+                                    unalloc_asn_cache[origin_asn] = (
+                                        unalloc_asn.is_unallocated(
+                                            int(origin_asn)
+                                        )
+                                    )
+                                if unalloc_asn_cache[origin_asn]:
                                     is_unalloc_origin = True
                             else:
                                 logging.error(f"No AS Path: {mrt_e.data}")
@@ -320,7 +328,11 @@ class mrt_parser:
                     NLRI attribute of a MP_REACH_NLRI update as above.
                     """
                     for prefix in prefixes:
-                        if bogon_ip.is_v6_bogon(prefix):
+                        if prefix not in bogon_prefix_cache:
+                            bogon_prefix_cache[prefix] = bogon_ip.is_v6_bogon(
+                                prefix
+                            )
+                        if bogon_prefix_cache[prefix]:
                             bogon_prefixes.append(prefix)
 
                         if prefix not in upd_prefix:
@@ -348,7 +360,11 @@ class mrt_parser:
                             prefix = nlri["prefix"] + "/" + str(nlri["length"])
                             prefixes.append(prefix)
 
-                            if bogon_ip.is_v4_bogon(prefix):
+                            if prefix not in bogon_prefix_cache:
+                                bogon_prefix_cache[prefix] = (
+                                    bogon_ip.is_v4_bogon(prefix)
+                                )
+                            if bogon_prefix_cache[prefix]:
                                 bogon_prefixes.append(prefix)
 
                             if prefix not in upd_prefix:

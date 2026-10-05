@@ -15,13 +15,18 @@ class unallocated_asn:
         Load the unallocated ASN ranges
         """
 
-        with open(cfg.unallocated_asns_file, "r") as unallocated_asns:
-            for asn_tuple in unallocated_asns.readlines():
-                min_asn, max_asn = map(int, asn_tuple.strip("()\n").split(","))
-                self.unallocated_ranges.append(range(min_asn, max_asn + 1))
-        logging.debug(
-            f"Loaded {len(self.unallocated_ranges)} unallocated ASN tuples"
-        )
+        if unallocated_asn.unallocated_ranges == []:
+            with open(cfg.unallocated_asns_file, "r") as unallocated_asns:
+                for asn_tuple in unallocated_asns.readlines():
+                    min_asn, max_asn = map(
+                        int, asn_tuple.strip("()\n").split(",")
+                    )
+                    unallocated_asn.unallocated_ranges.append(
+                        range(min_asn, max_asn + 1)
+                    )
+            logging.debug(
+                f"Loaded {len(unallocated_asn.unallocated_ranges)} unallocated ASN tuples"
+            )
 
     def is_unallocated(self: "unallocated_asn", asn: int) -> bool:
         """
@@ -30,7 +35,7 @@ class unallocated_asn:
         if type(asn) != int:
             raise TypeError(f"{asn} is not an int: {type(asn)}")
 
-        for unallocated_range in self.unallocated_ranges:
+        for unallocated_range in unallocated_asn.unallocated_ranges:
             if asn in unallocated_range:
                 return True
         return False

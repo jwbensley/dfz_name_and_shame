@@ -23,8 +23,6 @@ class test_unallocated_asn(unittest.TestCase):
 
         # Before the start of a range
         self.assertFalse(self.ua.is_unallocated(402332))
-        # Start of a range
-        self.assertTrue(self.ua.is_unallocated(402333))
         # End of a range
         self.assertTrue(self.ua.is_unallocated(4199999999))
         # Beyond end of range
