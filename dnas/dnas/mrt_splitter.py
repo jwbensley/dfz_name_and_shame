@@ -92,7 +92,6 @@ class mrt_splitter:
                 f"Invalid MRT header length {len(mrt_entry)} < 12 bytes"
             )
 
-        val = 0
         length = 0
         for i in mrt_entry[-4:]:
             length = (length << 8) + i
