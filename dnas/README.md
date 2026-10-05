@@ -44,36 +44,15 @@ docker exec -it redis_dnas redis-cli
 > CONFIG REWRITE
 ```
 
-### Python & PyPy
+### Python
 
-To run the DNAS code natively in Python3 outside of the container, install the required Python modules:
+The DNAS container uses the Python version set by `PYTHON_VERSION` in [docker/.env](../docker/.env). To run the DNAS code natively outside of the container, use the same Python version and install the required Python modules:
 
 ```shell
 cd /opt/dnas/
 source venv/bin/activate
 cd ./dnas/
 python3 -m pip install -r requirements.txt
-```
-
-The code is developed in Python3 but the DNAS container actually uses PyPy3 to run faster. The following commands manually install PyPy3 and the required modules in PyPy, to manually run the code outside of a container:
-
-```shell
-cd /opt/dnas/
-source venv/bin/activate
-cd ./dnas/
-
-#pypy="https://downloads.python.org/pypy/pypy3.8-v7.3.7-aarch64.tar.bz2"
-pypy_url="https://downloads.python.org/pypy/pypy3.8-v7.3.7-linux64.tar.bz2"
-pypy_tar="$(basename $pypy_url)"
-pypy_dir="${pypy_tar/.tar.bz2/}/"
-wget "$pypy_url"
-tar -xf $(basename "$pypy_tar")
-rm $(basename "$pypy_tar")
-sudo mv "$pypy_dir" /opt/
-
-/opt/"$pypy_dir"/bin/pypy3 -m ensurepip
-/opt/"$pypy_dir"/bin/pypy3 -mpip install --upgrade pip
-/opt/"$pypy_dir"/bin/pypy3 -mpip install -r requirements.txt
 ```
 
 Copy across the required authentication files:

@@ -121,7 +121,9 @@ class mrt_entry:
         self.filename = (
             json_data["filename"] if ("filename" in json_data) else ""
         )
-        self.med = json_data["med"] if ("med" in json_data) else None
+        self.med = (
+            json_data["med"] if ("med" in json_data) else cfg.MISSING_MED
+        )
         self.next_hop = json_data["next_hop"] if json_data["next_hop"] else ""
         self.prefix = json_data["prefix"] if json_data["prefix"] else ""
         self.origin_asns = set(json_data["origin_asns"])

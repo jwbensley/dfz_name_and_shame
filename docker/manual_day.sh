@@ -27,7 +27,6 @@ fi
 source /opt/dnas/venv/bin/activate
 cd "/opt/dnas/docker/"
 
-PYPY="/opt/pypy"
 SCRIPTS_DIR="/opt/dnas/dnas/scripts"
 YMD="${1}"
 shift
@@ -38,13 +37,13 @@ docker compose run --rm --name tmp_getter_day dnas_getter -- \
 docker compose run --rm --name tmp_parser_day dnas_parser -- \
 "${SCRIPTS_DIR}/parse_mrts.py" --update --remove --enabled --ymd "${YMD}" "${@}"
 
-docker compose run --rm --name tmp_stats_day --entrypoint "${PYPY}" dnas_stats -- \
+docker compose run --rm --name tmp_stats_day --entrypoint python3 dnas_stats -- \
 "${SCRIPTS_DIR}/stats.py" --update --enabled --daily --ymd "${YMD}" "${@}"
 
-docker compose run --rm --name tmp_report_day --entrypoint "${PYPY}" dnas_stats -- \
+docker compose run --rm --name tmp_report_day --entrypoint python3 dnas_stats -- \
 "${SCRIPTS_DIR}/git_reports.py" --generate --publish --ymd "${YMD}" "${@}"
 
 # The Twitter account has been disabled!
-#dockercompose run --rm --name tmp_tweet_day --entrypoint "${PYPY}" dnas_stats -- \
+#dockercompose run --rm --name tmp_tweet_day --entrypoint python3 dnas_stats -- \
 #"${SCRIPTS_DIR}/tweet.py" --generate --tweet --ymd "${YMD}" "${@}"
 

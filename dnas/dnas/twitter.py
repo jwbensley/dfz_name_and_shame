@@ -1,6 +1,6 @@
 import logging
 
-import tweepy  # type: ignore
+# import tweepy  # type: ignore
 from dnas.config import config as cfg
 from dnas.mrt_archive import mrt_archive
 from dnas.mrt_stats import mrt_stats
@@ -15,12 +15,12 @@ class twitter:
     """
 
     def __init__(self: "twitter") -> None:
-        self.client = tweepy.Client(
-            consumer_key=twitter_auth.consumer_key,
-            consumer_secret=twitter_auth.consumer_secret,
-            access_token=twitter_auth.access_token,
-            access_token_secret=twitter_auth.access_token_secret,
-        )
+        # self.client = tweepy.Client(
+        #     consumer_key=twitter_auth.consumer_key,
+        #     consumer_secret=twitter_auth.consumer_secret,
+        #     access_token=twitter_auth.access_token,
+        #     access_token_secret=twitter_auth.access_token_secret,
+        # )
 
     def delete(self: "twitter", tweet_id: int) -> None:
         """
