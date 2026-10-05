@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import Mock
 
 # import tweepy  # type: ignore
 from dnas.config import config as cfg
@@ -21,6 +22,7 @@ class twitter:
         #     access_token=twitter_auth.access_token,
         #     access_token_secret=twitter_auth.access_token_secret,
         # )
+        self.client = Mock()
 
     def delete(self: "twitter", tweet_id: int) -> None:
         """
