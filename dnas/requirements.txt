@@ -46,4 +46,4 @@ types-requests==2.33.0.20260906
 types-setuptools==84.0.0.20260812
 typing_extensions==4.16.0
 urllib3==2.8.0
-virtualenv==21.14.5
+virtualenv==21.14.13
